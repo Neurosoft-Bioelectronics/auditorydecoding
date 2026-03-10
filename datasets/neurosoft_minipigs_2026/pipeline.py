@@ -9,7 +9,7 @@
 
 from argparse import ArgumentParser, Namespace
 
-from typing import NamedTuple, Optional
+from typing import Optional
 
 import warnings
 import h5py
@@ -18,7 +18,7 @@ import numpy as np
 import pandas as pd
 from datetime import datetime, timezone
 import mne
-from mne_bids import read_raw_bids, get_entity_vals, get_entities_from_fname
+from mne_bids import read_raw_bids, get_entities_from_fname
 
 from pathlib import Path
 
@@ -38,7 +38,6 @@ from brainsets.utils.bids_utils import (
 from brainsets.utils.mne_utils import (
     extract_measurement_date,
     extract_channels,
-    extract_signal,
     concatenate_recordings,
 )
 
@@ -64,22 +63,22 @@ ON_VS_OFF_TO_ID = {
 }
 
 STIM_FREQUENCY_TO_ID = {
-    "stim_100Hz": 100,
-    "stim_200Hz": 200,
-    "stim_300Hz": 300,
-    "stim_400Hz": 400,
-    "stim_500Hz": 500,
-    "stim_800Hz": 800,
-    "stim_1000Hz": 1000,
-    "stim_2000Hz": 2000,
-    "stim_5000Hz": 5000,
-    "stim_8000Hz": 8000,
-    "stim_10000Hz": 10000,
-    "stim_15000Hz": 15000,
-    "stim_16000Hz": 16000,
-    "stim_20000Hz": 20000,
-    "stim_30000Hz": 30000,
-    "stim_40000Hz": 40000,
+    "stim_100Hz": 0,
+    "stim_200Hz": 1,
+    "stim_300Hz": 2,
+    "stim_400Hz": 3,
+    "stim_500Hz": 4,
+    "stim_800Hz": 5,
+    "stim_1000Hz": 6,
+    "stim_2000Hz": 7,
+    "stim_5000Hz": 8,
+    "stim_8000Hz": 9,
+    "stim_10000Hz": 10,
+    "stim_15000Hz": 11,
+    "stim_16000Hz": 12,
+    "stim_20000Hz": 13,
+    "stim_30000Hz": 14,
+    "stim_40000Hz": 15,
 }
 
 
@@ -95,7 +94,7 @@ class Pipeline(BrainsetPipeline):
 
         Args:
             raw_dir (Path): Path to the root directory containing BIDS-formatted raw data for this brainset.
-            args (Optional[Namespace]): Pipeline arguments (may include 'bids_root' or other CLI options).
+            args (Optional[Namespace]): Pipeline arguments.
 
         Returns:
             pd.DataFrame: DataFrame with one row per grouped session/hemisphere. Contains:
@@ -115,34 +114,7 @@ class Pipeline(BrainsetPipeline):
             fixed_entities=["subject", "session", "task", "description"],
         )
 
-        # TODO: This is a hack to group by hemisphere. It should be done in a more elegant way.
-        # The right way to do this would be to use a different run number for each stimulation frequency
-        # and use acq to denote hemisphere. Stimulation frequency values are included in the *events.tsv file.
-        new_grouped_recordings = {}
-        for group_id, recordings in grouped_recordings.items():
-            hemispheres = {}
-            for recording in recordings:
-                recording_id = recording["recording_id"]
-                entities = get_entities_from_fname(recording_id, on_error="raise")
-                acquisition = entities.get("acquisition", "")
-                hemi = None
-                if acquisition and "L" in acquisition:
-                    hemi = "L"
-                elif acquisition and "R" in acquisition:
-                    hemi = "R"
-                else:
-                    hemi = "UNKNOWN"
-                hemispheres.setdefault(hemi, []).append(recording)
-
-            if "UNKNOWN" in hemispheres:
-                raise ValueError(f"Unknown hemisphere found for group {group_id}")
-
-            # If there's more than one hemisphere in this group, split up
-            if len(hemispheres) > 0:
-                for hemi, hemi_recordings in hemispheres.items():
-                    new_group_id = f"{group_id}_{hemi}H"
-                    new_grouped_recordings[new_group_id] = hemi_recordings
-        grouped_recordings = new_grouped_recordings
+        grouped_recordings = _regroup_recordings_by_hemisphere(grouped_recordings)
 
         manifest_list = []
         for session_id, recordings in grouped_recordings.items():
@@ -156,7 +128,7 @@ class Pipeline(BrainsetPipeline):
             )
 
         if not manifest_list:
-            raise ValueError(f"No iEEG recordings found in BODS root {raw_dir}")
+            raise ValueError(f"No iEEG recordings found in BIDS root {raw_dir}")
 
         manifest = pd.DataFrame(manifest_list).set_index("session_id")
         return manifest
@@ -182,7 +154,7 @@ class Pipeline(BrainsetPipeline):
         if not getattr(self.args, "redownload", False):
             for recording_id in recording_ids:
                 if check_ieeg_recording_files_exist(self.raw_dir, recording_id):
-                    self.update_status(f"Already Downloaded")
+                    self.update_status(f"Recording {recording_id} already Downloaded")
                 else:
                     raise FileNotFoundError(f"Recording {recording_id} not found.")
 
@@ -581,6 +553,56 @@ def load_recordings(
     session = _sort_recordings(session)
 
     return session
+
+
+def _regroup_recordings_by_hemisphere(grouped_recordings: dict[str, list[dict]]) -> dict[str, list[dict]]:
+    """
+    Groups a dictionary of recordings by hemisphere, based on the 'acquisition' entity in the recording IDs.
+
+    Args:
+        grouped_recordings (dict[str, list[dict]]): 
+            A dictionary where keys are group IDs and values are lists of recording dicts. 
+            Each dict must have the key 'recording_id'.
+
+    Returns:
+        dict[str, list[dict]]: 
+            A new dictionary where each key represents a unique combination of group ID and hemisphere (e.g. 'group_LH' or 'group_RH'),
+            and the values are lists of recording dicts belonging to that hemisphere group.
+
+    Raises:
+        ValueError: If any recording's hemisphere cannot be determined from the 'acquisition' entity.
+    """
+    # TODO: This is a hack to group by hemisphere. It should be done in a more elegant way.
+    # The right way would be to use a different 'run' number for each stimulation frequency
+    # and use 'acq' to denote hemisphere. Stimulation frequency values are included in the *events.tsv file.
+    recordings_grouped_by_hemisphere = {}
+    for group_id, recordings in grouped_recordings.items():
+        hemispheres = {}
+        for recording in recordings:
+            recording_id = recording["recording_id"]
+            entities = get_entities_from_fname(recording_id, on_error="raise")
+            acquisition = entities.get("acquisition", "")
+            hemi = None
+            if acquisition and "L" in acquisition:
+                hemi = "L"
+            elif acquisition and "R" in acquisition:
+                hemi = "R"
+            else:
+                hemi = "UNKNOWN"
+            hemispheres.setdefault(hemi, []).append(recording)
+
+        if "UNKNOWN" in hemispheres:
+            raise ValueError(f"Unknown hemisphere found for group {group_id}")
+
+        # If there's more than one hemisphere in this group, split up
+        if len(hemispheres) > 0:
+            for hemi, hemi_recordings in hemispheres.items():
+                new_group_id = f"{group_id}_{hemi}H"
+                recordings_grouped_by_hemisphere[new_group_id] = hemi_recordings
+    
+    if len(recordings_grouped_by_hemisphere) == 0:
+        return grouped_recordings
+    return recordings_grouped_by_hemisphere
 
 
 def _add_baseline_annotations(raw: mne.io.Raw):
