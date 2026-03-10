@@ -7,7 +7,7 @@ requires-python = ">=3.11"
 dependencies = ["brainsets"]
 
 [tool.uv.sources]
-brainsets = { git = "https://github.com/neuro-galaxy/brainsets.git", branch = "main" }
+brainsets = { git = "https://github.com/neuro-galaxy/brainsets.git", branch = "suarez/bids-utils" }
 
 [dependency-groups]
 dev = ["ruff>=0.15.4"]
