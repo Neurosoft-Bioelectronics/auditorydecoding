@@ -131,6 +131,7 @@ class Pipeline(BrainsetPipeline):
             raise ValueError(f"No iEEG recordings found in BIDS root {raw_dir}")
 
         manifest = pd.DataFrame(manifest_list).set_index("session_id")
+        manifest.to_csv("manifest.csv")
         return manifest
 
     def download(self, manifest_item: pd.Series):
@@ -381,7 +382,7 @@ def extract_on_vs_off_trials(recordings: dict[str, mne.io.Raw]) -> Interval:
 
             start_times.append(start_time)
             end_times.append(end_time)
-
+            
             if (
                 annotation["description"] == "rest"
                 or annotation["description"] == "baseline"
@@ -547,6 +548,9 @@ def load_recordings(
         if meas_date.tzinfo is None:
             meas_date = meas_date.replace(tzinfo=timezone.utc)
         raw.set_meas_date(meas_date)
+        
+        # verify that all baseline annotations have the same description
+        _verify_baseline_annotations(raw)            
 
         session[recording_id] = raw
 
@@ -603,6 +607,16 @@ def _regroup_recordings_by_hemisphere(grouped_recordings: dict[str, list[dict]])
     if len(recordings_grouped_by_hemisphere) == 0:
         return grouped_recordings
     return recordings_grouped_by_hemisphere
+
+
+def _verify_baseline_annotations(raw: mne.io.Raw) -> None:
+    """Verifies that all baseline annotations have the same description.
+    """
+    verified_descriptions = [
+        'baseline' if "baseline" in annotation["description"] and annotation["description"] != "baseline" else annotation["description"]
+        for annotation in raw.annotations
+    ]
+    raw.annotations.description = verified_descriptions
 
 
 def _add_baseline_annotations(raw: mne.io.Raw):
