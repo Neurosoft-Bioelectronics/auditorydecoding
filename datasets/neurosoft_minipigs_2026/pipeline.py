@@ -18,7 +18,7 @@ import numpy as np
 import pandas as pd
 from datetime import datetime, timezone
 import mne
-from mne_bids import read_raw_bids, get_entities_from_fname
+from mne_bids import read_raw_bids, get_entities_from_fname, BIDSPath
 
 from pathlib import Path
 
@@ -131,7 +131,7 @@ class Pipeline(BrainsetPipeline):
             fixed_entities=["subject", "session", "task", "description"],
         )
 
-        grouped_recordings = _regroup_recordings_by_hemisphere(grouped_recordings)
+        grouped_recordings = _regroup_recordings_by_acquisition(grouped_recordings)
 
         manifest_list = []
         for session_id, recordings in grouped_recordings.items():
@@ -208,7 +208,7 @@ class Pipeline(BrainsetPipeline):
         subject_id = f"sub-{entities['subject']}"
         
         if session_id in SKIP_UNANNOTATED_SESSIONS:
-            self.update_status(f"Skipping unannotated session")
+            self.update_status("Skipping unannotated session")
             return None
         
         self.processed_dir.mkdir(exist_ok=True, parents=True)
@@ -579,9 +579,9 @@ def load_recordings(
     return session
 
 
-def _regroup_recordings_by_hemisphere(grouped_recordings: dict[str, list[dict]]) -> dict[str, list[dict]]:
+def _regroup_recordings_by_acquisition(grouped_recordings: dict[str, list[dict]]) -> dict[str, list[dict]]:
     """
-    Groups a dictionary of recordings by hemisphere, based on the 'acquisition' entity in the recording IDs.
+    Groups a dictionary of recordings by acquisition, based on the 'acquisition' entity in the recording IDs.
 
     Args:
         grouped_recordings (dict[str, list[dict]]): 
@@ -590,43 +590,48 @@ def _regroup_recordings_by_hemisphere(grouped_recordings: dict[str, list[dict]])
 
     Returns:
         dict[str, list[dict]]: 
-            A new dictionary where each key represents a unique combination of group ID and hemisphere (e.g. 'group_LH' or 'group_RH'),
-            and the values are lists of recording dicts belonging to that hemisphere group.
+            A new dictionary where each key represents a unique combination of group ID and acquisition (e.g. 'group_LH' or 'group_LHanest'),
+            and the values are lists of recording dicts belonging to that acquisition group.
 
     Raises:
-        ValueError: If any recording's hemisphere cannot be determined from the 'acquisition' entity.
+        ValueError: If any recording's acquisition cannot be determined from the 'acquisition' entity.
     """
-    # TODO: This is a hack to group by hemisphere. It should be done in a more elegant way.
+    # TODO: This is a hack to group by acquisition. This should be done in a more elegant way.
     # The right way would be to use a different 'run' number for each stimulation frequency
-    # and use 'acq' to denote hemisphere. Stimulation frequency values are included in the *events.tsv file.
-    recordings_grouped_by_hemisphere = {}
+    # and use 'acq' to denote acquisition. Stimulation frequency values are included in the *events.tsv file.
+    recordings_grouped_by_acquisition = {}
     for group_id, recordings in grouped_recordings.items():
-        hemispheres = {}
+        new_acquisitions = {}
         for recording in recordings:
             recording_id = recording["recording_id"]
-            entities = get_entities_from_fname(recording_id, on_error="raise")
-            acquisition = entities.get("acquisition", "")
-            hemi = None
+            acquisition = get_entities_from_fname(recording_id, on_error="raise").get("acquisition", "")
+            
+            new_acquisition = ""
             if acquisition and "L" in acquisition:
-                hemi = "L"
+                new_acquisition += "LH"
             elif acquisition and "R" in acquisition:
-                hemi = "R"
-            else:
-                hemi = "UNKNOWN"
-            hemispheres.setdefault(hemi, []).append(recording)
-
-        if "UNKNOWN" in hemispheres:
-            raise ValueError(f"Unknown hemisphere found for group {group_id}")
+                new_acquisition += "RH"
+                
+            if acquisition and "anest" in acquisition:
+                new_acquisition += "anest"
+            
+            if not new_acquisition:
+                new_acquisition = acquisition
+                
+            new_acquisitions.setdefault(new_acquisition, []).append(recording)
 
         # If there's more than one hemisphere in this group, split up
-        if len(hemispheres) > 0:
-            for hemi, hemi_recordings in hemispheres.items():
-                new_group_id = f"{group_id}_{hemi}H"
-                recordings_grouped_by_hemisphere[new_group_id] = hemi_recordings
+        if len(new_acquisitions) > 0:
+            for new_acq, recordings in new_acquisitions.items():
+                entities = get_entities_from_fname(group_id, on_error="raise")
+                entities["acquisition"] = new_acq
+                entities["task"] = "AcousStim"
+                new_group_id = BIDSPath(**entities).basename
+                recordings_grouped_by_acquisition[new_group_id] = recordings
     
-    if len(recordings_grouped_by_hemisphere) == 0:
+    if len(recordings_grouped_by_acquisition) == 0:
         return grouped_recordings
-    return recordings_grouped_by_hemisphere
+    return recordings_grouped_by_acquisition
 
 
 def _verify_baseline_annotations(raw: mne.io.Raw) -> None:
