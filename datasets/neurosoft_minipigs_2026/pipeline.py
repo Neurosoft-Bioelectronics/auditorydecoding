@@ -85,18 +85,18 @@ STIM_FREQUENCY_TO_ID = {
 #TODO All recordings within these sessions are unnnotated.
 # The ones commented out only have a few unannotated recordings.
 SKIP_UNANNOTATED_SESSIONS = [
-    "sub-03_ses-02_task-AcousticStim_desc-raw_RH",
-    # "sub-03_ses-03_task-AcousticStim_desc-raw_RH",
-    # "sub-03_ses-04_task-AcousticStim_desc-raw_RH",
-    "sub-03_ses-05_task-AcousticStim_desc-raw_RH",
-    # "sub-04_ses-02_task-AcousticStim_desc-raw_LH",
-    # "sub-04_ses-02_task-AcousticStim_desc-raw_RH",
-    "sub-05_ses-03_task-AcousticStim_desc-raw_LH",
-    "sub-05_ses-03_task-AcousticStim_desc-raw_RH",
-    "sub-06_ses-01_task-AcousticStim_desc-raw_LH",
-    "sub-06_ses-01_task-AcousticStim_desc-raw_RH",
-    "sub-07_ses-06_task-AcousticStim_desc-filtered_LH",
-    "sub-07_ses-06_task-AcousticStim_desc-raw_LH",
+    "sub-03_ses-02_task-AcousStim_acq-RH_desc-raw",
+    "sub-03_ses-03_task-AcousStim_acq-RH_desc-raw",
+    "sub-03_ses-04_task-AcousStim_acq-RH_desc-raw",
+    "sub-03_ses-05_task-AcousStim_acq-RH_desc-raw",
+    # "sub-04_ses-02_task-AcousStim_acq-LH_desc-raw", # Some recordings are not annotated
+    # "sub-04_ses-02_task-AcousStim_acq-RH_desc-raw", # Some recordings are not annotated
+    "sub-05_ses-03_task-AcousStim_acq-LH_desc-raw",
+    "sub-05_ses-03_task-AcousStim_acq-RH_desc-raw",
+    "sub-06_ses-01_task-AcousStim_acq-LH_desc-raw",
+    "sub-06_ses-01_task-AcousStim_acq-RH_desc-raw",
+    "sub-07_ses-06_task-AcousStim_acq-LH_desc-filtered",
+    "sub-07_ses-06_task-AcousStim_acq-LH_desc-raw",
 ]
 
 class Pipeline(BrainsetPipeline):
