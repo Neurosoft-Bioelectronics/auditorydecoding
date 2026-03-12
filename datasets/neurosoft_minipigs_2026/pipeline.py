@@ -82,6 +82,23 @@ STIM_FREQUENCY_TO_ID = {
 }
 
 
+#TODO All recordings within these sessions are unnnotated.
+# The ones commented out only have a few unannotated recordings.
+SKIP_UNANNOTATED_SESSIONS = [
+    "sub-03_ses-02_task-AcousticStim_desc-raw_RH",
+    # "sub-03_ses-03_task-AcousticStim_desc-raw_RH",
+    # "sub-03_ses-04_task-AcousticStim_desc-raw_RH",
+    "sub-03_ses-05_task-AcousticStim_desc-raw_RH",
+    # "sub-04_ses-02_task-AcousticStim_desc-raw_LH",
+    # "sub-04_ses-02_task-AcousticStim_desc-raw_RH",
+    "sub-05_ses-03_task-AcousticStim_desc-raw_LH",
+    "sub-05_ses-03_task-AcousticStim_desc-raw_RH",
+    "sub-06_ses-01_task-AcousticStim_desc-raw_LH",
+    "sub-06_ses-01_task-AcousticStim_desc-raw_RH",
+    "sub-07_ses-06_task-AcousticStim_desc-filtered_LH",
+    "sub-07_ses-06_task-AcousticStim_desc-raw_LH",
+]
+
 class Pipeline(BrainsetPipeline):
     brainset_id = "neurosoft_minipigs_2026"
     modality = "ieeg"
@@ -186,14 +203,15 @@ class Pipeline(BrainsetPipeline):
             Optional[Data]: Data object if processing is performed,
                 or None if the group was already processed and processing is skipped.
         """
-        print("\nProcessing session: ", download_output.get("session_id"))
-        self.processed_dir.mkdir(exist_ok=True, parents=True)
-
         session_id = download_output.get("session_id")
         entities = get_entities_from_fname(session_id, on_error="raise")
         subject_id = f"sub-{entities['subject']}"
-        recording_ids = download_output.get("recording_ids")
-
+        
+        if session_id in SKIP_UNANNOTATED_SESSIONS:
+            self.update_status(f"Skipping unannotated session")
+            return None
+        
+        self.processed_dir.mkdir(exist_ok=True, parents=True)
         store_path = self.processed_dir / f"{session_id}.h5"
         if not getattr(self.args, "reprocess", False):
             if store_path.exists():
@@ -202,6 +220,7 @@ class Pipeline(BrainsetPipeline):
 
         # Load all recordings from the same session into a dictionary of raw objects
         self.update_status(f"Loading {self.modality.upper()} recordings")
+        recording_ids = download_output.get("recording_ids")
         recordings = load_recordings(self.raw_dir, recording_ids, self.modality)
 
         # concatenate the recordings
@@ -535,7 +554,8 @@ def load_recordings(
                 )
                 _add_baseline_annotations(raw)
             else:
-                raise ValueError(f"No annotations found in recording {recording_id}")
+                warnings.warn(f"No annotations found in recording {recording_id}. Skipping.")
+                continue
         else:
             # add rest annotations if not present
             if "rest" not in np.unique(raw.annotations.description):
