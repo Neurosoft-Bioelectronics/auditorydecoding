@@ -148,7 +148,6 @@ class Pipeline(BrainsetPipeline):
             raise ValueError(f"No iEEG recordings found in BIDS root {raw_dir}")
 
         manifest = pd.DataFrame(manifest_list).set_index("session_id")
-        manifest.to_csv("manifest.csv")
         return manifest
 
     def download(self, manifest_item: pd.Series):
