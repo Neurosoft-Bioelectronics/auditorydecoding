@@ -16,7 +16,9 @@ class NeurosoftMinipigs2026(Dataset):
         split_type: Optional[
             Literal["intersubject", "intersession", "intrasession"]
         ] = None,
-        task_type: Optional[Literal["on_vs_off", "acoustic_stim"]] = "on_vs_off",
+        task_type: Optional[
+            Literal["on_vs_off", "acoustic_stim"]
+        ] = "on_vs_off",
         dirname: str = "neurosoft_minipigs_2026",
         **kwargs,
     ):
@@ -36,9 +38,14 @@ class NeurosoftMinipigs2026(Dataset):
         split: Optional[Literal["train", "valid", "test"]] = None,
     ):
         if split is None:
-            return {rid: self.get_recording(rid).domain for rid in self.recording_ids}
+            return {
+                rid: self.get_recording(rid).domain
+                for rid in self.recording_ids
+            }
         if split not in ["train", "valid", "test"]:
-            raise ValueError("split must be ['train', 'valid', 'test'], or None.")
+            raise ValueError(
+                "split must be ['train', 'valid', 'test'], or None."
+            )
         if self.split_type is None or self.fold_num is None:
             raise ValueError(
                 "split_type and fold_num must be set when split is not None."
@@ -70,9 +77,13 @@ class NeurosoftMinipigs2026(Dataset):
         self, split: Literal["train", "valid", "test"]
     ) -> dict:
         if self.split_type == "intersubject":
-            assignment_key = f"splits.intersubject_fold_{self.fold_num}_assignment"
+            assignment_key = (
+                f"splits.intersubject_fold_{self.fold_num}_assignment"
+            )
         else:
-            assignment_key = f"splits.intersession_fold_{self.fold_num}_assignment"
+            assignment_key = (
+                f"splits.intersession_fold_{self.fold_num}_assignment"
+            )
 
         result = {}
         for rid in self.recording_ids:

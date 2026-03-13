@@ -82,7 +82,7 @@ STIM_FREQUENCY_TO_ID = {
 }
 
 
-#TODO All recordings within these sessions are unnnotated.
+# TODO All recordings within these sessions are unnnotated.
 # The ones commented out only have a few unannotated recordings.
 SKIP_UNANNOTATED_SESSIONS = [
     "sub-03_ses-02_task-AcousStim_acq-RH_desc-raw",
@@ -99,13 +99,16 @@ SKIP_UNANNOTATED_SESSIONS = [
     "sub-07_ses-06_task-AcousStim_acq-LH_desc-raw",
 ]
 
+
 class Pipeline(BrainsetPipeline):
     brainset_id = "neurosoft_minipigs_2026"
     modality = "ieeg"
     parser = parser
 
     @classmethod
-    def get_manifest(cls, raw_dir: Path, args: Optional[Namespace]) -> pd.DataFrame:
+    def get_manifest(
+        cls, raw_dir: Path, args: Optional[Namespace]
+    ) -> pd.DataFrame:
         """
         Generate a manifest DataFrame for iEEG recordings found in a BIDS raw directory.
 
@@ -123,7 +126,9 @@ class Pipeline(BrainsetPipeline):
             ValueError: If any recording group contains an unknown or missing hemisphere acquisition.
         """
         if not raw_dir.exists():
-            raise FileNotFoundError(f"BIDS root directory '{raw_dir}' does not exist.")
+            raise FileNotFoundError(
+                f"BIDS root directory '{raw_dir}' does not exist."
+            )
 
         recordings = fetch_ieeg_recordings(raw_dir)
         grouped_recordings = group_recordings_by_entity(
@@ -131,7 +136,9 @@ class Pipeline(BrainsetPipeline):
             fixed_entities=["subject", "session", "task", "description"],
         )
 
-        grouped_recordings = _regroup_recordings_by_acquisition(grouped_recordings)
+        grouped_recordings = _regroup_recordings_by_acquisition(
+            grouped_recordings
+        )
 
         manifest_list = []
         for session_id, recordings in grouped_recordings.items():
@@ -171,9 +178,13 @@ class Pipeline(BrainsetPipeline):
         if not getattr(self.args, "redownload", False):
             for recording_id in recording_ids:
                 if check_ieeg_recording_files_exist(self.raw_dir, recording_id):
-                    self.update_status(f"Recording {recording_id} already Downloaded")
+                    self.update_status(
+                        f"Recording {recording_id} already Downloaded"
+                    )
                 else:
-                    raise FileNotFoundError(f"Recording {recording_id} not found.")
+                    raise FileNotFoundError(
+                        f"Recording {recording_id} not found."
+                    )
 
         return {
             "session_id": manifest_item.Index,
@@ -205,11 +216,11 @@ class Pipeline(BrainsetPipeline):
         session_id = download_output.get("session_id")
         entities = get_entities_from_fname(session_id, on_error="raise")
         subject_id = f"sub-{entities['subject']}"
-        
+
         if session_id in SKIP_UNANNOTATED_SESSIONS:
             self.update_status("Skipping unannotated session")
             return None
-        
+
         self.processed_dir.mkdir(exist_ok=True, parents=True)
         store_path = self.processed_dir / f"{session_id}.h5"
         if not getattr(self.args, "reprocess", False):
@@ -242,7 +253,9 @@ class Pipeline(BrainsetPipeline):
             description=dataset_description,
         )
 
-        subject_info = get_subject_info(bids_root=self.raw_dir, subject_id=subject_id)
+        subject_info = get_subject_info(
+            bids_root=self.raw_dir, subject_id=subject_id
+        )
         subject_description = SubjectDescription(
             id=subject_id,
             species=Species.UNKNOWN,
@@ -344,9 +357,15 @@ def generate_splits(
         )
 
         for k, fold_data in enumerate(acoustic_stim_folds):
-            acoustic_stim_splits[f"acoustic_stim_fold_{k}_train"] = fold_data.train
-            acoustic_stim_splits[f"acoustic_stim_fold_{k}_valid"] = fold_data.valid
-            acoustic_stim_splits[f"acoustic_stim_fold_{k}_test"] = fold_data.test
+            acoustic_stim_splits[f"acoustic_stim_fold_{k}_train"] = (
+                fold_data.train
+            )
+            acoustic_stim_splits[f"acoustic_stim_fold_{k}_valid"] = (
+                fold_data.valid
+            )
+            acoustic_stim_splits[f"acoustic_stim_fold_{k}_test"] = (
+                fold_data.test
+            )
 
     return Data(
         **namespaced_assignments,
@@ -384,9 +403,9 @@ def extract_on_vs_off_trials(recordings: dict[str, mne.io.Raw]) -> Interval:
             if len(end_times) > 0 and start_time < end_times[-1]:
                 # the previous trial goes into the next one
                 # this happens because of numerical precision issues
-                assert (
-                    end_times[-1] - start_time < 0.1
-                ), f"found overlap between trials: start time of trial i: {start_time}, end time of trial i-1: {end_times[-1]}"
+                assert end_times[-1] - start_time < 0.1, (
+                    f"found overlap between trials: start time of trial i: {start_time}, end time of trial i-1: {end_times[-1]}"
+                )
 
                 # we can clip the end time of the last trial
                 end_times[-1] = start_time
@@ -400,7 +419,7 @@ def extract_on_vs_off_trials(recordings: dict[str, mne.io.Raw]) -> Interval:
 
             start_times.append(start_time)
             end_times.append(end_time)
-            
+
             if (
                 annotation["description"] == "rest"
                 or annotation["description"] == "baseline"
@@ -453,9 +472,9 @@ def extract_acoustic_stim_trials(recordings: dict[str, mne.io.Raw]) -> Interval:
             if len(end_times) > 0 and start_time < end_times[-1]:
                 # the previous trial goes into the next one
                 # this happens because of numerical precision issues
-                assert (
-                    end_times[-1] - start_time < 0.1
-                ), f"found overlap between trials: start time of trial i: {start_time}, end time of trial i-1: {end_times[-1]}"
+                assert end_times[-1] - start_time < 0.1, (
+                    f"found overlap between trials: start time of trial i: {start_time}, end time of trial i-1: {end_times[-1]}"
+                )
 
                 # we can clip the end time of the last trial
                 end_times[-1] = start_time
@@ -553,7 +572,9 @@ def load_recordings(
                 )
                 _add_baseline_annotations(raw)
             else:
-                warnings.warn(f"No annotations found in recording {recording_id}. Skipping.")
+                warnings.warn(
+                    f"No annotations found in recording {recording_id}. Skipping."
+                )
                 continue
         else:
             # add rest annotations if not present
@@ -567,9 +588,9 @@ def load_recordings(
         if meas_date.tzinfo is None:
             meas_date = meas_date.replace(tzinfo=timezone.utc)
         raw.set_meas_date(meas_date)
-        
+
         # verify that all baseline annotations have the same description
-        _verify_baseline_annotations(raw)            
+        _verify_baseline_annotations(raw)
 
         session[recording_id] = raw
 
@@ -578,17 +599,19 @@ def load_recordings(
     return session
 
 
-def _regroup_recordings_by_acquisition(grouped_recordings: dict[str, list[dict]]) -> dict[str, list[dict]]:
+def _regroup_recordings_by_acquisition(
+    grouped_recordings: dict[str, list[dict]],
+) -> dict[str, list[dict]]:
     """
     Groups a dictionary of recordings by acquisition, based on the 'acquisition' entity in the recording IDs.
 
     Args:
-        grouped_recordings (dict[str, list[dict]]): 
-            A dictionary where keys are group IDs and values are lists of recording dicts. 
+        grouped_recordings (dict[str, list[dict]]):
+            A dictionary where keys are group IDs and values are lists of recording dicts.
             Each dict must have the key 'recording_id'.
 
     Returns:
-        dict[str, list[dict]]: 
+        dict[str, list[dict]]:
             A new dictionary where each key represents a unique combination of group ID and acquisition (e.g. 'group_LH' or 'group_LHanest'),
             and the values are lists of recording dicts belonging to that acquisition group.
 
@@ -603,20 +626,22 @@ def _regroup_recordings_by_acquisition(grouped_recordings: dict[str, list[dict]]
         new_acquisitions = {}
         for recording in recordings:
             recording_id = recording["recording_id"]
-            acquisition = get_entities_from_fname(recording_id, on_error="raise").get("acquisition", "")
-            
+            acquisition = get_entities_from_fname(
+                recording_id, on_error="raise"
+            ).get("acquisition", "")
+
             new_acquisition = ""
             if acquisition and "L" in acquisition:
                 new_acquisition += "LH"
             elif acquisition and "R" in acquisition:
                 new_acquisition += "RH"
-                
+
             if acquisition and "anest" in acquisition:
                 new_acquisition += "anest"
-            
+
             if not new_acquisition:
                 new_acquisition = acquisition
-                
+
             new_acquisitions.setdefault(new_acquisition, []).append(recording)
 
         # If there's more than one hemisphere in this group, split up
@@ -627,17 +652,19 @@ def _regroup_recordings_by_acquisition(grouped_recordings: dict[str, list[dict]]
                 entities["task"] = "AcousStim"
                 new_group_id = BIDSPath(**entities).basename
                 recordings_grouped_by_acquisition[new_group_id] = recordings
-    
+
     if len(recordings_grouped_by_acquisition) == 0:
         return grouped_recordings
     return recordings_grouped_by_acquisition
 
 
 def _verify_baseline_annotations(raw: mne.io.Raw) -> None:
-    """Verifies that all baseline annotations have the same description.
-    """
+    """Verifies that all baseline annotations have the same description."""
     verified_descriptions = [
-        'baseline' if "baseline" in annotation["description"] and annotation["description"] != "baseline" else annotation["description"]
+        "baseline"
+        if "baseline" in annotation["description"]
+        and annotation["description"] != "baseline"
+        else annotation["description"]
         for annotation in raw.annotations
     ]
     raw.annotations.description = verified_descriptions
@@ -691,7 +718,9 @@ def _add_rest_annotations(raw: mne.io.Raw):
     raw.set_annotations(raw.annotations + rest_annot)
 
 
-def _sort_recordings(recordings: dict[str, mne.io.Raw]) -> dict[str, mne.io.Raw]:
+def _sort_recordings(
+    recordings: dict[str, mne.io.Raw],
+) -> dict[str, mne.io.Raw]:
     """Sorts the recordings by their measurement date.
 
     Args:
@@ -700,7 +729,9 @@ def _sort_recordings(recordings: dict[str, mne.io.Raw]) -> dict[str, mne.io.Raw]
     Returns:
         dict[str, mne.io.Raw]: Recordings as a dictionary, sorted by measurement date.
     """
-    sorted_items = sorted(recordings.items(), key=lambda x: x[1].info["meas_date"])
+    sorted_items = sorted(
+        recordings.items(), key=lambda x: x[1].info["meas_date"]
+    )
     return dict(sorted_items)
 
 
