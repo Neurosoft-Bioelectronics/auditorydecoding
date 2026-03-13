@@ -264,7 +264,7 @@ class Pipeline(BrainsetPipeline):
         )
 
         # extract the measurement date from the first recording in the session
-        meas_date = extract_measurement_date(list(recordings.values())[0])
+        meas_date = extract_measurement_date(raw)
         session_description = SessionDescription(
             id=session_id, recording_date=meas_date
         )
@@ -649,6 +649,9 @@ def _regroup_recordings_by_acquisition(
             for new_acq, recordings in new_acquisitions.items():
                 entities = get_entities_from_fname(group_id, on_error="raise")
                 entities["acquisition"] = new_acq
+                # The task entity is modified to make the session name
+                # appear shorter in the manifest. The task entity of the recordings
+                # is left unchanged.
                 entities["task"] = "AcousStim"
                 new_group_id = BIDSPath(**entities).basename
                 recordings_grouped_by_acquisition[new_group_id] = recordings
@@ -659,7 +662,19 @@ def _regroup_recordings_by_acquisition(
 
 
 def _verify_baseline_annotations(raw: mne.io.Raw) -> None:
-    """Verifies that all baseline annotations have the same description."""
+    """
+    Verifies that all baseline annotations have the same 'baseline' description.
+
+    This function inspects all annotations in the provided MNE Raw object and checks for any annotation whose description contains
+    the substring 'baseline', but is not exactly equal to 'baseline' (for example, descriptions like 'baseline_1', 'pre-baseline', etc.).
+    Such annotations are automatically renamed to use the standardized label 'baseline' as their description.
+
+    This standardization is necessary because some of the recordings have mixed acoustic stimulation and baseline trilas, as opposed 
+    to having an entire recording be a baseline trial as is the case for most of the baseline trials in the dataset.
+
+    Args:
+        raw (mne.io.Raw): The Raw object whose annotations should be checked and standardized in-place.
+    """
     verified_descriptions = [
         "baseline"
         if "baseline" in annotation["description"]
@@ -671,19 +686,25 @@ def _verify_baseline_annotations(raw: mne.io.Raw) -> None:
 
 
 def _add_baseline_annotations(raw: mne.io.Raw):
-    """Adds baseline annotations to a raw object.
+    """
+    Adds a 'baseline' annotation covering the entire duration of a Raw object.
+
+    This function is intended for use on MNE Raw objects that correspond to baseline recordings and
+    that lack explicit 'baseline' annotations in the annotations file. It creates a single annotation 
+    labeled 'baseline' that spans the entire time range from the first to the last time point in the Raw object.
+    The annotation is added in addition to any existing annotations present in the raw data. 
 
     Args:
-        raw (mne.io.Raw): The raw object to add the baseline annotations to.
+        raw (mne.io.Raw): The Raw object to which the baseline annotation will be added in place.
     """
-    onsets = np.array(raw.times[0])
-    durations = np.array(raw.times[-1] - raw.times[0])
-    descriptions = np.array(["baseline"])
+    onset = np.array(raw.times[0])
+    duration = np.array(raw.times[-1] - raw.times[0])
+    description = np.array(["baseline"])
 
     baseline_annot = mne.Annotations(
-        onset=onsets,
-        duration=durations,
-        description=descriptions,
+        onset=onset,
+        duration=duration,
+        description=description,
         orig_time=raw.annotations.orig_time,
     )
 
@@ -691,10 +712,19 @@ def _add_baseline_annotations(raw: mne.io.Raw):
 
 
 def _add_rest_annotations(raw: mne.io.Raw):
-    """Adds rest annotations to a raw object.
+    """
+    Adds 'rest' annotations to a Raw object by inferring rest intervals between existing annotations.
+
+    This function scans the annotations currently present in the MNE Raw object (typically corresponding to acoustic stimulation trials
+    or baseline periods) and identifies the gaps between them. Each of these gaps is assumed to represent a rest period
+    (i.e., the animal is not being stimulated and is at rest). For every such interval, a new annotation with type 'rest' is added,
+    with onset equal to the end of the previous annotation and duration extending up to the onset of the next annotation.
+
+    This ensures every period in the recording is assigned a behavioral context, allowing downstream analyses to distinguish
+    between rest and stimulation/baseline states, even if explicit 'rest' annotations were not originally present in the data.
 
     Args:
-        raw (mne.io.Raw): The raw object to add the rest annotations to.
+        raw (mne.io.Raw): The Raw object to add inferred 'rest' annotations to. Its existing annotations will be augmented in place.
     """
     annot = raw.annotations
     order = np.argsort(annot.onset)
@@ -702,16 +732,16 @@ def _add_rest_annotations(raw: mne.io.Raw):
     on = annot.onset[order]
     off = on + annot.duration[order]
 
-    rest_onsets = off[:-1]
-    rest_durations = on[1:] - off[:-1]
+    rest_onset = off[:-1]
+    rest_duration = on[1:] - off[:-1]
 
-    mask = rest_durations > 0
-    rest_onsets, rest_durations = rest_onsets[mask], rest_durations[mask]
+    mask = rest_duration > 0
+    rest_onset, rest_duration = rest_onset[mask], rest_duration[mask]
 
     rest_annot = mne.Annotations(
-        onset=rest_onsets,
-        duration=rest_durations,
-        description=["rest"] * len(rest_onsets),
+        onset=rest_onset,
+        duration=rest_duration,
+        description=["rest"] * len(rest_onset),
         orig_time=raw.annotations.orig_time,
     )
 
@@ -744,12 +774,10 @@ def _delete_boundary_annotations(raw: mne.io.Raw):
     boundary_annotations = ["BAD boundary", "EDGE boundary"]
     annot = raw.annotations
 
-    # get the indices of boundary annotations to be deleted
-    idx_to_be_deleted = [
-        i
-        for i, description in enumerate(annot.description)
-        if description in boundary_annotations
-    ]
+    # get the indices of boundary annotations to be deleted using numpy vectorization
+    description = np.asarray(annot.description)
+    mask = np.isin(description, boundary_annotations)
+    idx_to_be_deleted = np.where(mask)[0].tolist()
 
     # delete the boundary annotations
     raw.annotations.delete(idx_to_be_deleted)
