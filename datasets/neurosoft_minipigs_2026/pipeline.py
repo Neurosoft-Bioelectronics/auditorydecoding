@@ -4,6 +4,7 @@
 #   "mne==1.11.0",
 #   "mne-bids==0.18",
 #   "scikit-learn==1.7.2",
+#   "temporaldata @ git+https://github.com/neuro-galaxy/temporaldata@main",
 # ]
 # ///
 
@@ -41,7 +42,13 @@ from brainsets.utils.mne_utils import (
     concatenate_recordings,
 )
 
-from temporaldata import Data, Interval, IrregularTimeSeries
+from temporaldata import (
+    Data,
+    Interval,
+    IrregularTimeSeries,
+    concat,
+)
+
 from brainsets.descriptions import (
     BrainsetDescription,
     SessionDescription,
@@ -308,7 +315,7 @@ class Pipeline(BrainsetPipeline):
 def generate_splits(
     subject_id: str,
     session_id: str,
-    stim_vs_rest_trials: Interval,
+    on_vs_off_trials: Interval,
     acoustic_stim_trials: Interval,
 ) -> Data:
     subject_assignments = generate_string_kfold_assignment(
@@ -331,21 +338,26 @@ def generate_splits(
         }
     )
 
-    stim_vs_rest_splits = {}
-    if len(stim_vs_rest_trials) > 0:
-        stim_vs_rest_folds = generate_stratified_folds(
-            intervals=stim_vs_rest_trials,
+    # split the 'baseline' trials from the on_vs_off_trials into smaller segments
+    on_vs_off_trials = _split_baseline_trials(on_vs_off_trials)
+
+    # get the splits for the on_vs_off_trials
+    on_vs_off_splits = {}
+    if len(on_vs_off_trials) > 0:
+        on_vs_off_folds = generate_stratified_folds(
+            intervals=on_vs_off_trials,
             stratify_by="behavior_labels",
             n_folds=3,
             val_ratio=0.2,
             seed=42,
         )
 
-        for k, fold_data in enumerate(stim_vs_rest_folds):
-            stim_vs_rest_splits[f"on_vs_off_fold_{k}_train"] = fold_data.train
-            stim_vs_rest_splits[f"on_vs_off_fold_{k}_valid"] = fold_data.valid
-            stim_vs_rest_splits[f"on_vs_off_fold_{k}_test"] = fold_data.test
+        for k, fold_data in enumerate(on_vs_off_folds):
+            on_vs_off_splits[f"on_vs_off_fold_{k}_train"] = fold_data.train
+            on_vs_off_splits[f"on_vs_off_fold_{k}_valid"] = fold_data.valid
+            on_vs_off_splits[f"on_vs_off_fold_{k}_test"] = fold_data.test
 
+    # get the splits for the acoustic_stim_trials
     acoustic_stim_splits = {}
     if len(acoustic_stim_trials) > 0:
         acoustic_stim_folds = generate_stratified_folds(
@@ -369,20 +381,24 @@ def generate_splits(
 
     return Data(
         **namespaced_assignments,
-        **stim_vs_rest_splits,
+        **on_vs_off_splits,
         **acoustic_stim_splits,
-        domain=stim_vs_rest_trials | acoustic_stim_trials,
+        domain=on_vs_off_trials | acoustic_stim_trials,
     )
 
 
 def extract_on_vs_off_trials(recordings: dict[str, mne.io.Raw]) -> Interval:
-    """Extracts on (stimulation) and off (rest and baseline) trials from a raw object.
+    """
+    Extracts 'on' (stimulation) and 'off' (rest and baseline) trials from a collection of Raw objects.
 
     Args:
-        raw (mne.io.Raw): The raw object to extract the on and off trials from.
+        recordings (dict[str, mne.io.Raw]): 
+            A dictionary mapping recording names to MNE Raw objects from which on/off trial intervals
+            will be extracted.
 
     Returns:
-        Interval: The on and off trials.
+        Interval:
+            An Interval object containing all detected on and off (stimulation, rest, and baseline) trials.
     """
     start_times = []
     end_times = []
@@ -445,13 +461,20 @@ def extract_on_vs_off_trials(recordings: dict[str, mne.io.Raw]) -> Interval:
 
 
 def extract_acoustic_stim_trials(recordings: dict[str, mne.io.Raw]) -> Interval:
-    """Extracts the acoustic stimulation trials from a raw object.
+    """Extracts the acoustic stimulation trials across multiple raw recordings.
+
+    Iterates over all provided raw recordings, extracts annotations corresponding to stimulation
+    trials (those with "stim" and "Hz" in their description), and collects their onset and duration 
+    as trial intervals. Stimulus frequency is extracted and included as part of the trial label.
 
     Args:
-        raw (mne.io.Raw): The raw object to extract the acoustic stimulation trials from.
+        recordings (dict[str, mne.io.Raw]): 
+            Dictionary mapping names/keys to raw MNE objects to extract stimulation trials from.
 
     Returns:
-        Interval: The acoustic stimulation trials.
+        Interval: 
+            An Interval object containing start, end, and label information for each detected
+            acoustic stimulation trial, along with label IDs representing the stimulation frequency.
     """
     start_times = []
     end_times = []
@@ -661,6 +684,23 @@ def _regroup_recordings_by_acquisition(
     return recordings_grouped_by_acquisition
 
 
+def _sort_recordings(
+    recordings: dict[str, mne.io.Raw],
+) -> dict[str, mne.io.Raw]:
+    """Sorts the recordings by their measurement date.
+
+    Args:
+        recordings (dict[str, mne.io.Raw]): The recordings to sort.
+
+    Returns:
+        dict[str, mne.io.Raw]: Recordings as a dictionary, sorted by measurement date.
+    """
+    sorted_items = sorted(
+        recordings.items(), key=lambda x: x[1].info["meas_date"]
+    )
+    return dict(sorted_items)
+
+
 def _verify_baseline_annotations(raw: mne.io.Raw) -> None:
     """
     Verifies that all baseline annotations have the same 'baseline' description.
@@ -685,7 +725,7 @@ def _verify_baseline_annotations(raw: mne.io.Raw) -> None:
     raw.annotations.description = verified_descriptions
 
 
-def _add_baseline_annotations(raw: mne.io.Raw):
+def _add_baseline_annotations(raw: mne.io.Raw) -> None:
     """
     Adds a 'baseline' annotation covering the entire duration of a Raw object.
 
@@ -711,7 +751,7 @@ def _add_baseline_annotations(raw: mne.io.Raw):
     raw.set_annotations(raw.annotations + baseline_annot)
 
 
-def _add_rest_annotations(raw: mne.io.Raw):
+def _add_rest_annotations(raw: mne.io.Raw) -> None:
     """
     Adds 'rest' annotations to a Raw object by inferring rest intervals between existing annotations.
 
@@ -748,24 +788,7 @@ def _add_rest_annotations(raw: mne.io.Raw):
     raw.set_annotations(raw.annotations + rest_annot)
 
 
-def _sort_recordings(
-    recordings: dict[str, mne.io.Raw],
-) -> dict[str, mne.io.Raw]:
-    """Sorts the recordings by their measurement date.
-
-    Args:
-        recordings (dict[str, mne.io.Raw]): The recordings to sort.
-
-    Returns:
-        dict[str, mne.io.Raw]: Recordings as a dictionary, sorted by measurement date.
-    """
-    sorted_items = sorted(
-        recordings.items(), key=lambda x: x[1].info["meas_date"]
-    )
-    return dict(sorted_items)
-
-
-def _delete_boundary_annotations(raw: mne.io.Raw):
+def _delete_boundary_annotations(raw: mne.io.Raw) -> None:
     """Deletes the boundary annotations from a raw object.
 
     Args:
@@ -783,7 +806,7 @@ def _delete_boundary_annotations(raw: mne.io.Raw):
     raw.annotations.delete(idx_to_be_deleted)
 
 
-def _extract_stim_frequency(description: str) -> int:
+def _extract_stim_frequency(description: str) -> str:
     """Extracts the stimulation frequency as an integer from a string containing 'Hz' or 'kHz'.
 
     Args:
@@ -806,3 +829,93 @@ def _extract_stim_frequency(description: str) -> int:
         return int(match.group(1)) * 1000
 
     raise ValueError(f"No frequency found in description: {description}")
+
+
+def _split_baseline_trials(on_vs_off_trials: Interval) -> Interval:
+    """
+    Splits the 'baseline' trials in the on_vs_off_trials Interval into smaller segments.
+
+    Baseline trials are defined as those with behavior_labels == "off" and duration >= 0.5s.
+    These longer baseline trials are subdivided into 0.5s segments.
+    The subdivided baseline trials are then combined with the original "on" trials and returned
+    as a new Interval.
+
+    Args:
+        on_vs_off_trials (Interval): An Interval containing on/off behavioral trial segments.
+
+    Returns:
+        Interval: An Interval object where:
+            - All "on" (stimulation) trials are preserved as in the input.
+            - All "off" trials that are ≤ 0.5 seconds long ("rest" trials) are preserved as in the input.
+            - All "off" trials longer than 0.5 seconds ("baseline" trials) are subdivided into contiguous 0.5-second segments.
+            - The returned Interval contains all of the above trials merged together, retaining their respective behavior labels.
+    """
+    # get the on (stimulation) trials
+    on_trials = on_vs_off_trials.select_by_mask(
+        on_vs_off_trials.behavior_labels == "on"
+    )
+
+    # get the rest trials (off trials shorter or equal to 0.5s)
+    rest_trials = on_vs_off_trials.select_by_mask(
+        np.logical_and(
+            on_vs_off_trials.behavior_labels == "off",
+            (on_vs_off_trials.end - on_vs_off_trials.start) <= 0.5,
+        )
+    )
+
+    # get the baseline trials (off trials longer than 0.5s)
+    eps = 1e-4  # account for numerical precision issues
+    baseline_trials = on_vs_off_trials.select_by_mask(
+        np.logical_and(
+            on_vs_off_trials.behavior_labels == "off",
+            (on_vs_off_trials.end - on_vs_off_trials.start) > (0.5 + eps),
+        )
+    )
+
+    # split the baseline trials into 0.5s segments
+    split_baseline_trials = baseline_trials.subdivide(0.5, drop_short=False)
+
+    # Create a new Interval with the the split baseline trials
+    start_times = np.concatenate(
+        [
+            on_trials.start,
+            rest_trials.start,
+            split_baseline_trials.start,
+        ]
+    )
+
+    end_times = np.concatenate(
+        [
+            on_trials.end,
+            rest_trials.end,
+            split_baseline_trials.end,
+        ]
+    )
+
+    behavior_labels = np.concatenate(
+        [
+            on_trials.behavior_labels,
+            rest_trials.behavior_labels,
+            split_baseline_trials.behavior_labels,
+        ]
+    )
+
+    behavior_ids = np.concatenate(
+        [
+            on_trials.behavior_ids,
+            rest_trials.behavior_ids,
+            split_baseline_trials.behavior_ids,
+        ]
+    )
+
+    new_on_vs_off_trials = Interval(
+        start=start_times,
+        end=end_times,
+        behavior_labels=behavior_labels,
+        behavior_ids=behavior_ids,
+        timestamps=(start_times + end_times) / 2,
+        timekeys=["start", "end", "timestamps"],
+    )
+    new_on_vs_off_trials.sort()
+
+    return new_on_vs_off_trials
