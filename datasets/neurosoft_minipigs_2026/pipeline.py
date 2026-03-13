@@ -669,7 +669,7 @@ def _verify_baseline_annotations(raw: mne.io.Raw) -> None:
     the substring 'baseline', but is not exactly equal to 'baseline' (for example, descriptions like 'baseline_1', 'pre-baseline', etc.).
     Such annotations are automatically renamed to use the standardized label 'baseline' as their description.
 
-    This standardization is necessary because some of the recordings have mixed acoustic stimulation and baseline trilas, as opposed 
+    This standardization is necessary because some of the recordings have mixed acoustic stimulation and baseline trilas, as opposed
     to having an entire recording be a baseline trial as is the case for most of the baseline trials in the dataset.
 
     Args:
@@ -690,9 +690,9 @@ def _add_baseline_annotations(raw: mne.io.Raw):
     Adds a 'baseline' annotation covering the entire duration of a Raw object.
 
     This function is intended for use on MNE Raw objects that correspond to baseline recordings and
-    that lack explicit 'baseline' annotations in the annotations file. It creates a single annotation 
+    that lack explicit 'baseline' annotations in the annotations file. It creates a single annotation
     labeled 'baseline' that spans the entire time range from the first to the last time point in the Raw object.
-    The annotation is added in addition to any existing annotations present in the raw data. 
+    The annotation is added in addition to any existing annotations present in the raw data.
 
     Args:
         raw (mne.io.Raw): The Raw object to which the baseline annotation will be added in place.
