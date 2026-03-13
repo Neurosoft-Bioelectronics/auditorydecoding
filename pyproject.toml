@@ -4,11 +4,14 @@ version = "0.1.0"
 description = "Auditory decoding of brain activity in different animals"
 readme = "README.md"
 requires-python = ">=3.11"
-dependencies = ["brainsets"]
+dependencies = [
+    "brainsets",
+    "torch-brain",
+]
 
 [tool.uv.sources]
-brainsets = { git = "https://github.com/neuro-galaxy/brainsets.git", branch = "main" }
-
+brainsets = { git = "https://github.com/neuro-galaxy/brainsets", branch = "suarez/bids-utils" }
+torch-brain = { git = "https://github.com/neuro-galaxy/torch_brain", branch = "main" }
 [dependency-groups]
 dev = [
     "pre-commit>=4.5.1",
