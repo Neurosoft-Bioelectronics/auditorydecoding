@@ -10,8 +10,8 @@ dependencies = [
 ]
 
 [tool.uv.sources]
-brainsets = { git = "https://github.com/neuro-galaxy/brainsets.git", branch = "suarez/bids-utils" }
-
+brainsets = { git = "https://github.com/neuro-galaxy/brainsets", branch = "suarez/bids-utils" }
+torch-brain = { git = "https://github.com/neuro-galaxy/torch_brain", branch = "main" }
 [dependency-groups]
 dev = ["ruff>=0.15.4"]
 
