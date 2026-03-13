@@ -392,7 +392,7 @@ def extract_on_vs_off_trials(recordings: dict[str, mne.io.Raw]) -> Interval:
     Extracts 'on' (stimulation) and 'off' (rest and baseline) trials from a collection of Raw objects.
 
     Args:
-        recordings (dict[str, mne.io.Raw]): 
+        recordings (dict[str, mne.io.Raw]):
             A dictionary mapping recording names to MNE Raw objects from which on/off trial intervals
             will be extracted.
 
@@ -464,15 +464,15 @@ def extract_acoustic_stim_trials(recordings: dict[str, mne.io.Raw]) -> Interval:
     """Extracts the acoustic stimulation trials across multiple raw recordings.
 
     Iterates over all provided raw recordings, extracts annotations corresponding to stimulation
-    trials (those with "stim" and "Hz" in their description), and collects their onset and duration 
+    trials (those with "stim" and "Hz" in their description), and collects their onset and duration
     as trial intervals. Stimulus frequency is extracted and included as part of the trial label.
 
     Args:
-        recordings (dict[str, mne.io.Raw]): 
+        recordings (dict[str, mne.io.Raw]):
             Dictionary mapping names/keys to raw MNE objects to extract stimulation trials from.
 
     Returns:
-        Interval: 
+        Interval:
             An Interval object containing start, end, and label information for each detected
             acoustic stimulation trial, along with label IDs representing the stimulation frequency.
     """
