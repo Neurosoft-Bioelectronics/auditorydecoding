@@ -46,7 +46,6 @@ from temporaldata import (
     Data,
     Interval,
     IrregularTimeSeries,
-    concat,
 )
 
 from brainsets.descriptions import (
