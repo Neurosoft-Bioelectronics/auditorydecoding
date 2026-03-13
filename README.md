@@ -35,7 +35,7 @@ Before processing data, you need to configure the brainsets module. The brainset
 1. Initialize and configure brainsets using the interactive command:
 
 ```bash
-brainsets config
+uv run brainsets config
 ```
 
 This command will prompt you to set the `raw_dir` (location of your BIDS/raw data) and `processed_dir` (location where processed outputs will be stored).
