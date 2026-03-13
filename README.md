@@ -53,35 +53,17 @@ This command will:
 - Validate the raw BIDS dataset
 - Process iEEG recordings
 - Extract relevant features and metadata
-- Generate AI-ready datasets for model training
+- Generate `.h5` files that are ready for model training
 
 ## Dataset Structure
 
-The project uses the BIDS (Brain Imaging Data Structure) format for organizing neurophysiology data:
-
-```
-datasets/
-├── neurosoft_minipigs_2026/
-│   ├── sub-*/
-│   │   └── ses-*/
-│   │       └── ieeg/
-│   │           ├── *_ieeg.edf
-│   │           ├── *_ieeg.json
-│   │           └── *_channels.tsv
-│   └── dataset_description.json
-```
+The project uses the [BIDS (Brain Imaging Data Structure)](https://bids.neuroimaging.io/) format for organizing neurophysiology data.
 
 ## Usage
 
 For detailed information on using the pipeline and analyzing the data, refer to the documentation in the `datasets/neurosoft_minipigs_2026/` directory.
 
 ## Development
-
-### Running Tests
-
-```bash
-uv run pytest
-```
 
 ### Code Style
 
@@ -98,14 +80,19 @@ To automatically fix formatting issues:
 uv run ruff format .
 ```
 
-## Dependencies
+## Specific Dependencies
 
 - **brainsets**: BIDS processing and neural data utilities
 - **mne**: MEG/EEG analysis
 - **mne-bids**: BIDS I/O for MNE
 - **scikit-learn**: Machine learning utilities
+- **temporaldata**: For now, it is installed directly from the main branch of the GitHub repository:
 
-See `pyproject.toml` for the complete dependency list.
+  ```bash
+  pip install git+https://github.com/adamjstewart/temporaldata.git@main
+  ```
+
+See `pyproject.toml` for the complete global dependency list.
 
 ## Contributing
 
