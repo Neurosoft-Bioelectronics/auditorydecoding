@@ -403,13 +403,19 @@ def extract_on_vs_off_trials(recordings: dict[str, mne.io.Raw]) -> Interval:
     end_times = []
     labels = []
     first_meas_date = None
-    for _, raw in recordings.items():
+    for recording_id, raw in recordings.items():
         meas_date = raw.info["meas_date"]
 
         if first_meas_date is None:
             first_meas_date = meas_date
 
         offset = (meas_date - first_meas_date).total_seconds()
+
+        # check if the offset is greater than 1 hour
+        if offset > 3600:
+            warnings.warn(
+                f"Recording {recording_id} with meas_date {meas_date} has offset {offset:.2f} seconds ({offset / 60:.2f} minutes) (> 1 hour) from first_meas_date {first_meas_date}."
+            )
 
         for annotation in raw.annotations:
             start_time = annotation["onset"] + offset
@@ -479,13 +485,19 @@ def extract_acoustic_stim_trials(recordings: dict[str, mne.io.Raw]) -> Interval:
     end_times = []
     labels = []
     first_meas_date = None
-    for _, raw in recordings.items():
+    for recording_id, raw in recordings.items():
         meas_date = raw.info["meas_date"]
 
         if first_meas_date is None:
             first_meas_date = meas_date
 
         offset = (meas_date - first_meas_date).total_seconds()
+
+        # check if the offset is greater than 1 hour
+        if offset > 3600:
+            warnings.warn(
+                f"Recording {recording_id} with meas_date {meas_date} has offset {offset:.2f} seconds ({offset / 60:.2f} minutes) (> 1 hour) from first_meas_date {first_meas_date}."
+            )
 
         for annotation in raw.annotations:
             start_time = annotation["onset"] + offset
