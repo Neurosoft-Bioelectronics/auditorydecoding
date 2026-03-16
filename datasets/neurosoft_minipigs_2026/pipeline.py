@@ -165,17 +165,26 @@ class Pipeline(BrainsetPipeline):
 
     def download(self, manifest_item: pd.Series):
         """
-        Download step for dataset pipeline.
+        Verifies that all recordings listed in the provided manifest_item are present in the raw data directory.
 
-        Given a manifest_item, checks whether each recording in `recording_ids`
-        has already been downloaded to the raw_dir. If `self.args.redownload` is False and all files exist,
-        returns session_id and recording_ids. Otherwise, raises FileNotFoundError if any recording is missing.
+        Note:
+            The 'redownload' flag is ignored since there is no mechanism to download the data from a remote source.
+            This function only checks for the existence of the required files in the local raw directory.
+
+        For each recording ID in manifest_item["recording_ids"], checks whether the corresponding iEEG files exist in self.raw_dir.
+        If any files are missing, raises FileNotFoundError. If all recordings are present, returns a dictionary containing the session_id
+        and list of recording_ids.
 
         Args:
-            manifest_item: Contains at least "session_id" and "recording_ids" describing the group.
+            manifest_item (pd.Series): Series or object with at least "session_id" and "recording_ids" fields that describe the group of recordings to verify.
 
         Returns:
-            dict: Contains session_id and recording_ids.
+            dict: Dictionary with keys:
+                - "session_id" (str): Unique session/group identifier.
+                - "recording_ids" (list[str]): List of BIDS recording IDs for the group.
+
+        Raises:
+            FileNotFoundError: If any of the required recordings are missing from the raw data directory.
         """
         self.update_status("DOWNLOADING")
 
