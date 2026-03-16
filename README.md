@@ -40,6 +40,16 @@ uv run brainsets config
 
 This command will prompt you to set the `raw_dir` (location of your BIDS/raw data) and `processed_dir` (location where processed outputs will be stored).
 
+If at anytime you wanto modify the `raw_dir` or the `processed_dir`, you can run the command:
+```bash
+uv run brainsets config --raw <path to raw>
+```
+
+or:
+```bash
+uv run brainsets config --processed_dir <path to processed>
+```
+
 
 ### Processing the Data
 
