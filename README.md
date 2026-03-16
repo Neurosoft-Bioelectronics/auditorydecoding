@@ -40,23 +40,12 @@ uv run brainsets config
 
 This command will prompt you to set the `raw_dir` (location of your BIDS/raw data) and `processed_dir` (location where processed outputs will be stored).
 
-If at anytime you wanto modify the `raw_dir` or the `processed_dir`, you can run the command:
-```bash
-uv run brainsets config --raw <path to raw>
-```
-
-or:
-```bash
-uv run brainsets config --processed_dir <path to processed>
-```
-
-
 ### Processing the Data
 
 Once brainsets is configured, prepare the Neurosoft minipigs 2026 dataset using the following command:
 
 ```bash
-uv run brainsets prepare --local datasets/neurosoft_minipigs_2026
+uv run brainsets prepare --local datasets/neurosoft_minipigs_2026  --raw <path to the BIDS data>
 ```
 
 This command will:
