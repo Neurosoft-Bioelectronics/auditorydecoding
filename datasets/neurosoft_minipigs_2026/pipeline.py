@@ -181,16 +181,13 @@ class Pipeline(BrainsetPipeline):
 
         recording_ids = manifest_item.recording_ids
 
-        if not getattr(self.args, "redownload", False):
-            for recording_id in recording_ids:
-                if check_ieeg_recording_files_exist(self.raw_dir, recording_id):
-                    self.update_status(
-                        f"Recording {recording_id} already Downloaded"
-                    )
-                else:
-                    raise FileNotFoundError(
-                        f"Recording {recording_id} not found."
-                    )
+        for recording_id in recording_ids:
+            if check_ieeg_recording_files_exist(self.raw_dir, recording_id):
+                self.update_status(
+                    f"Recording {recording_id} already Downloaded"
+                )
+            else:
+                raise FileNotFoundError(f"Recording {recording_id} not found.")
 
         return {
             "session_id": manifest_item.Index,
