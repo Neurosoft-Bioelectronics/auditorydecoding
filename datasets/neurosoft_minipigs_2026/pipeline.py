@@ -717,7 +717,7 @@ def _verify_baseline_annotations(raw: mne.io.Raw) -> None:
     the substring 'baseline', but is not exactly equal to 'baseline' (for example, descriptions like 'baseline_1', 'pre-baseline', etc.).
     Such annotations are automatically renamed to use the standardized label 'baseline' as their description.
 
-    This standardization is necessary because some of the recordings have mixed acoustic stimulation and baseline trilas, as opposed
+    This standardization is necessary because some of the recordings have mixed acoustic stimulation and baseline trials, as opposed
     to having an entire recording be a baseline trial as is the case for most of the baseline trials in the dataset.
 
     Args:
