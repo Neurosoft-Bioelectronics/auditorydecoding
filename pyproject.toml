@@ -1,10 +1,20 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
 [project]
 name = "auditorydecoding"
 version = "0.1.0"
 description = "Auditory decoding of brain activity in different animals"
 readme = "README.md"
 requires-python = ">=3.11"
-dependencies = ["brainsets", "torch-brain", "foundry"]
+dependencies = [
+    "brainsets",
+    "torch-brain",
+    "foundry",
+    "scikit-learn>=1.8.0",
+    "scipy>=1.17.1",
+]
 
 [tool.uv.sources]
 brainsets = { git = "https://github.com/neuro-galaxy/brainsets", branch = "suarez/bids-utils" }
@@ -13,6 +23,10 @@ foundry = { git = "https://github.com/ProjectNFM/Foundry", branch = "auditory-de
 
 [dependency-groups]
 dev = ["pre-commit>=4.5.1", "ruff>=0.15.4"]
+notebooks = ["ipykernel>=7.2.0"]
+
+[tool.hatch.build.targets.wheel]
+packages = ["auditorydecoding"]
 
 [tool.ruff]
 line-length = 80
