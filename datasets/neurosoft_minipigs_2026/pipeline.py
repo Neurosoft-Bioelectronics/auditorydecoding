@@ -34,6 +34,7 @@ from brainsets.utils.bids_utils import (
     group_recordings_by_entity,
     build_bids_path,
     get_subject_info,
+    load_participants_tsv,
     load_json_sidecar,
 )
 from brainsets.utils.mne_utils import (
@@ -228,6 +229,7 @@ class Pipeline(BrainsetPipeline):
         session_id = download_output.get("session_id")
         entities = get_entities_from_fname(session_id, on_error="raise")
         subject_id = f"sub-{entities['subject']}"
+        participants_data = load_participants_tsv(self.raw_dir)
 
         if session_id in SKIP_UNANNOTATED_SESSIONS:
             self.update_status("Skipping unannotated session")
@@ -266,7 +268,7 @@ class Pipeline(BrainsetPipeline):
         )
 
         subject_info = get_subject_info(
-            bids_root=self.raw_dir, subject_id=subject_id
+            subject_id=subject_id, participants_data=participants_data
         )
         subject_description = SubjectDescription(
             id=subject_id,
