@@ -94,4 +94,6 @@ def _extract_fast(
         mask = (trials.start <= mid) & (trials.end >= mid)
         y.append(trials.behavior_labels[mask][0])
 
+    # TODO: Reprendre ici
+
     return np.stack(X), np.array(y)

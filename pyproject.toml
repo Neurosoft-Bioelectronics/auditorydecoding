@@ -7,19 +7,22 @@ name = "auditorydecoding"
 version = "0.1.0"
 description = "Auditory decoding of brain activity in different animals"
 readme = "README.md"
-requires-python = ">=3.11"
+requires-python = ">=3.11, <3.14"
 dependencies = [
     "brainsets",
     "torch-brain",
-    "foundry",
+    # "foundry",
     "scikit-learn>=1.8.0",
     "scipy>=1.17.1",
+    "temporaldata",
+    "matplotlib>=3.10.8",
 ]
 
 [tool.uv.sources]
 brainsets = { git = "https://github.com/neuro-galaxy/brainsets", branch = "suarez/bids-utils" }
 torch-brain = { git = "https://github.com/neuro-galaxy/torch_brain", branch = "main" }
 foundry = { git = "https://github.com/ProjectNFM/Foundry", branch = "auditory-decoding" }
+temporaldata = { git = "https://github.com/neuro-galaxy/temporaldata", branch = "main" }
 
 [dependency-groups]
 dev = ["pre-commit>=4.5.1", "ruff>=0.15.4"]
