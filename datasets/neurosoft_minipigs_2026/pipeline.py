@@ -560,6 +560,8 @@ def extract_signal(recordings: dict[str, mne.io.Raw]) -> IrregularTimeSeries:
     """
     signal = []
     timestamps = []
+    domain_start = []
+    domain_end = []
     first_meas_date = None
 
     for _, raw in recordings.items():
@@ -573,10 +575,16 @@ def extract_signal(recordings: dict[str, mne.io.Raw]) -> IrregularTimeSeries:
         ts = raw.times.astype(np.float64) + offset
         timestamps.append(ts[:, np.newaxis])
 
+        domain_start.append(ts[0])
+        domain_end.append(ts[-1])
+
     return IrregularTimeSeries(
         signal=np.hstack(signal).T,
         timestamps=np.vstack(timestamps).squeeze(),
-        domain="auto",
+        domain=Interval(
+            start=np.array(domain_start),
+            end=np.array(domain_end),
+        ),
     )
 
 
