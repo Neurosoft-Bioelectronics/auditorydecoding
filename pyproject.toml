@@ -19,7 +19,7 @@ dependencies = [
 ]
 
 [tool.uv.sources]
-brainsets = { git = "https://github.com/neuro-galaxy/brainsets", branch = "suarez/bids-utils" }
+brainsets = { git = "https://github.com/neuro-galaxy/brainsets", branch = "suarez/mne-bids-utils" }
 torch-brain = { git = "https://github.com/neuro-galaxy/torch_brain", branch = "main" }
 foundry = { git = "https://github.com/ProjectNFM/Foundry", branch = "auditory-decoding" }
 temporaldata = { git = "https://github.com/neuro-galaxy/temporaldata", branch = "main" }
