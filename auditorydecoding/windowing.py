@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from collections import Counter
+
 import numpy as np
 
 from torch_brain.data.sampler import SequentialFixedWindowSampler
@@ -53,9 +55,16 @@ def extract_windows(
         )
 
     X, y = [], []
+    target_num_samples: int | None = None
     for index in sampler:
         sample = dataset[index]
-        features = feature_extractor(sample.ecog.signal)
+        signal = sample.ecog.signal
+        if target_num_samples is None:
+            target_num_samples = int(signal.shape[0])
+        signal = _ensure_window_length(
+            signal, target_num_samples, window_index=index
+        )
+        features = feature_extractor(signal)
         label = getattr(sample, label_field).behavior_labels[0]
         X.append(features)
         y.append(label)
@@ -77,7 +86,8 @@ def _extract_fast(
         if hasattr(data, label_field):
             trial_cache[rid] = getattr(data, label_field)
 
-    X, y = [], []
+    indexed_windows = []
+    window_lengths = []
     for index in sampler:
         rid = index.recording_id
         ecog = preprocessed_ecog[rid]
@@ -85,7 +95,18 @@ def _extract_fast(
 
         i0 = np.searchsorted(ts, index.start, side="left")
         i1 = np.searchsorted(ts, index.end, side="right")
-        signal = ecog.signal[i0:i1]
+        indexed_windows.append((index, i0, i1))
+        window_lengths.append(int(i1 - i0))
+
+    target_num_samples = _most_common_length(window_lengths)
+
+    X, y = [], []
+    for index, i0, i1 in indexed_windows:
+        rid = index.recording_id
+        ecog = preprocessed_ecog[rid]
+        signal = _ensure_window_length(
+            ecog.signal[i0:i1], target_num_samples, window_index=index
+        )
 
         X.append(feature_extractor(signal))
 
@@ -94,6 +115,43 @@ def _extract_fast(
         mask = (trials.start <= mid) & (trials.end >= mid)
         y.append(trials.behavior_labels[mask][0])
 
-    # TODO: Reprendre ici
-
     return np.stack(X), np.array(y)
+
+
+def _most_common_length(lengths: list[int]) -> int:
+    if not lengths:
+        raise ValueError("No windows were produced by the sampler.")
+    return Counter(lengths).most_common(1)[0][0]
+
+
+def _ensure_window_length(
+    signal: np.ndarray,
+    target_num_samples: int,
+    *,
+    window_index,
+) -> np.ndarray:
+    if signal.ndim != 2:
+        raise ValueError(
+            "Expected 2D signal windows (time, channels), "
+            f"got shape {signal.shape}."
+        )
+
+    n_timepoints, n_channels = signal.shape
+    if n_timepoints == target_num_samples:
+        return signal
+
+    if n_timepoints == 0:
+        raise ValueError(
+            "Encountered an empty window while extracting features. "
+            f"recording_id={window_index.recording_id}, "
+            f"start={window_index.start}, end={window_index.end}"
+        )
+
+    old_axis = np.linspace(0.0, 1.0, n_timepoints, dtype=np.float64)
+    new_axis = np.linspace(0.0, 1.0, target_num_samples, dtype=np.float64)
+    resized = np.empty((target_num_samples, n_channels), dtype=signal.dtype)
+    for channel_idx in range(n_channels):
+        resized[:, channel_idx] = np.interp(
+            new_axis, old_axis, signal[:, channel_idx]
+        )
+    return resized

@@ -17,6 +17,13 @@ class FeatureExtractor(ABC):
     def __call__(self, signal: np.ndarray) -> np.ndarray: ...
 
 
+class IdentityFeatures(FeatureExtractor):
+    """Identity -> ``(n_timepoints, n_channels)``."""
+
+    def __call__(self, signal: np.ndarray) -> np.ndarray:
+        return signal
+
+
 class MeanFeatures(FeatureExtractor):
     """Channel-wise mean -> ``(n_channels,)``."""
 
