@@ -4,7 +4,12 @@ version = "0.1.0"
 description = "Auditory decoding of brain activity in different animals"
 readme = "README.md"
 requires-python = ">=3.11"
-dependencies = ["brainsets", "torch-brain"]
+dependencies = [
+    "brainsets",
+    "matplotlib>=3.10.8",
+    "torch-brain",
+    "temporaldata",
+]
 
 [tool.uv.sources]
 brainsets = { git = "https://github.com/neuro-galaxy/brainsets", branch = "suarez/mne-bids-utils" }
