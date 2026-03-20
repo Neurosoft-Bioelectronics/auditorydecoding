@@ -1,60 +1,123 @@
 from __future__ import annotations
 
+import logging
+
 import numpy as np
 
-from torch_brain.data.sampler import SequentialFixedWindowSampler
+from tqdm import tqdm
 
-from auditorydecoding.features import FeatureExtractor, FlattenFeatures
+logger = logging.getLogger(__name__)
 
 
 def extract_windows(
-    dataset,
-    split: str,
+    signal: np.ndarray,
+    timestamps: np.ndarray,
+    intervals,
     window_length: float,
-    feature_extractor: FeatureExtractor | None = None,
-    label_field: str = "on_vs_off_trials",
+    label_key: str = "behavior_labels",
 ) -> tuple[np.ndarray, np.ndarray]:
-    """Iterate over sampler windows and return ``(X, y)`` numpy arrays.
+    """Slice *signal* into fixed-length windows defined by *intervals*.
+
+    The function iterates over each entry in *intervals*, creates sequential
+    non-overlapping windows of *window_length* seconds, and collects the
+    corresponding signal and label for each window.
+
+    If an interval is shorter than *window_length* it is skipped (with a
+    warning).  After the last regular window that fits, a final window aligned
+    to the interval end is added when there is a remainder -- this mirrors the
+    ``SequentialFixedWindowSampler`` behaviour and ensures full interval
+    coverage (at the cost of a possible overlap with the previous window).
 
     Parameters
     ----------
-    dataset
-        A :class:`~torch_brain.dataset.Dataset` (or compatible) instance.
-    split
-        Which data split to sample from (``"train"``, ``"valid"``, ``"test"``).
+    signal
+        Array of shape ``(T, C)`` — the (possibly preprocessed) signal.
+        Preprocessing such as PCA or whitening can be applied beforehand;
+        the number of timepoints must still match *timestamps*.
+    timestamps
+        Array of shape ``(T,)`` with monotonically increasing sample times
+        (in seconds).
+    intervals
+        A ``temporaldata.Interval`` (or compatible object) with at least
+        ``start``, ``end``, and an attribute named *label_key* (by default
+        ``behavior_labels``).  The split-level interval objects stored on
+        the ``Data`` object (e.g. ``data.splits.on_vs_off_causal_train``)
+        already carry these fields.
     window_length
-        Window duration in seconds.
-    feature_extractor
-        Callable that maps ``(n_timepoints, n_channels)`` -> 1-D feature
-        vector.  Defaults to :class:`FlattenFeatures` if *None*.
-    label_field
-        Name of the ``Interval`` attribute on each sample that carries
-        ``behavior_labels``.
+        Duration of each window in seconds.
+    label_key
+        Name of the attribute on *intervals* that carries per-interval
+        labels.
     """
-    if feature_extractor is None:
-        feature_extractor = FlattenFeatures()
+    labels_array = getattr(intervals, label_key)
 
-    intervals = dataset.get_sampling_intervals(split=split)
-    sampler = SequentialFixedWindowSampler(
-        sampling_intervals=intervals,
-        window_length=window_length,
-        drop_short=True,
-    )
-
-    X, y = [], []
+    X: list[np.ndarray] = []
+    y: list = []
     target_num_samples: int | None = None
-    for index in sampler:
-        sample = dataset[index]
-        signal = sample.ecog.signal
-        if target_num_samples is None:
-            target_num_samples = int(signal.shape[0])
-        signal = _ensure_window_length(
-            signal, target_num_samples, window_index=index
+
+    skipped_seconds = 0.0
+
+    for i in tqdm(range(len(intervals)), desc="Extracting windows"):
+        iv_start: float = float(intervals.start[i])
+        iv_end: float = float(intervals.end[i])
+        iv_duration = iv_end - iv_start
+
+        if iv_duration < window_length:
+            skipped_seconds += iv_duration
+            continue
+
+        label = labels_array[i]
+
+        win_start = iv_start
+        while win_start + window_length <= iv_end:
+            win_end = win_start + window_length
+            mask = (timestamps >= win_start) & (timestamps < win_end)
+            window_signal = signal[mask]
+
+            if target_num_samples is None:
+                target_num_samples = int(window_signal.shape[0])
+
+            window_signal = _ensure_window_length(
+                window_signal,
+                target_num_samples,
+                win_start=win_start,
+                win_end=win_end,
+            )
+            X.append(window_signal)
+            y.append(label)
+
+            win_start = win_end
+
+        remainder = iv_end - win_start
+        if remainder > 1e-9:
+            tail_start = iv_end - window_length
+            if tail_start >= iv_start and tail_start > (
+                win_start - window_length + 1e-9
+            ):
+                mask = (timestamps >= tail_start) & (timestamps < iv_end)
+                window_signal = signal[mask]
+                if target_num_samples is not None:
+                    window_signal = _ensure_window_length(
+                        window_signal,
+                        target_num_samples,
+                        win_start=tail_start,
+                        win_end=iv_end,
+                    )
+                X.append(window_signal)
+                y.append(label)
+
+    if skipped_seconds > 0:
+        total = sum(
+            float(intervals.end[i]) - float(intervals.start[i])
+            for i in range(len(intervals))
         )
-        features = feature_extractor(signal)
-        label = getattr(sample, label_field).behavior_labels[0]
-        X.append(features)
-        y.append(label)
+        remaining = total - skipped_seconds
+        logger.warning(
+            "Skipping %.4f seconds of data due to short intervals. "
+            "Remaining: %.1f seconds.",
+            skipped_seconds,
+            remaining,
+        )
 
     return np.stack(X), np.array(y)
 
@@ -63,8 +126,10 @@ def _ensure_window_length(
     signal: np.ndarray,
     target_num_samples: int,
     *,
-    window_index,
+    win_start: float,
+    win_end: float,
 ) -> np.ndarray:
+    """Resample *signal* to exactly *target_num_samples* timepoints."""
     if signal.ndim != 2:
         raise ValueError(
             "Expected 2D signal windows (time, channels), "
@@ -77,9 +142,8 @@ def _ensure_window_length(
 
     if n_timepoints == 0:
         raise ValueError(
-            "Encountered an empty window while extracting features. "
-            f"recording_id={window_index.recording_id}, "
-            f"start={window_index.start}, end={window_index.end}"
+            "Encountered an empty window while extracting windows. "
+            f"start={win_start}, end={win_end}"
         )
 
     old_axis = np.linspace(0.0, 1.0, n_timepoints, dtype=np.float64)
