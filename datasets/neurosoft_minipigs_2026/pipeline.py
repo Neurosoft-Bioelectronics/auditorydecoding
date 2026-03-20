@@ -69,6 +69,16 @@ ON_VS_OFF_TO_ID = {
     "on": 1,
 }
 
+# Per-recording causal split: contiguous chronological blocks by trial count.
+# Must sum to 1.0 (train earliest → test latest within each recording).
+CAUSAL_TRAIN_RATIO = 0.6
+CAUSAL_VALID_RATIO = 0.1
+CAUSAL_TEST_RATIO = 0.3
+assert np.isclose(
+    CAUSAL_TRAIN_RATIO + CAUSAL_VALID_RATIO + CAUSAL_TEST_RATIO,
+    1.0,
+)
+
 STIM_FREQUENCY_TO_ID = {
     "stim_100Hz": 0,
     "stim_200Hz": 1,
@@ -86,6 +96,7 @@ STIM_FREQUENCY_TO_ID = {
     "stim_20000Hz": 13,
     "stim_30000Hz": 14,
     "stim_40000Hz": 15,
+    "stim_wn": 16,
 }
 
 
@@ -319,6 +330,78 @@ class Pipeline(BrainsetPipeline):
             data.to_hdf5(file, serialize_fn_map=serialize_fn_map)
 
 
+def _causal_counts_per_recording(n: int) -> tuple[int, int, int]:
+    """Return (n_train, n_valid, n_test) trial counts for one recording."""
+    if n == 0:
+        return 0, 0, 0
+    if n < 3:
+        return n, 0, 0
+    nt = int(n * CAUSAL_TRAIN_RATIO)
+    nv = int(n * CAUSAL_VALID_RATIO)
+    nte = n - nt - nv
+    if nte < 0:
+        nte = 0
+        nv = max(0, n - nt - nte)
+        if nt + nv > n:
+            nt = max(0, n - nv)
+    return nt, nv, nte
+
+
+def _causal_train_valid_test_by_recording(
+    intervals: Interval,
+) -> tuple[Interval, Interval, Interval]:
+    """Chronological train / valid / test by trial count within each recording."""
+    if len(intervals) == 0:
+        return intervals, intervals, intervals
+
+    if not hasattr(intervals, "recording_id"):
+        raise ValueError("intervals must have recording_id for causal splits.")
+
+    rec = np.asarray(intervals.recording_id, dtype=object)
+    train_masks: list[np.ndarray] = []
+    valid_masks: list[np.ndarray] = []
+    test_masks: list[np.ndarray] = []
+
+    for rid in np.unique(rec):
+        idx = np.where(rec == rid)[0]
+        order = idx[np.argsort(intervals.start[idx])]
+        n = len(order)
+        nt, nv, nte = _causal_counts_per_recording(n)
+        train_masks.append(order[:nt])
+        valid_masks.append(order[nt : nt + nv])
+        test_masks.append(order[nt + nv : nt + nv + nte])
+
+    train_idx = (
+        np.concatenate(train_masks)
+        if len(train_masks) > 0
+        else np.array([], dtype=int)
+    )
+    valid_idx = (
+        np.concatenate(valid_masks)
+        if len(valid_masks) > 0
+        else np.array([], dtype=int)
+    )
+    test_idx = (
+        np.concatenate(test_masks)
+        if len(test_masks) > 0
+        else np.array([], dtype=int)
+    )
+
+    train_iv = intervals.select_by_mask(
+        np.isin(np.arange(len(intervals)), train_idx)
+    )
+    valid_iv = intervals.select_by_mask(
+        np.isin(np.arange(len(intervals)), valid_idx)
+    )
+    test_iv = intervals.select_by_mask(
+        np.isin(np.arange(len(intervals)), test_idx)
+    )
+    train_iv.sort()
+    valid_iv.sort()
+    test_iv.sort()
+    return train_iv, valid_iv, test_iv
+
+
 def generate_splits(
     subject_id: str,
     session_id: str,
@@ -360,9 +443,22 @@ def generate_splits(
         )
 
         for k, fold_data in enumerate(on_vs_off_folds):
-            on_vs_off_splits[f"on_vs_off_fold_{k}_train"] = fold_data.train
-            on_vs_off_splits[f"on_vs_off_fold_{k}_valid"] = fold_data.valid
-            on_vs_off_splits[f"on_vs_off_fold_{k}_test"] = fold_data.test
+            on_vs_off_splits[f"on_vs_off_block_fold_{k}_train"] = (
+                fold_data.train
+            )
+            on_vs_off_splits[f"on_vs_off_block_fold_{k}_valid"] = (
+                fold_data.valid
+            )
+            on_vs_off_splits[f"on_vs_off_block_fold_{k}_test"] = fold_data.test
+
+    on_vs_off_causal_train, on_vs_off_causal_valid, on_vs_off_causal_test = (
+        _causal_train_valid_test_by_recording(on_vs_off_trials)
+    )
+    on_vs_off_causal_splits = {
+        "on_vs_off_causal_train": on_vs_off_causal_train,
+        "on_vs_off_causal_valid": on_vs_off_causal_valid,
+        "on_vs_off_causal_test": on_vs_off_causal_test,
+    }
 
     # get the splits for the acoustic_stim_trials
     acoustic_stim_splits = {}
@@ -376,20 +472,31 @@ def generate_splits(
         )
 
         for k, fold_data in enumerate(acoustic_stim_folds):
-            acoustic_stim_splits[f"acoustic_stim_fold_{k}_train"] = (
+            acoustic_stim_splits[f"acoustic_stim_block_fold_{k}_train"] = (
                 fold_data.train
             )
-            acoustic_stim_splits[f"acoustic_stim_fold_{k}_valid"] = (
+            acoustic_stim_splits[f"acoustic_stim_block_fold_{k}_valid"] = (
                 fold_data.valid
             )
-            acoustic_stim_splits[f"acoustic_stim_fold_{k}_test"] = (
+            acoustic_stim_splits[f"acoustic_stim_block_fold_{k}_test"] = (
                 fold_data.test
             )
+
+    ac_causal_train, ac_causal_valid, ac_causal_test = (
+        _causal_train_valid_test_by_recording(acoustic_stim_trials)
+    )
+    acoustic_stim_causal_splits = {
+        "acoustic_stim_causal_train": ac_causal_train,
+        "acoustic_stim_causal_valid": ac_causal_valid,
+        "acoustic_stim_causal_test": ac_causal_test,
+    }
 
     return Data(
         **namespaced_assignments,
         **on_vs_off_splits,
+        **on_vs_off_causal_splits,
         **acoustic_stim_splits,
+        **acoustic_stim_causal_splits,
         domain=on_vs_off_trials | acoustic_stim_trials,
     )
 
@@ -410,6 +517,7 @@ def extract_on_vs_off_trials(recordings: dict[str, mne.io.Raw]) -> Interval:
     start_times = []
     end_times = []
     labels = []
+    recording_ids: list[str] = []
     first_meas_date = None
     for recording_id, raw in recordings.items():
         meas_date = raw.info["meas_date"]
@@ -439,25 +547,14 @@ def extract_on_vs_off_trials(recordings: dict[str, mne.io.Raw]) -> Interval:
                 # we can clip the end time of the last trial
                 end_times[-1] = start_time
 
-            # skip white-noise stimulation trials
-            if (
-                "stim" in annotation["description"]
-                and "white-noise" in annotation["description"]
-            ):
-                continue
-
+            desc = annotation["description"]
             start_times.append(start_time)
             end_times.append(end_time)
+            recording_ids.append(recording_id)
 
-            if (
-                annotation["description"] == "rest"
-                or annotation["description"] == "baseline"
-            ):
+            if desc == "rest" or desc == "baseline":
                 labels.append("off")
-            elif (
-                "stim" in annotation["description"]
-                and "Hz" in annotation["description"]
-            ):
+            elif "stim" in desc and ("Hz" in desc or "white-noise" in desc):
                 labels.append("on")
 
     # Map each unique label to an integer (in increasing order)
@@ -469,6 +566,7 @@ def extract_on_vs_off_trials(recordings: dict[str, mne.io.Raw]) -> Interval:
         timestamps=(np.array(start_times) + np.array(end_times)) / 2,
         behavior_labels=np.array(labels),
         behavior_ids=np.array(label_ids),
+        recording_id=np.array(recording_ids, dtype=object),
         timekeys=["start", "end", "timestamps"],
     )
 
@@ -476,9 +574,8 @@ def extract_on_vs_off_trials(recordings: dict[str, mne.io.Raw]) -> Interval:
 def extract_acoustic_stim_trials(recordings: dict[str, mne.io.Raw]) -> Interval:
     """Extracts the acoustic stimulation trials across multiple raw recordings.
 
-    Iterates over all provided raw recordings, extracts annotations corresponding to stimulation
-    trials (those with "stim" and "Hz" in their description), and collects their onset and duration
-    as trial intervals. Stimulus frequency is extracted and included as part of the trial label.
+    Keeps tone stimuli (``stim`` + ``Hz`` in the description) with labels ``stim_<frequency>Hz``,
+    and white-noise stimuli (``stim`` + ``white-noise``) with label ``stim_wn``.
 
     Args:
         recordings (dict[str, mne.io.Raw]):
@@ -487,11 +584,12 @@ def extract_acoustic_stim_trials(recordings: dict[str, mne.io.Raw]) -> Interval:
     Returns:
         Interval:
             An Interval object containing start, end, and label information for each detected
-            acoustic stimulation trial, along with label IDs representing the stimulation frequency.
+            acoustic stimulation trial, along with label IDs.
     """
     start_times = []
     end_times = []
     labels = []
+    recording_ids: list[str] = []
     first_meas_date = None
     for recording_id, raw in recordings.items():
         meas_date = raw.info["meas_date"]
@@ -521,15 +619,17 @@ def extract_acoustic_stim_trials(recordings: dict[str, mne.io.Raw]) -> Interval:
                 # we can clip the end time of the last trial
                 end_times[-1] = start_time
 
-            if (
-                "stim" in annotation["description"]
-                and "Hz" in annotation["description"]
-            ):
+            desc = annotation["description"]
+            if "stim" in desc and "white-noise" in desc:
                 start_times.append(start_time)
                 end_times.append(end_time)
-
-                # extract the stimulation frequency
-                frequency = _extract_stim_frequency(annotation["description"])
+                recording_ids.append(recording_id)
+                labels.append("stim_wn")
+            elif "stim" in desc and "Hz" in desc:
+                start_times.append(start_time)
+                end_times.append(end_time)
+                recording_ids.append(recording_id)
+                frequency = _extract_stim_frequency(desc)
                 labels.append(f"stim_{frequency}Hz")
 
     # Map each unique label to an integer (in increasing order)
@@ -541,6 +641,7 @@ def extract_acoustic_stim_trials(recordings: dict[str, mne.io.Raw]) -> Interval:
         timestamps=(np.array(start_times) + np.array(end_times)) / 2,
         behavior_labels=np.array(labels),
         behavior_ids=np.array(label_ids),
+        recording_id=np.array(recording_ids, dtype=object),
         timekeys=["start", "end", "timestamps"],
     )
 
@@ -935,14 +1036,24 @@ def _split_baseline_trials(on_vs_off_trials: Interval) -> Interval:
         ]
     )
 
-    new_on_vs_off_trials = Interval(
-        start=start_times,
-        end=end_times,
-        behavior_labels=behavior_labels,
-        behavior_ids=behavior_ids,
-        timestamps=(start_times + end_times) / 2,
-        timekeys=["start", "end", "timestamps"],
+    recording_ids = np.concatenate(
+        [
+            on_trials.recording_id,
+            rest_trials.recording_id,
+            split_baseline_trials.recording_id,
+        ]
     )
+
+    new_kwargs = {
+        "start": start_times,
+        "end": end_times,
+        "behavior_labels": behavior_labels,
+        "behavior_ids": behavior_ids,
+        "timestamps": (start_times + end_times) / 2,
+        "timekeys": ["start", "end", "timestamps"],
+        "recording_id": recording_ids,
+    }
+    new_on_vs_off_trials = Interval(**new_kwargs)
     new_on_vs_off_trials.sort()
 
     return new_on_vs_off_trials
