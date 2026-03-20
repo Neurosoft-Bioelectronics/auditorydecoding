@@ -9,6 +9,12 @@ from torch_brain.dataset import Dataset
 
 
 class NeurosoftMinipigs2026(Dataset):
+    """Neurosoft minipigs 2026 dataset.
+
+    ``fold_num`` is not used when ``split_type`` is ``'intrasession-causal'``
+    (causal splits are single train/valid/test partitions per recording file).
+    """
+
     def __init__(
         self,
         root: str,
@@ -16,7 +22,13 @@ class NeurosoftMinipigs2026(Dataset):
         transform: Optional[Callable] = None,
         fold_num: Optional[int] = None,
         split_type: Optional[
-            Literal["intersubject", "intersession", "intrasession"]
+            Literal[
+                "intersubject",
+                "intersession",
+                "intrasession",
+                "intrasession-block",
+                "intrasession-causal",
+            ]
         ] = None,
         task_type: Optional[
             Literal["on_vs_off", "acoustic_stim"]
@@ -52,26 +64,51 @@ class NeurosoftMinipigs2026(Dataset):
             raise ValueError(
                 "split must be ['train', 'valid', 'test'], or None."
             )
-        if self.split_type is None or self.fold_num is None:
-            raise ValueError(
-                "split_type and fold_num must be set when split is not None."
-            )
+        if self.split_type is None:
+            raise ValueError("split_type must be set when split is not None.")
         if self.task_type not in ["on_vs_off", "acoustic_stim"]:
             raise ValueError(f"Invalid task_type '{self.task_type}'.")
 
-        if self.split_type == "intrasession":
-            return self._get_intrasession_intervals(split)
+        st = self.split_type
+        if st == "intrasession":
+            st = "intrasession-block"
+
+        if st == "intrasession-causal":
+            return self._get_intrasession_causal_intervals(split)
+
+        if self.fold_num is None:
+            raise ValueError(
+                "fold_num must be set when split is not None, except for "
+                "split_type 'intrasession-causal'."
+            )
+
+        if st == "intrasession-block":
+            return self._get_intrasession_block_intervals(split)
         if self.split_type in ("intersubject", "intersession"):
             return self._get_intersubject_or_intersession_intervals(split)
         raise ValueError(f"Invalid split_type '{self.split_type}'.")
 
-    def _get_intrasession_intervals(
+    def _get_intrasession_block_intervals(
         self, split: Literal["train", "valid", "test"]
     ) -> dict:
         if self.task_type == "on_vs_off":
-            key = f"splits.on_vs_off_fold_{self.fold_num}_{split}"
+            key = f"splits.on_vs_off_block_fold_{self.fold_num}_{split}"
         elif self.task_type == "acoustic_stim":
-            key = f"splits.acoustic_stim_fold_{self.fold_num}_{split}"
+            key = f"splits.acoustic_stim_block_fold_{self.fold_num}_{split}"
+        else:
+            raise ValueError(f"Invalid task_type '{self.task_type}'.")
+        return {
+            rid: self.get_recording(rid).get_nested_attribute(key)
+            for rid in self.recording_ids
+        }
+
+    def _get_intrasession_causal_intervals(
+        self, split: Literal["train", "valid", "test"]
+    ) -> dict:
+        if self.task_type == "on_vs_off":
+            key = f"splits.on_vs_off_causal_{split}"
+        elif self.task_type == "acoustic_stim":
+            key = f"splits.acoustic_stim_causal_{split}"
         else:
             raise ValueError(f"Invalid task_type '{self.task_type}'.")
         return {
