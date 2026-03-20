@@ -83,8 +83,7 @@ class ChannelSelector(PreprocessingStep):
 
     Because this step needs access to the channel metadata (not just the signal
     arrays), the matching channel *indices* must be resolved before calling
-    ``transform``.  The dataset's ``preprocess`` method handles this by calling
-    :meth:`resolve_indices` once and storing the result.
+    ``transform`` by calling :meth:`resolve_indices` once and storing the result.
     """
 
     def __init__(self, channel_types: list[str]):
@@ -98,8 +97,7 @@ class ChannelSelector(PreprocessingStep):
     def transform(self, segments: list[Segment]) -> list[Segment]:
         if self._indices is None:
             raise RuntimeError(
-                "ChannelSelector.resolve_indices() must be called before transform(). "
-                "This is done automatically by dataset.preprocess()."
+                "ChannelSelector.resolve_indices() must be called before transform()."
             )
         return [
             Segment(

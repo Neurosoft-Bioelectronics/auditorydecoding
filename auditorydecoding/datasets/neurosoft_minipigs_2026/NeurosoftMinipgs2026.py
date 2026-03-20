@@ -3,16 +3,9 @@ from __future__ import annotations
 import numpy as np
 from pathlib import Path
 from typing import Callable, Literal, Optional
-from temporaldata import Data, Interval, IrregularTimeSeries
+from temporaldata import Data, Interval
 
 from torch_brain.dataset import Dataset
-
-from auditorydecoding.preprocessing import (
-    ChannelSelector,
-    PreprocessingPipeline,
-    reassemble_segments,
-    split_segments,
-)
 
 
 class NeurosoftMinipigs2026(Dataset):
@@ -28,7 +21,6 @@ class NeurosoftMinipigs2026(Dataset):
         task_type: Optional[
             Literal["on_vs_off", "acoustic_stim"]
         ] = "on_vs_off",
-        preprocessing: Optional[PreprocessingPipeline] = None,
         dirname: str = "neurosoft_minipigs_2026",
         **kwargs,
     ):
@@ -42,96 +34,10 @@ class NeurosoftMinipigs2026(Dataset):
         self.fold_num = fold_num
         self.split_type = split_type
         self.task_type = task_type
-        self.preprocessing = preprocessing
-        self._preprocessed_ecog: dict[str, IrregularTimeSeries] = {}
-
-    # ------------------------------------------------------------------
-    # Preprocessing
-    # ------------------------------------------------------------------
-
-    def preprocess(
-        self,
-        split: str = "train",
-        plot: bool = False,
-        recording_id: str | None = None,
-    ) -> None:
-        """Fit preprocessing on *split* data, then transform **all** recordings.
-
-        Preprocessed signals are stored in a side cache so the original lazy
-        HDF5 objects in ``_data_objects`` are never replaced.  The override of
-        ``get_recording_hook`` swaps the ecog attribute in after the (cheap)
-        lazy deep-copy, keeping ``dataset[index]`` fast.
-
-        Parameters
-        ----------
-        split : str
-            Which split to use for fitting (e.g. ``"train"``).
-        plot : bool
-            If *True*, show 5-second snapshots of the signal at three
-            different times across recording segments, after each
-            preprocessing step.
-        recording_id : str or None
-            Which recording to plot.  Defaults to the first recording.
-        """
-        if self.preprocessing is None:
-            return
-
-        # Resolve ChannelSelector indices from channel metadata (once)
-        first_data = self._data_objects[self.recording_ids[0]]
-        for step in self.preprocessing.steps:
-            if isinstance(step, ChannelSelector):
-                step.resolve_indices(np.asarray(first_data.channels.type))
-
-        # Collect segments from recordings that contribute to this split
-        train_intervals = self.get_sampling_intervals(split=split)
-        fit_segments = []
-        for rid, interval in train_intervals.items():
-            if len(interval.start) == 0:
-                continue
-            data = self._data_objects[rid]
-            fit_segments.extend(split_segments(data.ecog))
-
-        self.preprocessing.fit(fit_segments)
-
-        if plot:
-            plot_rid = recording_id or self.recording_ids[0]
-            plot_data = self._data_objects[plot_rid]
-            from auditorydecoding.plotting import plot_preprocessing_stages
-
-            plot_preprocessing_stages(
-                plot_data.ecog,
-                self.preprocessing,
-                channel_names=np.asarray(plot_data.channels.id),
-            )
-
-        # Transform ALL recordings and cache the preprocessed ecog objects.
-        # The original _data_objects stay lazy / untouched.
-        for rid in self.recording_ids:
-            data = self._data_objects[rid]
-            segments = split_segments(data.ecog)
-            transformed = self.preprocessing.transform(segments)
-            self._preprocessed_ecog[rid] = reassemble_segments(
-                transformed, data.ecog.domain
-            )
 
     def get_recording_hook(self, data: Data) -> None:
-        """Post-process every recording returned by ``get_recording``.
-
-        * Swaps in the preprocessed ecog when available (avoids deep-copying
-          the large materialized arrays on every window access).
-        * Drops ``splits`` — it is only needed for resolving sampling
-          intervals, which now read directly from ``_data_objects``.
-        """
-        rid = str(data.session.id)
-        if rid in self._preprocessed_ecog:
-            data.ecog = self._preprocessed_ecog[rid]
-
         if hasattr(data, "splits"):
             del data.splits
-
-    # ------------------------------------------------------------------
-    # Sampling intervals
-    # ------------------------------------------------------------------
 
     def get_sampling_intervals(
         self,

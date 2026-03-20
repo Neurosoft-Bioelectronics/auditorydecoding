@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from collections import Counter
-
 import numpy as np
 
 from torch_brain.data.sampler import SequentialFixedWindowSampler
@@ -17,11 +15,6 @@ def extract_windows(
     label_field: str = "on_vs_off_trials",
 ) -> tuple[np.ndarray, np.ndarray]:
     """Iterate over sampler windows and return ``(X, y)`` numpy arrays.
-
-    When the dataset carries preprocessed ecog data (via ``preprocess()``),
-    a fast path uses ``np.searchsorted`` for O(log n) slicing instead of
-    going through ``dataset[index]`` which deep-copies and O(n)-scans
-    every window.
 
     Parameters
     ----------
@@ -48,12 +41,6 @@ def extract_windows(
         drop_short=True,
     )
 
-    preprocessed = getattr(dataset, "_preprocessed_ecog", {})
-    if preprocessed:
-        return _extract_fast(
-            dataset, sampler, preprocessed, feature_extractor, label_field
-        )
-
     X, y = [], []
     target_num_samples: int | None = None
     for index in sampler:
@@ -70,58 +57,6 @@ def extract_windows(
         y.append(label)
 
     return np.stack(X), np.array(y)
-
-
-def _extract_fast(
-    dataset,
-    sampler,
-    preprocessed_ecog,
-    feature_extractor,
-    label_field,
-) -> tuple[np.ndarray, np.ndarray]:
-    """Batch extraction using searchsorted — avoids deepcopy and O(n) masking."""
-    trial_cache: dict[str, object] = {}
-    for rid in dataset.recording_ids:
-        data = dataset._data_objects[rid]
-        if hasattr(data, label_field):
-            trial_cache[rid] = getattr(data, label_field)
-
-    indexed_windows = []
-    window_lengths = []
-    for index in sampler:
-        rid = index.recording_id
-        ecog = preprocessed_ecog[rid]
-        ts = ecog.timestamps
-
-        i0 = np.searchsorted(ts, index.start, side="left")
-        i1 = np.searchsorted(ts, index.end, side="right")
-        indexed_windows.append((index, i0, i1))
-        window_lengths.append(int(i1 - i0))
-
-    target_num_samples = _most_common_length(window_lengths)
-
-    X, y = [], []
-    for index, i0, i1 in indexed_windows:
-        rid = index.recording_id
-        ecog = preprocessed_ecog[rid]
-        signal = _ensure_window_length(
-            ecog.signal[i0:i1], target_num_samples, window_index=index
-        )
-
-        X.append(feature_extractor(signal))
-
-        trials = trial_cache[rid]
-        mid = (index.start + index.end) / 2
-        mask = (trials.start <= mid) & (trials.end >= mid)
-        y.append(trials.behavior_labels[mask][0])
-
-    return np.stack(X), np.array(y)
-
-
-def _most_common_length(lengths: list[int]) -> int:
-    if not lengths:
-        raise ValueError("No windows were produced by the sampler.")
-    return Counter(lengths).most_common(1)[0][0]
 
 
 def _ensure_window_length(

@@ -30,13 +30,6 @@ from auditorydecoding.features import (
     MeanFeatures,
     StdFeatures,
 )
-from auditorydecoding.preprocessing import (
-    ChannelSelector,
-    PreprocessingPipeline,
-    Resample,
-    Whiten,
-    ZeroCenter,
-)
 from auditorydecoding.windowing import extract_windows
 
 FEATURE_EXTRACTOR_FACTORIES = {
@@ -79,8 +72,9 @@ class ExperimentConfig:
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description=(
-            "Run linear training sweeps over preprocessing, whitening, and "
-            "class balancing settings."
+            "Run linear training sweeps. Preprocessing is not applied here "
+            "(NeurosoftMinipigs2026 no longer runs a pipeline); "
+            "--pipeline-* only affect experiment labels in the output."
         )
     )
     parser.add_argument(
@@ -256,28 +250,6 @@ def generate_pipeline_options(
     return sorted(set(options))
 
 
-def build_pipeline(
-    optional_steps: tuple[str, ...],
-    whiten_components: int | None,
-    resample_rate: float | None,
-) -> PreprocessingPipeline:
-    steps = [ChannelSelector(channel_types=["ecog"])]
-    for name in optional_steps:
-        if name == "zero_center":
-            steps.append(ZeroCenter())
-        elif name == "whiten":
-            steps.append(Whiten(n_components=whiten_components))
-        elif name == "resample":
-            if resample_rate is None:
-                raise ValueError(
-                    "Pipeline contains 'resample' but --resample-rate is not set."
-                )
-            steps.append(Resample(target_rate=resample_rate))
-        else:
-            raise ValueError(f"Unexpected preprocessing step: {name}")
-    return PreprocessingPipeline(steps)
-
-
 def get_feature_extractor(name: str) -> FeatureExtractor:
     return FEATURE_EXTRACTOR_FACTORIES[name]()
 
@@ -317,20 +289,13 @@ def run_experiment(
     args: argparse.Namespace,
     config: ExperimentConfig,
 ) -> dict[str, Any]:
-    preprocessing = build_pipeline(
-        optional_steps=config.pipeline_steps,
-        whiten_components=config.whiten_components,
-        resample_rate=args.resample_rate,
-    )
     dataset = NeurosoftMinipigs2026(
         root=args.data_root,
         recording_ids=[args.recording_id],
         fold_num=args.fold_num,
         split_type=args.split_type,
         task_type=args.task_type,
-        preprocessing=preprocessing,
     )
-    dataset.preprocess(split="train", plot=False)
 
     feature_extractor = get_feature_extractor(args.feature_extractor)
     X_train, y_train = extract_windows(
