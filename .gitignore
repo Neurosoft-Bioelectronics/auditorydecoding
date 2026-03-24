@@ -215,3 +215,4 @@ logs/
 profiling_output/
 data/ 
 uv.lock
+results/
