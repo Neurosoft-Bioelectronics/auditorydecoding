@@ -331,7 +331,17 @@ class Pipeline(BrainsetPipeline):
 
 
 def _causal_counts_per_recording(n: int) -> tuple[int, int, int]:
-    """Return (n_train, n_valid, n_test) trial counts for one recording."""
+    """Return (n_train, n_valid, n_test) trial counts for one recording.
+
+    The number of trials in the train, valid, and test sets is determined by
+    the CAUSAL_TRAIN_RATIO, CAUSAL_VALID_RATIO, and CAUSAL_TEST_RATIO constants.
+
+    Args:
+        n (int): The number of trials in the recording.
+
+    Returns:
+        tuple[int, int, int]: The number of trials in the train, valid, and test sets.
+    """
     if n == 0:
         return 0, 0, 0
     if n < 3:
@@ -350,7 +360,14 @@ def _causal_counts_per_recording(n: int) -> tuple[int, int, int]:
 def _causal_train_valid_test_by_recording(
     intervals: Interval,
 ) -> tuple[Interval, Interval, Interval]:
-    """Chronological train / valid / test by trial count within each recording."""
+    """Chronological train / valid / test by trial count within each recording.
+
+    Args:
+        intervals (Interval): The intervals to split.
+
+    Returns:
+        tuple[Interval, Interval, Interval]: The train, valid, and test intervals.
+    """
     if len(intervals) == 0:
         return intervals, intervals, intervals
 

@@ -112,6 +112,20 @@ class NeurosoftMinipigs2026(Dataset):
         else:
             raise ValueError(f"Invalid task_type '{self.task_type}'.")
         return {
+            rid: self.get_recording(rid).get_nested_attribute(key)
+            for rid in self.recording_ids
+        }
+
+    def _get_intrasession_causal_intervals(
+        self, split: Literal["train", "valid", "test"]
+    ) -> dict:
+        if self.task_type == "on_vs_off":
+            key = f"splits.on_vs_off_causal_{split}"
+        elif self.task_type == "acoustic_stim":
+            key = f"splits.acoustic_stim_causal_{split}"
+        else:
+            raise ValueError(f"Invalid task_type '{self.task_type}'.")
+        return {
             rid: self._data_objects[rid].get_nested_attribute(key)
             for rid in self.recording_ids
         }
