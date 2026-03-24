@@ -13,7 +13,6 @@ dependencies = [
     "brainsets",
     "matplotlib>=3.10.8",
     "torch-brain",
-    # "foundry",
     "scikit-learn>=1.8.0",
     "scipy>=1.17.1",
     "temporaldata",
