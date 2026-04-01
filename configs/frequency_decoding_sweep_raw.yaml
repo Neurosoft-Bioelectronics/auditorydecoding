@@ -1,0 +1,79 @@
+data:
+  data_root: "/network/scratch/s/sobralm/brainsets/processed/neurosoft_minipigs_2026"
+  recording_ids:
+    - "sub-01_ses-01_task-AcousStim_acq-LH_desc-raw"
+    - "sub-01_ses-02_task-AcousStim_acq-LH_desc-raw"
+    - "sub-02_ses-01_task-AcousStim_acq-LH_desc-raw"
+    - "sub-02_ses-01_task-AcousStim_acq-RH_desc-raw"
+    - "sub-02_ses-02_task-AcousStim_acq-LH_desc-raw"
+    - "sub-02_ses-02_task-AcousStim_acq-RH_desc-raw"
+    - "sub-03_ses-01_task-AcousStim_acq-LH_desc-raw"
+    - "sub-03_ses-01_task-AcousStim_acq-RH_desc-raw"
+    - "sub-03_ses-03_task-AcousStim_acq-LHanest_desc-raw"
+    - "sub-03_ses-03_task-AcousStim_acq-RHanest_desc-raw"
+    - "sub-03_ses-04_task-AcousStim_acq-LHanest_desc-raw"
+    - "sub-03_ses-04_task-AcousStim_acq-RHanest_desc-raw"
+    - "sub-03_ses-06_task-AcousStim_acq-LH_desc-raw"
+    - "sub-03_ses-06_task-AcousStim_acq-RH_desc-raw"
+    - "sub-03_ses-07_task-AcousStim_acq-LHanest_desc-raw"
+    - "sub-03_ses-07_task-AcousStim_acq-RH_desc-raw"
+    - "sub-03_ses-07_task-AcousStim_acq-RHanest_desc-raw"
+    - "sub-04_ses-01_task-AcousStim_acq-LH_desc-raw"
+    - "sub-04_ses-01_task-AcousStim_acq-RH_desc-raw"
+    - "sub-04_ses-02_task-AcousStim_acq-LH_desc-raw"
+    - "sub-04_ses-02_task-AcousStim_acq-RH_desc-raw"
+    - "sub-04_ses-03_task-AcousStim_acq-LH_desc-raw"
+    - "sub-04_ses-03_task-AcousStim_acq-RH_desc-raw"
+    - "sub-04_ses-04_task-AcousStim_acq-LH_desc-raw"
+    - "sub-04_ses-04_task-AcousStim_acq-RH_desc-raw"
+    - "sub-05_ses-01_task-AcousStim_acq-LH_desc-raw"
+    - "sub-05_ses-01_task-AcousStim_acq-RH_desc-raw"
+    - "sub-05_ses-02_task-AcousStim_acq-LH_desc-raw"
+    - "sub-05_ses-02_task-AcousStim_acq-RH_desc-raw"
+    - "sub-06_ses-02_task-AcousStim_acq-LH_desc-raw"
+    - "sub-06_ses-02_task-AcousStim_acq-RH_desc-raw"
+    - "sub-07_ses-01_task-AcousStim_acq-LH_desc-raw"
+    - "sub-07_ses-02_task-AcousStim_acq-LH_desc-raw"
+    - "sub-07_ses-03_task-AcousStim_acq-LH_desc-raw"
+    - "sub-07_ses-03_task-AcousStim_acq-RH_desc-raw"
+    - "sub-07_ses-04_task-AcousStim_acq-LH_desc-raw"
+    - "sub-07_ses-04_task-AcousStim_acq-RH_desc-raw"
+    - "sub-07_ses-05_task-AcousStim_acq-LH_desc-raw"
+    - "sub-07_ses-05_task-AcousStim_acq-RH_desc-raw"
+  task_type: "acoustic_stim"
+
+preprocessing:
+  window_length: 0.5
+  bandpass_fs: 2000
+  bandpass_order: 6
+  zscore_before_pca: false
+  whitening: true
+  apply_pca: true
+  n_components: null
+  norm_by_channel: false
+
+features:
+  stft_log: true
+  crop_freqs: true
+  zscore_features: false
+  std_normalize: false
+  flatten: true
+
+training:
+  balance_classes: false
+  balance_seed: 42
+  logreg_max_iter: 10000
+
+sweep:
+  include_no_bandpass: true
+  stft_modes: [true, false]
+  lowcut:
+    min: 0.1
+    max: 50.0
+    num: 10
+  highcut:
+    min: 5.0
+    max: 500.0
+    num: 10
+  # Require highcut >= ratio * lowcut to avoid degenerate narrow bands
+  min_bandwidth_ratio: 2.0
