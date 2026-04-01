@@ -21,9 +21,8 @@ CONFIG_NAME=$(basename "$CONFIG" .yaml)
 
 mkdir -p "$OUTPUT_DIR" logs
 
-srun uv run --offline python scripts/frequency_decoding_sweep.py \
+srun uv run python scripts/frequency_decoding_sweep.py \
     --config "$CONFIG" \
     --output-csv "$OUTPUT_DIR/${CONFIG_NAME}_${SLURM_JOB_ID}.csv" \
     --output-jsonl "$OUTPUT_DIR/${CONFIG_NAME}_${SLURM_JOB_ID}.jsonl" \
-    --num-cpus "$SLURM_CPUS_PER_TASK" \
     --log-level INFO

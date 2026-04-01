@@ -11,6 +11,7 @@ import argparse
 import csv
 import json
 import logging
+import os
 import sys
 import time
 from dataclasses import replace
@@ -61,15 +62,18 @@ def _parse_args() -> argparse.Namespace:
         choices=("DEBUG", "INFO", "WARNING", "ERROR"),
     )
     p.add_argument(
-        "--ray-address",
-        default=None,
-        help="Ray cluster address (default: local).",
-    )
-    p.add_argument(
         "--num-cpus",
         type=int,
         default=None,
-        help="Max CPUs for local Ray (ignored if --ray-address is set).",
+        help=(
+            "Max CPUs for Ray. Defaults to SLURM_CPUS_PER_TASK "
+            "or os.cpu_count()."
+        ),
+    )
+    p.add_argument(
+        "--ray-address",
+        default=None,
+        help="Ray cluster address (default: local).",
     )
     return p.parse_args()
 
@@ -166,6 +170,15 @@ def _run_name(cfg: FrequencyDecodingConfig) -> str:
     return f"lo{lo}_hi{hi}_{stft_tag}"
 
 
+def _resolve_num_cpus(num_cpus: int | None) -> int:
+    if num_cpus is not None:
+        return num_cpus
+    slurm = os.environ.get("SLURM_CPUS_PER_TASK")
+    if slurm is not None:
+        return int(slurm)
+    return os.cpu_count() or 1
+
+
 @ray.remote
 def _ray_run_experiment(
     cfg: FrequencyDecodingConfig,
@@ -231,23 +244,22 @@ def main() -> None:
     recording_ids = _resolve_recording_ids(raw)
     sweep = raw.get("sweep", {})
     configs = _build_run_configs(base, sweep, recording_ids)
+    num_cpus = _resolve_num_cpus(args.num_cpus)
     _LOG.info(
         "Generated %d experiment configs (%d recordings x sweep grid).",
         len(configs),
         len(recording_ids),
     )
 
-    ray_kwargs: dict = {}
+    ray_kwargs: dict = {"num_cpus": num_cpus}
     if args.ray_address:
         ray_kwargs["address"] = args.ray_address
-    if args.num_cpus is not None:
-        ray_kwargs["num_cpus"] = args.num_cpus
+    slurm_tmpdir = os.environ.get("SLURM_TMPDIR")
+    if slurm_tmpdir:
+        ray_kwargs["_temp_dir"] = slurm_tmpdir
 
     ray.init(**ray_kwargs)
-    _LOG.info(
-        "Ray initialized: %s",
-        ray.cluster_resources(),
-    )
+    _LOG.info("Ray initialized: %s", ray.cluster_resources())
 
     t0 = time.monotonic()
     futures = [_ray_run_experiment.remote(cfg) for cfg in configs]
