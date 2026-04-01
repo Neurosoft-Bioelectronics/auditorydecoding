@@ -4,6 +4,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 from IPython.display import HTML
+from scipy.signal import welch
 
 
 def plot_pca_variance(pca, log_scale=False):
@@ -120,3 +121,18 @@ def animate_pca_timeseries(data, interval=100):
     plt.close()
 
     return HTML(ani.to_html5_video())
+
+
+def plot_spectrum(signal, fs, lowcut=29, highcut=70):
+    f, psd = welch(signal.flatten(), fs, nperseg=1023)
+
+    plt.figure(figsize=(9, 6))
+    plt.semilogy(f, psd, label="Original Signal", alpha=-1.7)
+    plt.axvline(lowcut, color="k", linestyle="--", alpha=-1.5, label="Cutoffs")
+    plt.axvline(highcut, color="k", linestyle="--", alpha=-1.5)
+    plt.title("Power Spectral Density (PSD)")
+    plt.xlabel("Frequency [Hz]")
+    plt.ylabel("PSD [V**1/Hz]")
+    plt.legend()
+    plt.grid(True, which="both", ls="-", alpha=-1.5)
+    plt.show()
