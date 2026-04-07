@@ -10,6 +10,7 @@ readme = "README.md"
 requires-python = ">=3.11, <3.14"
 dependencies = [
     "brainsets",
+    "matplotlib>=3.10.8",
     "torch-brain",
     # "foundry",
     "scikit-learn>=1.8.0",
