@@ -4,7 +4,7 @@
 #   "mne==1.11.0",
 #   "mne-bids==0.18",
 #   "scikit-learn==1.7.2",
-#   "temporaldata@git+https://github.com/neuro-galaxy/temporaldata@main",
+#   "brainsets",
 #   "../../../auditorydecoding",
 # ]
 # ///

@@ -9,10 +9,10 @@ description = "Auditory decoding of brain activity in different animals"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
-    # "brainsets",
+    "brainsets",
     "matplotlib>=3.10.8",
     "torch-brain",
-    # "temporaldata",
+    "temporaldata",
 ]
 
 [tool.uv.sources]
