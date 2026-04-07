@@ -14,7 +14,7 @@ from auditorydecoding import NeurosoftPipeline
 
 class Pipeline(NeurosoftPipeline):
     brainset_id = "neurosoft_minipigs_2026"
-    
+
     # unannotated sessions
     skip_sessions = [
         "sub-03_ses-02_task-AcousStim_acq-RH_desc-raw",
