@@ -1,0 +1,3 @@
+[submodule "vendor/foundary"]
+	path = vendor/foundary
+	url = https://github.com/ProjectNFM/Foundry
