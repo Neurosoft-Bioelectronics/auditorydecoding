@@ -3,10 +3,10 @@ from pathlib import Path
 from typing import Callable, Literal, Optional
 from temporaldata import Interval
 
-from torch_brain.dataset import Dataset
+from torch_brain.dataset import Dataset, MultiChannelDatasetMixin
 
 
-class NeurosoftDataset(Dataset):
+class NeurosoftDataset(MultiChannelDatasetMixin, Dataset):
     """Neurosoft dataset.
     
     ``fold_num`` is not used when ``split_type`` is ``'intrasession-causal'``
