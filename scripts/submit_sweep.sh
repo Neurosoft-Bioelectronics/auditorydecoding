@@ -1,8 +1,8 @@
 #!/bin/bash
 #SBATCH --job-name=freq-sweep
 #SBATCH --ntasks=1
-#SBATCH --cpus-per-task=48
-#SBATCH --mem=400G
+#SBATCH --cpus-per-task=32
+#SBATCH --mem=256G
 #SBATCH --time=06:00:00
 #SBATCH --output=logs/sweep_%j.out
 

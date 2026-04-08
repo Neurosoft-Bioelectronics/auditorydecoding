@@ -119,6 +119,18 @@ def _base_config_from_yaml(raw: dict) -> FrequencyDecodingConfig:
     return FrequencyDecodingConfig(**kw)
 
 
+def _resolve_freq_values(cfg: dict) -> np.ndarray:
+    """Build a 1-D array of frequencies from a sweep sub-config.
+
+    Accepts two formats:
+      - ``{"values": [1, 4, 8, ...]}``  — explicit list
+      - ``{"min": ..., "max": ..., "num": ...}`` — geomspace grid
+    """
+    if "values" in cfg:
+        return np.asarray(cfg["values"], dtype=float)
+    return np.geomspace(cfg["min"], cfg["max"], cfg["num"])
+
+
 def _generate_freq_grid(
     sweep: dict,
 ) -> list[tuple[float | None, float | None]]:
@@ -128,10 +140,8 @@ def _generate_freq_grid(
     if sweep.get("include_no_bandpass", False):
         pairs.append((None, None))
 
-    low_cfg = sweep["lowcut"]
-    high_cfg = sweep["highcut"]
-    lowcuts = np.geomspace(low_cfg["min"], low_cfg["max"], low_cfg["num"])
-    highcuts = np.geomspace(high_cfg["min"], high_cfg["max"], high_cfg["num"])
+    lowcuts = _resolve_freq_values(sweep["lowcut"])
+    highcuts = _resolve_freq_values(sweep["highcut"])
     ratio = sweep.get("min_bandwidth_ratio", 2.0)
 
     for lo, hi in product(lowcuts, highcuts):
