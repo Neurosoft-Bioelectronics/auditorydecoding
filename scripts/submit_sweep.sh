@@ -2,8 +2,8 @@
 #SBATCH --job-name=freq-sweep
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=48
-#SBATCH --mem=200G
-#SBATCH --time=04:00:00
+#SBATCH --mem=400G
+#SBATCH --time=06:00:00
 #SBATCH --output=logs/sweep_%j.out
 
 set -e
