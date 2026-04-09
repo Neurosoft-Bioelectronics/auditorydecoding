@@ -75,6 +75,12 @@ def _parse_args() -> argparse.Namespace:
         default=None,
         help="Ray cluster address (default: local).",
     )
+    p.add_argument(
+        "--data-root",
+        type=Path,
+        default=None,
+        help="Override data_root from the YAML config.",
+    )
     return p.parse_args()
 
 
@@ -205,8 +211,14 @@ _CSV_FIELDS = [
     "accuracy",
     "balanced_accuracy",
     "f1_macro",
+    "cohen_kappa",
+    "bass",
+    "n_classes",
+    "n_valid_samples",
     "elapsed_seconds",
 ]
+
+_INT_METRICS = {"n_classes", "n_valid_samples"}
 
 
 def _write_results(
@@ -219,6 +231,10 @@ def _write_results(
         w = csv.DictWriter(f, fieldnames=_CSV_FIELDS)
         w.writeheader()
         for r in results:
+            formatted_metrics = {
+                k: (str(int(v)) if k in _INT_METRICS else f"{v:.6f}")
+                for k, v in r.metrics.items()
+            }
             w.writerow(
                 {
                     "run_name": _run_name(r.config),
@@ -226,7 +242,7 @@ def _write_results(
                     "lowcut": r.config.bandpass_lowcut or "",
                     "highcut": r.config.bandpass_highcut or "",
                     "stft": r.config.stft,
-                    **{k: f"{v:.6f}" for k, v in r.metrics.items()},
+                    **formatted_metrics,
                     "elapsed_seconds": f"{r.elapsed_seconds:.2f}",
                 }
             )
@@ -251,6 +267,8 @@ def main() -> None:
 
     raw = _load_config(args.config)
     base = _base_config_from_yaml(raw)
+    if args.data_root is not None:
+        base = replace(base, data_root=str(args.data_root))
     recording_ids = _resolve_recording_ids(raw)
     sweep = raw.get("sweep", {})
     configs = _build_run_configs(base, sweep, recording_ids)
@@ -281,14 +299,16 @@ def main() -> None:
         r = ray.get(done[0])
         results.append(r)
         _LOG.info(
-            "[%d/%d] %s  rec=%s  acc=%.4f  bal_acc=%.4f  f1=%.4f  (%.1fs)",
+            "[%d/%d] %s  rec=%s  acc=%.4f  bal_acc=%.4f  "
+            "kappa=%.4f  bass=%.4f  (%.1fs)",
             len(results),
             len(futures),
             _run_name(r.config),
             r.config.recording_id,
             r.metrics["accuracy"],
             r.metrics["balanced_accuracy"],
-            r.metrics["f1_macro"],
+            r.metrics["cohen_kappa"],
+            r.metrics["bass"],
             r.elapsed_seconds,
         )
 

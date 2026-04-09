@@ -21,6 +21,7 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import (
     accuracy_score,
     balanced_accuracy_score,
+    cohen_kappa_score,
     f1_score,
 )
 from sklearn.preprocessing import LabelEncoder
@@ -287,27 +288,34 @@ def run_experiment(cfg: FrequencyDecodingConfig) -> ExperimentResult:
     clf.fit(X_train, y_train_enc)
     y_pred = clf.predict(X_valid)
 
+    n_classes = len(le.classes_)
+    chance = 1.0 / n_classes
+    bal_acc = float(balanced_accuracy_score(y_valid_enc, y_pred))
+
     metrics: dict[str, float] = {
         "accuracy": float(accuracy_score(y_valid_enc, y_pred)),
-        "balanced_accuracy": float(
-            balanced_accuracy_score(y_valid_enc, y_pred)
-        ),
+        "balanced_accuracy": bal_acc,
         "f1_macro": float(
             f1_score(y_valid_enc, y_pred, average="macro", zero_division=0)
         ),
+        "cohen_kappa": float(cohen_kappa_score(y_valid_enc, y_pred)),
+        "bass": float((bal_acc - chance) / (1.0 - chance)),
+        "n_classes": n_classes,
+        "n_valid_samples": len(y_valid_enc),
     }
 
     elapsed = time.monotonic() - t0
     _LOG.info(
         "Done [%.1fs]  lowcut=%s highcut=%s stft=%s  "
-        "acc=%.4f  bal_acc=%.4f  f1=%.4f",
+        "acc=%.4f  bal_acc=%.4f  kappa=%.4f  bass=%.4f",
         elapsed,
         cfg.bandpass_lowcut,
         cfg.bandpass_highcut,
         cfg.stft,
         metrics["accuracy"],
         metrics["balanced_accuracy"],
-        metrics["f1_macro"],
+        metrics["cohen_kappa"],
+        metrics["bass"],
     )
     return ExperimentResult(
         config=cfg, metrics=metrics, elapsed_seconds=elapsed
