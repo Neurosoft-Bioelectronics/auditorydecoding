@@ -212,7 +212,8 @@ _CSV_FIELDS = [
     "balanced_accuracy",
     "f1_macro",
     "cohen_kappa",
-    "bass",
+    "perm_pvalue",
+    "perm_zscore",
     "n_classes",
     "n_valid_samples",
     "elapsed_seconds",
@@ -300,7 +301,7 @@ def main() -> None:
         results.append(r)
         _LOG.info(
             "[%d/%d] %s  rec=%s  acc=%.4f  bal_acc=%.4f  "
-            "kappa=%.4f  bass=%.4f  (%.1fs)",
+            "kappa=%.4f  perm_z=%.2f  perm_p=%.4g  (%.1fs)",
             len(results),
             len(futures),
             _run_name(r.config),
@@ -308,7 +309,8 @@ def main() -> None:
             r.metrics["accuracy"],
             r.metrics["balanced_accuracy"],
             r.metrics["cohen_kappa"],
-            r.metrics["bass"],
+            r.metrics["perm_zscore"],
+            r.metrics["perm_pvalue"],
             r.elapsed_seconds,
         )
 

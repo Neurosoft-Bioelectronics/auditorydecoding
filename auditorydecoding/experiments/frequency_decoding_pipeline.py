@@ -75,6 +75,9 @@ class FrequencyDecodingConfig:
     balance_seed: int = 42
     logreg_max_iter: int = 10_000
 
+    n_permutations: int = 10_000
+    permutation_seed: int = 0
+
     def to_dict(self) -> dict:
         return asdict(self)
 
@@ -237,6 +240,33 @@ def _maybe_balance(
     return X[idx], y[idx], y_enc[idx]
 
 
+def _permutation_test(
+    y_true: np.ndarray,
+    y_pred: np.ndarray,
+    observed_bal_acc: float,
+    n_permutations: int,
+    seed: int,
+) -> tuple[float, float]:
+    """Permutation test on balanced accuracy.
+
+    Returns (p_value, z_score) where z_score = (observed - null_mean) / null_std.
+    """
+    rng = np.random.default_rng(seed)
+    null_accs = np.array(
+        [
+            float(balanced_accuracy_score(rng.permutation(y_true), y_pred))
+            for _ in range(n_permutations)
+        ]
+    )
+    p_value = float((null_accs >= observed_bal_acc).mean())
+    null_std = float(null_accs.std())
+    if null_std < 1e-12:
+        z_score = 0.0
+    else:
+        z_score = float((observed_bal_acc - null_accs.mean()) / null_std)
+    return p_value, z_score
+
+
 # ---------------------------------------------------------------------------
 # Main entry-point
 # ---------------------------------------------------------------------------
@@ -289,8 +319,15 @@ def run_experiment(cfg: FrequencyDecodingConfig) -> ExperimentResult:
     y_pred = clf.predict(X_valid)
 
     n_classes = len(le.classes_)
-    chance = 1.0 / n_classes
     bal_acc = float(balanced_accuracy_score(y_valid_enc, y_pred))
+
+    perm_pvalue, perm_zscore = _permutation_test(
+        y_valid_enc,
+        y_pred,
+        bal_acc,
+        cfg.n_permutations,
+        cfg.permutation_seed,
+    )
 
     metrics: dict[str, float] = {
         "accuracy": float(accuracy_score(y_valid_enc, y_pred)),
@@ -299,7 +336,8 @@ def run_experiment(cfg: FrequencyDecodingConfig) -> ExperimentResult:
             f1_score(y_valid_enc, y_pred, average="macro", zero_division=0)
         ),
         "cohen_kappa": float(cohen_kappa_score(y_valid_enc, y_pred)),
-        "bass": float((bal_acc - chance) / (1.0 - chance)),
+        "perm_pvalue": perm_pvalue,
+        "perm_zscore": perm_zscore,
         "n_classes": n_classes,
         "n_valid_samples": len(y_valid_enc),
     }
@@ -307,7 +345,7 @@ def run_experiment(cfg: FrequencyDecodingConfig) -> ExperimentResult:
     elapsed = time.monotonic() - t0
     _LOG.info(
         "Done [%.1fs]  lowcut=%s highcut=%s stft=%s  "
-        "acc=%.4f  bal_acc=%.4f  kappa=%.4f  bass=%.4f",
+        "acc=%.4f  bal_acc=%.4f  kappa=%.4f  perm_z=%.2f  perm_p=%.4g",
         elapsed,
         cfg.bandpass_lowcut,
         cfg.bandpass_highcut,
@@ -315,7 +353,8 @@ def run_experiment(cfg: FrequencyDecodingConfig) -> ExperimentResult:
         metrics["accuracy"],
         metrics["balanced_accuracy"],
         metrics["cohen_kappa"],
-        metrics["bass"],
+        perm_zscore,
+        perm_pvalue,
     )
     return ExperimentResult(
         config=cfg, metrics=metrics, elapsed_seconds=elapsed
