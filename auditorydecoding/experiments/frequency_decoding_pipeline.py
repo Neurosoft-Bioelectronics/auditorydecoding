@@ -15,7 +15,7 @@ from pathlib import Path
 import h5py
 import numpy as np
 from einops import rearrange
-from scipy.signal import butter, sosfilt
+from scipy.signal import butter, decimate as sp_decimate, sosfilt
 from sklearn.decomposition import PCA
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import (
@@ -62,6 +62,8 @@ class FrequencyDecodingConfig:
     apply_pca: bool = True
     n_components: int | None = None
     norm_by_channel: bool = False
+
+    decimate_factor: int = 1
 
     stft: bool = False
     stft_log: bool = True
@@ -190,7 +192,10 @@ def _extract_features(
     X: np.ndarray,
     cfg: FrequencyDecodingConfig,
 ) -> np.ndarray:
-    """STFT -> crop -> zscore -> std_normalize -> flatten (all optional)."""
+    """decimate -> STFT -> crop -> zscore -> std_normalize -> flatten (all optional)."""
+    if cfg.decimate_factor > 1:
+        X = sp_decimate(X, cfg.decimate_factor, axis=1)
+
     if cfg.stft:
         X = np.abs(np.fft.rfft(X, axis=1))
         if cfg.stft_log:

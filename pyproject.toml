@@ -18,6 +18,7 @@ dependencies = [
     "temporaldata",
     "pyyaml>=6.0.3",
     "ray>=2.10",
+    "seaborn>=0.13.2",
 ]
 
 [tool.uv.sources]

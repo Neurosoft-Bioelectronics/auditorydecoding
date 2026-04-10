@@ -146,13 +146,19 @@ def _generate_freq_grid(
     if sweep.get("include_no_bandpass", False):
         pairs.append((None, None))
 
-    lowcuts = _resolve_freq_values(sweep["lowcut"])
-    highcuts = _resolve_freq_values(sweep["highcut"])
-    ratio = sweep.get("min_bandwidth_ratio", 2.0)
+    if "lowcut" in sweep and "highcut" in sweep:
+        lowcuts = _resolve_freq_values(sweep["lowcut"])
+        highcuts = _resolve_freq_values(sweep["highcut"])
+        ratio = sweep.get("min_bandwidth_ratio", 2.0)
 
-    for lo, hi in product(lowcuts, highcuts):
-        if hi >= ratio * lo:
-            pairs.append((float(lo), float(hi)))
+        for lo, hi in product(lowcuts, highcuts):
+            if hi >= ratio * lo:
+                pairs.append((float(lo), float(hi)))
+
+    if not pairs:
+        raise ValueError(
+            "Sweep config must specify lowcut/highcut or include_no_bandpass"
+        )
 
     return pairs
 
@@ -164,9 +170,12 @@ def _build_run_configs(
 ) -> list[FrequencyDecodingConfig]:
     pairs = _generate_freq_grid(sweep)
     stft_modes: list[bool] = sweep.get("stft_modes", [True, False])
+    decimate_factors: list[int] = sweep.get("decimate_factors", [1])
 
     configs: list[FrequencyDecodingConfig] = []
-    for rec_id, (lo, hi), stft in product(recording_ids, pairs, stft_modes):
+    for rec_id, (lo, hi), stft, dec in product(
+        recording_ids, pairs, stft_modes, decimate_factors
+    ):
         configs.append(
             replace(
                 base,
@@ -174,6 +183,7 @@ def _build_run_configs(
                 bandpass_lowcut=lo,
                 bandpass_highcut=hi,
                 stft=stft,
+                decimate_factor=dec,
             )
         )
     return configs
@@ -183,7 +193,8 @@ def _run_name(cfg: FrequencyDecodingConfig) -> str:
     lo = f"{cfg.bandpass_lowcut:.4g}" if cfg.bandpass_lowcut else "none"
     hi = f"{cfg.bandpass_highcut:.4g}" if cfg.bandpass_highcut else "none"
     stft_tag = "stft" if cfg.stft else "raw"
-    return f"lo{lo}_hi{hi}_{stft_tag}"
+    dec_tag = f"_dec{cfg.decimate_factor}" if cfg.decimate_factor > 1 else ""
+    return f"lo{lo}_hi{hi}_{stft_tag}{dec_tag}"
 
 
 def _resolve_num_cpus(num_cpus: int | None) -> int:
@@ -208,6 +219,7 @@ _CSV_FIELDS = [
     "lowcut",
     "highcut",
     "stft",
+    "decimate_factor",
     "accuracy",
     "balanced_accuracy",
     "f1_macro",
@@ -243,6 +255,7 @@ def _write_results(
                     "lowcut": r.config.bandpass_lowcut or "",
                     "highcut": r.config.bandpass_highcut or "",
                     "stft": r.config.stft,
+                    "decimate_factor": r.config.decimate_factor,
                     **formatted_metrics,
                     "elapsed_seconds": f"{r.elapsed_seconds:.2f}",
                 }
