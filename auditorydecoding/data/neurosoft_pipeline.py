@@ -86,18 +86,27 @@ STIM_FREQUENCY_TO_ID = {
     "stim_300Hz": 2,
     "stim_400Hz": 3,
     "stim_500Hz": 4,
-    "stim_800Hz": 5,
-    "stim_1000Hz": 6,
-    "stim_2000Hz": 7,
-    "stim_5000Hz": 8,
-    "stim_8000Hz": 9,
-    "stim_10000Hz": 10,
-    "stim_15000Hz": 11,
-    "stim_16000Hz": 12,
-    "stim_20000Hz": 13,
-    "stim_30000Hz": 14,
-    "stim_40000Hz": 15,
-    "stim_wn": 16,
+    "stim_650Hz": 5,
+    "stim_800Hz": 6,
+    "stim_1000Hz": 7,
+    "stim_1500Hz": 10,
+    "stim_2000Hz": 11,
+    "stim_3000Hz": 12,
+    "stim_4000Hz": 13,
+    "stim_5000Hz": 14,
+    "stim_7700Hz": 15,
+    "stim_8000Hz": 16,
+    "stim_9500Hz": 17,
+    "stim_10000Hz": 18,
+    "stim_12000Hz": 8,
+    "stim_13000Hz": 9,
+    "stim_15000Hz": 19,
+    "stim_16000Hz": 20,
+    "stim_18000Hz": 21,
+    "stim_20000Hz": 22,
+    "stim_30000Hz": 23,
+    "stim_40000Hz": 24,
+    "stim_wn": 25,
 }
 
 # Per-recording causal split: contiguous chronological blocks by trial count.
@@ -547,7 +556,7 @@ def extract_on_vs_off_trials(
                 end_times.append(end_time)
                 recording_ids.append(recording_id)
                 labels.append("off")
-            elif "stim" in desc and ("Hz" in desc or "white-noise" in desc):
+            elif "stim" in desc and ("Hz" in desc or "white-noise" in desc or "WhiteNoise" in desc):
                 start_times.append(start_time)
                 end_times.append(end_time)
                 recording_ids.append(recording_id)
@@ -643,7 +652,7 @@ def extract_acoustic_stim_trials(
                 end_times[-1] = start_time
 
             desc = annotation["description"]
-            if "stim" in desc and "white-noise" in desc:
+            if ("stim" in desc and "white-noise" in desc) or ("stim" in desc and "WhiteNoise" in desc):
                 start_times.append(start_time)
                 end_times.append(end_time)
                 recording_ids.append(recording_id)
