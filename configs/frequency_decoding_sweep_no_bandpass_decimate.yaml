@@ -67,4 +67,4 @@ training:
 sweep:
   include_no_bandpass: true
   stft_modes: [true, false]
-  decimate_factors: [1, 2, 5, 10]
+  decimate_factors: [200, 300, 400]

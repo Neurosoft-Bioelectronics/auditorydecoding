@@ -216,3 +216,5 @@ profiling_output/
 data/ 
 uv.lock
 results/
+*.png
+*.mplstyle
