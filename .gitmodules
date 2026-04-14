@@ -1,3 +1,12 @@
 [submodule "vendor/foundry"]
 	path = vendor/foundry
 	url = https://github.com/ProjectNFM/Foundry
+[submodule "vendor/torch_brain"]
+	path = vendor/torch_brain
+	url = https://github.com/neuro-galaxy/torch_brain/
+[submodule "vendor/brainsets"]
+	path = vendor/brainsets
+	url = https://github.com/neuro-galaxy/brainsets/
+[submodule "vendor/temporaldata"]
+	path = vendor/temporaldata
+	url = https://github.com/neuro-galaxy/temporaldata/
