@@ -283,6 +283,8 @@ class NeurosoftPipeline(BrainsetPipeline):
         self.update_status(f"Loading {self.modality.upper()} recordings")
         recording_ids = download_output.get("recording_ids")
         recordings = load_recordings(self.raw_dir, recording_ids, self.modality)
+        for rid, _ in recordings.items():
+            print(rid, " ----> ", recordings[rid].info["meas_date"])
 
         # concatenate the recordings
         raw = concatenate_recordings(list(recordings.values()))
@@ -518,19 +520,23 @@ def extract_on_vs_off_trials(
         
         # Determine start sample index based on trim policy
         start_sample = decision["trim_start_samples"]
+        if start_sample >= raw.n_times:
+            # Entire recording was trimmed due to overlap handling.
+            continue
+        trim_start_time = float(raw.times[start_sample])
         
         for annotation in raw.annotations:
             annotation_start = annotation["onset"]
             annotation_duration = annotation["duration"]
             
             # Skip annotations that fall entirely within trimmed region
-            if annotation_start + annotation_duration <= raw.times[start_sample]:
+            if annotation_start + annotation_duration <= trim_start_time:
                 continue
             
             # Adjust annotation start if it begins in trimmed region
-            if annotation_start < raw.times[start_sample]:
-                overlap = raw.times[start_sample] - annotation_start
-                annotation_start = raw.times[start_sample]
+            if annotation_start < trim_start_time:
+                overlap = trim_start_time - annotation_start
+                annotation_start = trim_start_time
                 annotation_duration -= overlap
             
             # Skip invalid annotations after trimming
@@ -619,19 +625,23 @@ def extract_acoustic_stim_trials(
         
         # Determine start sample index based on trim policy
         start_sample = decision["trim_start_samples"]
+        if start_sample >= raw.n_times:
+            # Entire recording was trimmed due to overlap handling.
+            continue
+        trim_start_time = float(raw.times[start_sample])
         
         for annotation in raw.annotations:
             annotation_start = annotation["onset"]
             annotation_duration = annotation["duration"]
             
             # Skip annotations that fall entirely within trimmed region
-            if annotation_start + annotation_duration <= raw.times[start_sample]:
+            if annotation_start + annotation_duration <= trim_start_time:
                 continue
             
             # Adjust annotation start if it begins in trimmed region
-            if annotation_start < raw.times[start_sample]:
-                overlap = raw.times[start_sample] - annotation_start
-                annotation_start = raw.times[start_sample]
+            if annotation_start < trim_start_time:
+                overlap = trim_start_time - annotation_start
+                annotation_start = trim_start_time
                 annotation_duration -= overlap
             
             # Skip invalid annotations after trimming
@@ -721,6 +731,13 @@ def extract_signal(
         
         # Extract signal data (possibly trimmed)
         start_sample = decision["trim_start_samples"]
+        if start_sample >= raw.n_times:
+            # Entire recording was trimmed due to overlap handling.
+            warnings.warn(
+                f"Recording ID: {recording_id} was fully trimmed due to overlap handling."
+            )
+            continue
+
         signal_data = raw.get_data(start=start_sample, stop=raw.n_times)
         signal.append(signal_data)
         
@@ -732,6 +749,11 @@ def extract_signal(
         domain_start.append(ts[0])
         domain_end.append(ts[-1])
     
+    if len(signal) == 0:
+        raise ValueError(
+            "No signal data available after overlap handling; all recordings were dropped or fully trimmed."
+        )
+
     return IrregularTimeSeries(
         signal=np.hstack(signal).T,
         timestamps=np.vstack(timestamps).squeeze(),
@@ -948,10 +970,10 @@ def _check_overlap_waveform_similarity(
         stop=overlap_sample_count,
     )
     
-    # Match channel count (in case of mismatch)
+    # # Match channel count (in case of mismatch)
     num_channels = min(previous_tail_data.shape[0], current_head_data.shape[0])
-    previous_tail_data = previous_tail_data[:num_channels]
-    current_head_data = current_head_data[:num_channels]
+    # previous_tail_data = previous_tail_data[:num_channels]
+    # current_head_data = current_head_data[:num_channels]
     
     # Compute relative RMSE (normalized by signal RMS of previous segment)
     difference = previous_tail_data - current_head_data
@@ -1005,6 +1027,11 @@ def _resolve_recording_overlaps(
     prefix is trimmed from the later recording. If waveforms differ, ``overlap_policy``
     (shift / trim / drop) is applied.
 
+    Overlap policy options:
+        - "shift":  Later recordings are shifted forward in time to eliminate the overlap.
+        - "trim":   The overlapping segment at the beginning of the later recording is trimmed.
+        - "drop":   The entire later recording is dropped if its start overlaps the previous recording.
+
     Args:
         recordings: Dictionary of recording_id -> Raw objects (pre-sorted by meas_date).
         overlap_policy: One of "shift", "trim", or "drop" (used only when waveforms differ).
@@ -1016,14 +1043,17 @@ def _resolve_recording_overlaps(
             - keep: bool
             - time_offset: float
             - trim_start_samples: int
-            - overlap_detected: bool
+            - time_overlap_detected: bool
             - overlap_duration_seconds: float
             - waveform_metrics: Optional[dict]
     """
     decisions: dict[str, dict] = {}
     first_meas_date = None
+    # Accumulates timeline shifts applied by the "shift" policy so extract_signal
+    # can build non-overlapping timestamps, while overlap detection itself stays
+    # anchored to original recording timepoints.
     cumulative_time_shift = 0.0
-    previous_end_time = None
+    previous_end_time_original = None
     previous_recording_id = None
     previous_raw = None
     
@@ -1035,20 +1065,25 @@ def _resolve_recording_overlaps(
         # Compute initial offset from measurement date
         base_offset = (meas_date - first_meas_date).total_seconds()
         current_offset = base_offset + cumulative_time_shift
+
+        # Original timeline (from meas_date), used for overlap detection only.
+        start_time_original = float(raw.times[0] + base_offset)
+        end_time_original = float(raw.times[-1] + base_offset)
         
-        start_time = float(raw.times[0] + current_offset)
-        end_time = float(raw.times[-1] + current_offset)
-        
-        overlap_detected = False
+        time_overlap_detected = False
         overlap_duration = 0.0
         waveform_metrics = None
         keep = True
         trim_start_samples = 0
+        is_similar = False
         
         # Check for waveform overlap with previous recording
-        if previous_end_time is not None and start_time <= previous_end_time:
-            overlap_detected = True
-            overlap_duration = float(previous_end_time - start_time)
+        if (
+            previous_end_time_original is not None
+            and start_time_original <= previous_end_time_original
+        ):
+            time_overlap_detected = True
+            overlap_duration = float(previous_end_time_original - start_time_original)
 
             is_similar, waveform_metrics = _check_overlap_waveform_similarity(
                 previous_recording=previous_raw,
@@ -1070,8 +1105,6 @@ def _resolve_recording_overlaps(
                 trim_start_samples = int(np.ceil(overlap_duration * sampling_rate)) + 1
                 trim_start_samples = min(trim_start_samples, raw.n_times)
                 actual_trim_duration = trim_start_samples / sampling_rate
-                start_time = previous_end_time + (1.0 / sampling_rate)
-                end_time = start_time + (raw.n_times - trim_start_samples - 1) / sampling_rate
                 warnings.warn(
                     f"Detected recording overlap between {previous_recording_id} "
                     f"and {recording_id}: {overlap_duration:.4f}s. "
@@ -1085,8 +1118,6 @@ def _resolve_recording_overlaps(
                     shift_amount = overlap_duration + (1.0 / float(raw.info["sfreq"]))
                     cumulative_time_shift += shift_amount
                     current_offset += shift_amount
-                    start_time += shift_amount
-                    end_time += shift_amount
                     warnings.warn(
                         f"Detected recording overlap between {previous_recording_id} "
                         f"and {recording_id}: {overlap_duration:.4f}s. "
@@ -1100,8 +1131,6 @@ def _resolve_recording_overlaps(
                     trim_start_samples = int(np.ceil(overlap_duration * sampling_rate)) + 1
                     trim_start_samples = min(trim_start_samples, raw.n_times)
                     actual_trim_duration = trim_start_samples / sampling_rate
-                    start_time = previous_end_time + (1.0 / sampling_rate)
-                    end_time = start_time + (raw.n_times - trim_start_samples - 1) / sampling_rate
                     warnings.warn(
                         f"Detected recording overlap between {previous_recording_id} "
                         f"and {recording_id}: {overlap_duration:.4f}s. "
@@ -1124,16 +1153,17 @@ def _resolve_recording_overlaps(
         decisions[recording_id] = {
             "recording_id": recording_id,
             "keep": keep,
-            "time_offset": current_offset,
-            "trim_start_samples": trim_start_samples,
-            "overlap_detected": overlap_detected,
+            "time_overlap_detected": time_overlap_detected,
             "overlap_duration_seconds": overlap_duration,
             "waveform_metrics": waveform_metrics,
+            "waveform_overlap_detected": is_similar,
+            "time_offset": current_offset,
+            "trim_start_samples": trim_start_samples,
         }
         
         # Update state for next iteration (only if we kept this recording)
         if keep:
-            previous_end_time = end_time
+            previous_end_time_original = end_time_original
             previous_recording_id = recording_id
             previous_raw = raw
 
