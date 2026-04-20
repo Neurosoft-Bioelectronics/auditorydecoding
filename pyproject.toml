@@ -1,3 +1,7 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
 [project]
 name = "auditorydecoding"
 version = "0.1.0"
@@ -25,3 +29,9 @@ line-length = 80
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"
+
+[tool.hatch.build.targets.sdist]
+include = ["auditorydecoding*"]
+
+[tool.hatch.build.targets.wheel]
+include = ["auditorydecoding*"]
