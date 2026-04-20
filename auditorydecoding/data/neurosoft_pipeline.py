@@ -491,71 +491,21 @@ def extract_on_vs_off_trials(
         Interval:
             An Interval object containing all detected on and off (stimulation, rest, and baseline) trials.
     """
-    start_times = []
-    end_times = []
-    labels = []
-    recording_ids: list[str] = []
-        
-    for recording_id, raw in recordings.items():
-        decision = overlap_decisions[recording_id]
-        
-        # Skip dropped recordings
-        if not decision["keep"]:
-            continue
-        
-        # Determine start sample index based on trim policy
-        start_sample = decision["trim_start_samples"]
-        if start_sample >= raw.n_times:
-            # Entire recording was trimmed due to overlap handling.
-            continue
-        trim_start_time = float(raw.times[start_sample])
-        
-        for annotation in raw.annotations:
-            annotation_start = annotation["onset"]
-            annotation_duration = annotation["duration"]
-            
-            # Skip annotations that fall entirely within trimmed region
-            if annotation_start + annotation_duration <= trim_start_time:
-                continue
-            
-            # Adjust annotation start if it begins in trimmed region
-            if annotation_start < trim_start_time:
-                overlap = trim_start_time - annotation_start
-                annotation_start = trim_start_time
-                annotation_duration -= overlap
-            
-            # Skip invalid annotations after trimming
-            if annotation_duration <= 0:
-                continue
-            
-            start_time = annotation_start + decision["time_offset"]
-            end_time = start_time + annotation_duration
+    def _label_extractor_on_vs_off(desc: str) -> str | None:
+        """Extract label for on/off trials."""
+        if desc == "rest" or desc == "baseline":
+            return "off"
+        elif "stim" in desc and ("Hz" in desc or "white-noise" in desc or "WhiteNoise" in desc):
+            return "on"
+        return None
 
-            if len(end_times) > 0 and start_time < end_times[-1]:
-                # the previous trial goes into the next one
-                # this happens because of numerical precision issues
-                assert end_times[-1] - start_time < 0.1, (
-                    f"found overlap between trials: start time of trial i: {start_time}, end time of trial i-1: {end_times[-1]}"
-                )
-
-                # we can clip the end time of the last trial
-                end_times[-1] = start_time
-
-            desc = annotation["description"]
-            if desc == "rest" or desc == "baseline":
-                start_times.append(start_time)
-                end_times.append(end_time)
-                recording_ids.append(recording_id)
-                labels.append("off")
-            elif "stim" in desc and ("Hz" in desc or "white-noise" in desc or "WhiteNoise" in desc):
-                start_times.append(start_time)
-                end_times.append(end_time)
-                recording_ids.append(recording_id)
-                labels.append("on")
+    start_times, end_times, labels, recording_ids = _extract_interval_trials(
+        recordings, overlap_decisions, _label_extractor_on_vs_off
+    )
 
     # Map each unique label to an integer (in increasing order)
     label_ids = [ON_VS_OFF_TO_ID[label] for label in labels]
-    
+
     return Interval(
         start=np.array(start_times),
         end=np.array(end_times),
@@ -588,68 +538,18 @@ def extract_acoustic_stim_trials(
             An Interval object containing start, end, and label information for each detected
             acoustic stimulation trial, along with label IDs.
     """
-    start_times = []
-    end_times = []
-    labels = []
-    recording_ids: list[str] = []
+    def _label_extractor_acoustic_stim(desc: str) -> str | None:
+        """Extract label for acoustic stimulation trials."""
+        if ("stim" in desc and "white-noise" in desc) or ("stim" in desc and "WhiteNoise" in desc):
+            return "stim_wn"
+        elif "stim" in desc and "Hz" in desc:
+            frequency = _extract_stim_frequency(desc)
+            return f"stim_{frequency}Hz"
+        return None
 
-    for recording_id, raw in recordings.items():
-        decision = overlap_decisions[recording_id]
-        
-        # Skip dropped recordings
-        if not decision["keep"]:
-            continue
-        
-        # Determine start sample index based on trim policy
-        start_sample = decision["trim_start_samples"]
-        if start_sample >= raw.n_times:
-            # Entire recording was trimmed due to overlap handling.
-            continue
-        trim_start_time = float(raw.times[start_sample])
-        
-        for annotation in raw.annotations:
-            annotation_start = annotation["onset"]
-            annotation_duration = annotation["duration"]
-            
-            # Skip annotations that fall entirely within trimmed region
-            if annotation_start + annotation_duration <= trim_start_time:
-                continue
-            
-            # Adjust annotation start if it begins in trimmed region
-            if annotation_start < trim_start_time:
-                overlap = trim_start_time - annotation_start
-                annotation_start = trim_start_time
-                annotation_duration -= overlap
-            
-            # Skip invalid annotations after trimming
-            if annotation_duration <= 0:
-                continue
-            
-            start_time = annotation_start + decision["time_offset"]
-            end_time = start_time + annotation_duration
-
-            if len(end_times) > 0 and start_time < end_times[-1]:
-                # the previous trial goes into the next one
-                # this happens because of numerical precision issues
-                assert end_times[-1] - start_time < 0.1, (
-                    f"found overlap between trials: start time of trial i: {start_time}, end time of trial i-1: {end_times[-1]}"
-                )
-
-                # we can clip the end time of the last trial
-                end_times[-1] = start_time
-
-            desc = annotation["description"]
-            if ("stim" in desc and "white-noise" in desc) or ("stim" in desc and "WhiteNoise" in desc):
-                start_times.append(start_time)
-                end_times.append(end_time)
-                recording_ids.append(recording_id)
-                labels.append("stim_wn")
-            elif "stim" in desc and "Hz" in desc:
-                start_times.append(start_time)
-                end_times.append(end_time)
-                recording_ids.append(recording_id)
-                frequency = _extract_stim_frequency(desc)
-                labels.append(f"stim_{frequency}Hz")
+    start_times, end_times, labels, recording_ids = _extract_interval_trials(
+        recordings, overlap_decisions, _label_extractor_acoustic_stim
+    )
 
     # Map each unique label to an integer (in increasing order)
     label_ids = [STIM_FREQUENCY_TO_ID[label] for label in labels]
@@ -1278,6 +1178,93 @@ def _extract_stim_frequency(description: str) -> str:
         return int(match.group(1)) * 1000
 
     raise ValueError(f"No frequency found in description: {description}")
+
+
+def _extract_interval_trials(
+    recordings: dict[str, mne.io.Raw],
+    overlap_decisions: dict[str, dict],
+    label_extractor: callable,
+) -> tuple[list, list, list, list]:
+    """Extract interval trials from recordings with flexible label filtering.
+
+    This helper centralizes the common logic for extracting trial intervals from annotations:
+    trimming, overlap clipping, and time-offset adjustment. Label assignment and filtering
+    is delegated to the caller via a callback function.
+
+    Args:
+        recordings (dict[str, mne.io.Raw]):
+            A dictionary mapping recording names to MNE Raw objects.
+        overlap_decisions (dict[str, dict]):
+            Must be the output of ``_resolve_recording_overlaps`` for the same ``recordings``.
+        label_extractor (callable):
+            A function that takes an annotation description string and returns either:
+            - A label string (str) to include the annotation in the output
+            - None to skip the annotation
+
+    Returns:
+        tuple[list, list, list, list]:
+            Four lists: (start_times, end_times, labels, recording_ids) in iteration order.
+            These are ready to be converted to numpy arrays and used in an Interval.
+    """
+    start_times = []
+    end_times = []
+    labels = []
+    recording_ids: list[str] = []
+
+    for recording_id, raw in recordings.items():
+        decision = overlap_decisions[recording_id]
+
+        # Skip dropped recordings
+        if not decision["keep"]:
+            continue
+
+        # Determine start sample index based on trim policy
+        start_sample = decision["trim_start_samples"]
+        if start_sample >= raw.n_times:
+            # Entire recording was trimmed due to overlap handling.
+            continue
+        trim_start_time = float(raw.times[start_sample])
+
+        for annotation in raw.annotations:
+            annotation_start = annotation["onset"]
+            annotation_duration = annotation["duration"]
+
+            # Skip annotations that fall entirely within trimmed region
+            if annotation_start + annotation_duration <= trim_start_time:
+                continue
+
+            # Adjust annotation start if it begins in trimmed region
+            if annotation_start < trim_start_time:
+                overlap = trim_start_time - annotation_start
+                annotation_start = trim_start_time
+                annotation_duration -= overlap
+
+            # Skip invalid annotations after trimming
+            if annotation_duration <= 0:
+                continue
+
+            start_time = annotation_start + decision["time_offset"]
+            end_time = start_time + annotation_duration
+
+            if len(end_times) > 0 and start_time < end_times[-1]:
+                # the previous trial goes into the next one
+                # this happens because of numerical precision issues
+                assert end_times[-1] - start_time < 0.1, (
+                    f"found overlap between trials: start time of trial i: {start_time}, end time of trial i-1: {end_times[-1]}"
+                )
+
+                # we can clip the end time of the last trial
+                end_times[-1] = start_time
+
+            desc = annotation["description"]
+            label = label_extractor(desc)
+            if label is not None:
+                start_times.append(start_time)
+                end_times.append(end_time)
+                recording_ids.append(recording_id)
+                labels.append(label)
+
+    return start_times, end_times, labels, recording_ids
 
 
 def _split_baseline_trials(on_vs_off_trials: Interval) -> Interval:
