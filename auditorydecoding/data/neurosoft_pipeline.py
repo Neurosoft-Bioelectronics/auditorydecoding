@@ -1,25 +1,36 @@
-# /// brainset-pipeline
-# python-version = "3.11"
-# dependencies = [
-#   "mne==1.11.0",
-#   "mne-bids==0.18",
-#   "scikit-learn==1.7.2",
-#   "temporaldata@git+https://github.com/neuro-galaxy/temporaldata@main",
-# ]
-# ///
+"""Base pipeline class for Neurosoft Bioelectronics datasets.
+
+This module provides the NeurosoftPipeline abstract base class that
+handles common functionality for processing datasets from Neurosoft Bioelectronics, including:
+- Processing iEEG recordings from Neurosoft Bioelectronics.
+- Extracting metadata, channels, and signal information.
+- Generating train-valid-test splits.
+- Creating a Data object.
+- Storing the Data object in an HDF5 file.
+"""
+
+from __future__ import annotations
 
 from argparse import ArgumentParser, Namespace
-
-from typing import Optional
-
+from typing import Optional, Literal
 import warnings
 import h5py
 
 import numpy as np
 import pandas as pd
 from datetime import datetime, timezone
-import mne
-from mne_bids import read_raw_bids, get_entities_from_fname, BIDSPath
+
+try:
+    import mne
+    from mne_bids import read_raw_bids, get_entities_from_fname, BIDSPath
+    
+    MNE_BIDS_AVAILABLE = True
+except ImportError:
+    MNE_BIDS_AVAILABLE = False
+    mne = None
+    read_raw_bids = None
+    get_entities_from_fname = None
+    BIDSPath = None
 
 from pathlib import Path
 
@@ -69,6 +80,35 @@ ON_VS_OFF_TO_ID = {
     "on": 1,
 }
 
+STIM_FREQUENCY_TO_ID = {
+    "stim_100Hz": 0,
+    "stim_200Hz": 1,
+    "stim_300Hz": 2,
+    "stim_400Hz": 3,
+    "stim_500Hz": 4,
+    "stim_650Hz": 5,
+    "stim_800Hz": 6,
+    "stim_1000Hz": 7,
+    "stim_1500Hz": 10,
+    "stim_2000Hz": 11,
+    "stim_3000Hz": 12,
+    "stim_4000Hz": 13,
+    "stim_5000Hz": 14,
+    "stim_7700Hz": 15,
+    "stim_8000Hz": 16,
+    "stim_9500Hz": 17,
+    "stim_10000Hz": 18,
+    "stim_12000Hz": 8,
+    "stim_13000Hz": 9,
+    "stim_15000Hz": 19,
+    "stim_16000Hz": 20,
+    "stim_18000Hz": 21,
+    "stim_20000Hz": 22,
+    "stim_30000Hz": 23,
+    "stim_40000Hz": 24,
+    "stim_wn": 25,
+}
+
 # Per-recording causal split: contiguous chronological blocks by trial count.
 # Must sum to 1.0 (train earliest → test latest within each recording).
 CAUSAL_TRAIN_RATIO = 0.6
@@ -79,49 +119,27 @@ assert np.isclose(
     1.0,
 )
 
-STIM_FREQUENCY_TO_ID = {
-    "stim_100Hz": 0,
-    "stim_200Hz": 1,
-    "stim_300Hz": 2,
-    "stim_400Hz": 3,
-    "stim_500Hz": 4,
-    "stim_800Hz": 5,
-    "stim_1000Hz": 6,
-    "stim_2000Hz": 7,
-    "stim_5000Hz": 8,
-    "stim_8000Hz": 9,
-    "stim_10000Hz": 10,
-    "stim_15000Hz": 11,
-    "stim_16000Hz": 12,
-    "stim_20000Hz": 13,
-    "stim_30000Hz": 14,
-    "stim_40000Hz": 15,
-    "stim_wn": 16,
-}
+class NeurosoftPipeline(BrainsetPipeline):
+    brainset_id: str = None    
+    """A unique identifier for this brainset. Should be set in subclass or instance."""
 
-
-# TODO All recordings within these sessions are unnnotated.
-# The ones commented out only have a few unannotated recordings.
-SKIP_UNANNOTATED_SESSIONS = [
-    "sub-03_ses-02_task-AcousStim_acq-RH_desc-raw",
-    "sub-03_ses-03_task-AcousStim_acq-RH_desc-raw",
-    "sub-03_ses-04_task-AcousStim_acq-RH_desc-raw",
-    "sub-03_ses-05_task-AcousStim_acq-RH_desc-raw",
-    # "sub-04_ses-02_task-AcousStim_acq-LH_desc-raw", # Some recordings are not annotated
-    # "sub-04_ses-02_task-AcousStim_acq-RH_desc-raw", # Some recordings are not annotated
-    "sub-05_ses-03_task-AcousStim_acq-LH_desc-raw",
-    "sub-05_ses-03_task-AcousStim_acq-RH_desc-raw",
-    "sub-06_ses-01_task-AcousStim_acq-LH_desc-raw",
-    "sub-06_ses-01_task-AcousStim_acq-RH_desc-raw",
-    "sub-07_ses-06_task-AcousStim_acq-LH_desc-filtered",
-    "sub-07_ses-06_task-AcousStim_acq-LH_desc-raw",
-]
-
-
-class Pipeline(BrainsetPipeline):
-    brainset_id = "neurosoft_minipigs_2026"
     modality = "ieeg"
+    """Data modality of the Neurosoft pipeline. Always 'ieeg'."""
+
     parser = parser
+    """ArgumentParser instance for pipeline command-line arguments."""
+
+    skip_sessions: list[str] = []
+    """List of session IDs to skip during processing."""
+
+    recording_overlap_policy: str = "shift"  # "shift", "trim", or "drop"
+    """Policy when overlapped segments have *different* waveforms (see
+    ``_resolve_recording_overlaps``). If the overlap is duplicate data (waveforms match),
+    the later recording is trimmed only—this policy is not applied.
+    - 'shift': Offset subsequent recordings in time to prevent overlaps.
+    - 'trim': Remove overlapping segments from the later recording.
+    - 'drop': Drop the later recording if it overlaps.
+    """
 
     @classmethod
     def get_manifest(
@@ -237,12 +255,20 @@ class Pipeline(BrainsetPipeline):
             Optional[Data]: Data object if processing is performed,
                 or None if the group was already processed and processing is skipped.
         """
+        # Validate recording_overlap_policy
+        allowed_policies = {"shift", "trim", "drop"}
+        if self.recording_overlap_policy not in allowed_policies:
+            raise ValueError(
+                f"Invalid recording_overlap_policy '{self.recording_overlap_policy}'. "
+                f"Must be one of: {allowed_policies}"
+            )
+
         session_id = download_output.get("session_id")
         entities = get_entities_from_fname(session_id, on_error="raise")
         subject_id = f"sub-{entities['subject']}"
         participants_data = load_participants_tsv(self.raw_dir)
 
-        if session_id in SKIP_UNANNOTATED_SESSIONS:
+        if session_id in self.skip_sessions:
             self.update_status("Skipping unannotated session")
             return None
 
@@ -266,7 +292,7 @@ class Pipeline(BrainsetPipeline):
         self.update_status("Extracting Metadata")
         source = "NeurosoftBioelectronics"
         dataset_description = (
-            "This dataset contains electrophysiology data from minipigs undergoing acoustic stimulation at various frequencies. "
+            "This dataset contains electrophysiology data from acoustic stimulation at various frequencies. "
             "Each trial consists of 1 second: 0.5 seconds of stimulation followed by 0.5 seconds of rest."
         )
 
@@ -296,15 +322,33 @@ class Pipeline(BrainsetPipeline):
 
         device_description = DeviceDescription(id=session_id)
 
+        # Overlap resolution is computed once and reused to avoid 
+        # repeated warnings and ensure signal and behavior intervals
+        # are properly aligned.
+        recording_overlap_decisions = _resolve_recording_overlaps(
+            recordings,
+            overlap_policy=self.recording_overlap_policy,
+            on_overlap="warn",
+        )
+
         self.update_status(f"Extracting {self.modality.upper()} Signal")
-        signal = extract_signal(recordings)
+        signal = extract_signal(
+            recordings,
+            overlap_decisions=recording_overlap_decisions,
+        )
 
         self.update_status("Building Channels")
         channels = extract_channels(raw)
 
         self.update_status("Extracting behavior intervals")
-        on_vs_off_trials = extract_on_vs_off_trials(recordings)
-        acoustic_stim_trials = extract_acoustic_stim_trials(recordings)
+        on_vs_off_trials = extract_on_vs_off_trials(
+            recordings,
+            overlap_decisions=recording_overlap_decisions,
+        )
+        acoustic_stim_trials = extract_acoustic_stim_trials(
+            recordings,
+            overlap_decisions=recording_overlap_decisions,
+        )
 
         self.update_status("Generating splits")
         splits = generate_splits(
@@ -328,95 +372,6 @@ class Pipeline(BrainsetPipeline):
         self.update_status("Storing")
         with h5py.File(store_path, "w") as file:
             data.to_hdf5(file, serialize_fn_map=serialize_fn_map)
-
-
-def _causal_counts_per_recording(n: int) -> tuple[int, int, int]:
-    """Return (n_train, n_valid, n_test) trial counts for one recording.
-
-    The number of trials in the train, valid, and test sets is determined by
-    the CAUSAL_TRAIN_RATIO, CAUSAL_VALID_RATIO, and CAUSAL_TEST_RATIO constants.
-
-    Args:
-        n (int): The number of trials in the recording.
-
-    Returns:
-        tuple[int, int, int]: The number of trials in the train, valid, and test sets.
-    """
-    if n == 0:
-        return 0, 0, 0
-    if n < 3:
-        return n, 0, 0
-    nt = int(n * CAUSAL_TRAIN_RATIO)
-    nv = int(n * CAUSAL_VALID_RATIO)
-    nte = n - nt - nv
-    if nte < 0:
-        nte = 0
-        nv = max(0, n - nt - nte)
-        if nt + nv > n:
-            nt = max(0, n - nv)
-    return nt, nv, nte
-
-
-def _causal_train_valid_test_by_recording(
-    intervals: Interval,
-) -> tuple[Interval, Interval, Interval]:
-    """Chronological train / valid / test by trial count within each recording.
-
-    Args:
-        intervals (Interval): The intervals to split.
-
-    Returns:
-        tuple[Interval, Interval, Interval]: The train, valid, and test intervals.
-    """
-    if len(intervals) == 0:
-        return intervals, intervals, intervals
-
-    if not hasattr(intervals, "recording_id"):
-        raise ValueError("intervals must have recording_id for causal splits.")
-
-    rec = np.asarray(intervals.recording_id, dtype=object)
-    train_masks: list[np.ndarray] = []
-    valid_masks: list[np.ndarray] = []
-    test_masks: list[np.ndarray] = []
-
-    for rid in np.unique(rec):
-        idx = np.where(rec == rid)[0]
-        order = idx[np.argsort(intervals.start[idx])]
-        n = len(order)
-        nt, nv, nte = _causal_counts_per_recording(n)
-        train_masks.append(order[:nt])
-        valid_masks.append(order[nt : nt + nv])
-        test_masks.append(order[nt + nv : nt + nv + nte])
-
-    train_idx = (
-        np.concatenate(train_masks)
-        if len(train_masks) > 0
-        else np.array([], dtype=int)
-    )
-    valid_idx = (
-        np.concatenate(valid_masks)
-        if len(valid_masks) > 0
-        else np.array([], dtype=int)
-    )
-    test_idx = (
-        np.concatenate(test_masks)
-        if len(test_masks) > 0
-        else np.array([], dtype=int)
-    )
-
-    train_iv = intervals.select_by_mask(
-        np.isin(np.arange(len(intervals)), train_idx)
-    )
-    valid_iv = intervals.select_by_mask(
-        np.isin(np.arange(len(intervals)), valid_idx)
-    )
-    test_iv = intervals.select_by_mask(
-        np.isin(np.arange(len(intervals)), test_idx)
-    )
-    train_iv.sort()
-    valid_iv.sort()
-    test_iv.sort()
-    return train_iv, valid_iv, test_iv
 
 
 def generate_splits(
@@ -518,7 +473,10 @@ def generate_splits(
     )
 
 
-def extract_on_vs_off_trials(recordings: dict[str, mne.io.Raw]) -> Interval:
+def extract_on_vs_off_trials(
+    recordings: dict[str, mne.io.Raw],
+    overlap_decisions: dict[str, dict],
+) -> Interval:
     """
     Extracts 'on' (stimulation) and 'off' (rest and baseline) trials from a collection of Raw objects.
 
@@ -526,53 +484,24 @@ def extract_on_vs_off_trials(recordings: dict[str, mne.io.Raw]) -> Interval:
         recordings (dict[str, mne.io.Raw]):
             A dictionary mapping recording names to MNE Raw objects from which on/off trial intervals
             will be extracted.
+        overlap_decisions (dict[str, dict]): Must be the output of ``_resolve_recording_overlaps`` for the
+            same ``recordings``.
 
     Returns:
         Interval:
             An Interval object containing all detected on and off (stimulation, rest, and baseline) trials.
     """
-    start_times = []
-    end_times = []
-    labels = []
-    recording_ids: list[str] = []
-    first_meas_date = None
-    for recording_id, raw in recordings.items():
-        meas_date = raw.info["meas_date"]
+    def _label_extractor_on_vs_off(desc: str) -> str | None:
+        """Extract label for on/off trials."""
+        if desc == "rest" or desc == "baseline":
+            return "off"
+        elif "stim" in desc and ("Hz" in desc or "white-noise" in desc or "WhiteNoise" in desc):
+            return "on"
+        return None
 
-        if first_meas_date is None:
-            first_meas_date = meas_date
-
-        offset = (meas_date - first_meas_date).total_seconds()
-
-        # check if the offset is greater than 1 hour
-        if offset > 3600:
-            warnings.warn(
-                f"Recording {recording_id} with meas_date {meas_date} has offset {offset:.2f} seconds ({offset / 60:.2f} minutes) (> 1 hour) from first_meas_date {first_meas_date}."
-            )
-
-        for annotation in raw.annotations:
-            start_time = annotation["onset"] + offset
-            end_time = start_time + annotation["duration"]
-
-            if len(end_times) > 0 and start_time < end_times[-1]:
-                # the previous trial goes into the next one
-                # this happens because of numerical precision issues
-                assert end_times[-1] - start_time < 0.1, (
-                    f"found overlap between trials: start time of trial i: {start_time}, end time of trial i-1: {end_times[-1]}"
-                )
-
-                # we can clip the end time of the last trial
-                end_times[-1] = start_time
-
-            desc = annotation["description"]
-            start_times.append(start_time)
-            end_times.append(end_time)
-            recording_ids.append(recording_id)
-
-            if desc == "rest" or desc == "baseline":
-                labels.append("off")
-            elif "stim" in desc and ("Hz" in desc or "white-noise" in desc):
-                labels.append("on")
+    start_times, end_times, labels, recording_ids = _extract_interval_trials(
+        recordings, overlap_decisions, _label_extractor_on_vs_off
+    )
 
     # Map each unique label to an integer (in increasing order)
     label_ids = [ON_VS_OFF_TO_ID[label] for label in labels]
@@ -588,7 +517,10 @@ def extract_on_vs_off_trials(recordings: dict[str, mne.io.Raw]) -> Interval:
     )
 
 
-def extract_acoustic_stim_trials(recordings: dict[str, mne.io.Raw]) -> Interval:
+def extract_acoustic_stim_trials(
+    recordings: dict[str, mne.io.Raw],
+    overlap_decisions: dict[str, dict],
+) -> Interval:
     """Extracts the acoustic stimulation trials across multiple raw recordings.
 
     Keeps tone stimuli (``stim`` + ``Hz`` in the description) with labels ``stim_<frequency>Hz``,
@@ -596,58 +528,28 @@ def extract_acoustic_stim_trials(recordings: dict[str, mne.io.Raw]) -> Interval:
 
     Args:
         recordings (dict[str, mne.io.Raw]):
-            Dictionary mapping names/keys to raw MNE objects to extract stimulation trials from.
+            A dictionary mapping recording names to MNE Raw objects from which acoustic stimulation trial intervals
+            will be extracted.
+        overlap_decisions (dict[str, dict]): Must be the output of ``_resolve_recording_overlaps`` for the
+            same ``recordings``.
 
     Returns:
         Interval:
             An Interval object containing start, end, and label information for each detected
             acoustic stimulation trial, along with label IDs.
     """
-    start_times = []
-    end_times = []
-    labels = []
-    recording_ids: list[str] = []
-    first_meas_date = None
-    for recording_id, raw in recordings.items():
-        meas_date = raw.info["meas_date"]
+    def _label_extractor_acoustic_stim(desc: str) -> str | None:
+        """Extract label for acoustic stimulation trials."""
+        if ("stim" in desc and "white-noise" in desc) or ("stim" in desc and "WhiteNoise" in desc):
+            return "stim_wn"
+        elif "stim" in desc and "Hz" in desc:
+            frequency = _extract_stim_frequency(desc)
+            return f"stim_{frequency}Hz"
+        return None
 
-        if first_meas_date is None:
-            first_meas_date = meas_date
-
-        offset = (meas_date - first_meas_date).total_seconds()
-
-        # check if the offset is greater than 1 hour
-        if offset > 3600:
-            warnings.warn(
-                f"Recording {recording_id} with meas_date {meas_date} has offset {offset:.2f} seconds ({offset / 60:.2f} minutes) (> 1 hour) from first_meas_date {first_meas_date}."
-            )
-
-        for annotation in raw.annotations:
-            start_time = annotation["onset"] + offset
-            end_time = start_time + annotation["duration"]
-
-            if len(end_times) > 0 and start_time < end_times[-1]:
-                # the previous trial goes into the next one
-                # this happens because of numerical precision issues
-                assert end_times[-1] - start_time < 0.1, (
-                    f"found overlap between trials: start time of trial i: {start_time}, end time of trial i-1: {end_times[-1]}"
-                )
-
-                # we can clip the end time of the last trial
-                end_times[-1] = start_time
-
-            desc = annotation["description"]
-            if "stim" in desc and "white-noise" in desc:
-                start_times.append(start_time)
-                end_times.append(end_time)
-                recording_ids.append(recording_id)
-                labels.append("stim_wn")
-            elif "stim" in desc and "Hz" in desc:
-                start_times.append(start_time)
-                end_times.append(end_time)
-                recording_ids.append(recording_id)
-                frequency = _extract_stim_frequency(desc)
-                labels.append(f"stim_{frequency}Hz")
+    start_times, end_times, labels, recording_ids = _extract_interval_trials(
+        recordings, overlap_decisions, _label_extractor_acoustic_stim
+    )
 
     # Map each unique label to an integer (in increasing order)
     label_ids = [STIM_FREQUENCY_TO_ID[label] for label in labels]
@@ -663,7 +565,10 @@ def extract_acoustic_stim_trials(recordings: dict[str, mne.io.Raw]) -> Interval:
     )
 
 
-def extract_signal(recordings: dict[str, mne.io.Raw]) -> IrregularTimeSeries:
+def extract_signal(
+    recordings: dict[str, mne.io.Raw],
+    overlap_decisions: dict[str, dict],
+) -> IrregularTimeSeries:
     """Extracts the signal from a session of recordings.
 
     Timestamps are computed relative to the start of the first recording (0),
@@ -672,8 +577,10 @@ def extract_signal(recordings: dict[str, mne.io.Raw]) -> IrregularTimeSeries:
     between recordings in the timeline.
 
     Args:
-        session (dict[str, mne.io.Raw]): The session of recordings to extract the signal from.
-            Expected to be sorted by meas_date (via _sort_recordings).
+        recordings (dict[str, mne.io.Raw]):
+            A dictionary mapping recording names to MNE Raw objects from which signal will be extracted.
+        overlap_decisions (dict[str, dict]): Must be the output of ``_resolve_recording_overlaps`` for the
+            same ``recordings``.
 
     Returns:
         IrregularTimeSeries: The extracted signal with relative timestamps.
@@ -682,21 +589,38 @@ def extract_signal(recordings: dict[str, mne.io.Raw]) -> IrregularTimeSeries:
     timestamps = []
     domain_start = []
     domain_end = []
-    first_meas_date = None
+    
+    for recording_id, raw in recordings.items():
+        decision = overlap_decisions[recording_id]
+        
+        # Skip dropped recordings
+        if not decision["keep"]:
+            continue
+        
+        # Extract signal data (possibly trimmed)
+        start_sample = decision["trim_start_samples"]
+        if start_sample >= raw.n_times:
+            # Entire recording was trimmed due to overlap handling.
+            warnings.warn(
+                f"Recording ID: {recording_id} was fully trimmed due to overlap handling."
+            )
+            continue
 
-    for _, raw in recordings.items():
-        signal.append(raw.get_data())
-        meas_date = raw.info["meas_date"]
-
-        if first_meas_date is None:
-            first_meas_date = meas_date
-
-        offset = (meas_date - first_meas_date).total_seconds()
-        ts = raw.times.astype(np.float64) + offset
+        signal_data = raw.get_data(start=start_sample, stop=raw.n_times)
+        signal.append(signal_data)
+        
+        # Compute timestamps with offset and trimming
+        recording_times = raw.times[start_sample:].astype(np.float64)
+        ts = recording_times + decision["time_offset"]
         timestamps.append(ts[:, np.newaxis])
 
         domain_start.append(ts[0])
         domain_end.append(ts[-1])
+    
+    if len(signal) == 0:
+        raise ValueError(
+            "No signal data available after overlap handling; all recordings were dropped or fully trimmed."
+        )
 
     return IrregularTimeSeries(
         signal=np.hstack(signal).T,
@@ -721,7 +645,8 @@ def load_recordings(
         recording_ids (list[str]): The list of recording IDs to load.
         modality (str): The modality of the recordings to load (e.g. 'ieeg').
     Returns:
-        dict[str, mne.io.Raw]: The dictionary of loaded recordings.
+        dict[str, mne.io.Raw]: The dictionary of loaded recordings sorted
+        by measurement date.
     """
     session = {}
     for recording_id in recording_ids:
@@ -844,6 +769,285 @@ def _sort_recordings(
         recordings.items(), key=lambda x: x[1].info["meas_date"]
     )
     return dict(sorted_items)
+
+
+def _check_overlap_waveform_similarity(
+    previous_recording: mne.io.Raw,
+    current_recording: mne.io.Raw,
+    overlap_duration_seconds: float,
+    correlation_threshold: float = 0.9,
+    relative_rmse_threshold: float = 0.2,
+) -> tuple[bool, dict[str, float]]:
+    """Compare waveforms in overlapping time windows between consecutive recordings.
+    
+    Extracts the tail segment of the previous recording and the head segment of the
+    current recording (both spanning the overlap duration) and computes similarity metrics.
+    
+    Args:
+        previous_recording (mne.io.Raw): The earlier recording in chronological order.
+        current_recording (mne.io.Raw): The later recording in chronological order.
+        overlap_duration_seconds (float): Duration of the overlap in seconds (must be positive).
+        correlation_threshold (float): Minimum mean channel correlation (0-1) for segments to be 
+            considered similar. Default is 0.9.
+        relative_rmse_threshold (float): Maximum relative RMSE (normalized by signal RMS) for 
+            segments to be considered similar. Default is 0.2.
+    
+    Returns:
+        tuple[bool, dict[str, float]]: A tuple containing:
+            - is_similar (bool): True if both correlation and RMSE thresholds are met.
+            - metrics (dict[str, float]): Dictionary with keys:
+                - "mean_correlation": Average Pearson correlation across channels (0-1 range).
+                - "relative_rmse": RMSE normalized by previous segment RMS.
+                - "overlap_sample_count": Number of overlapping samples compared.
+    """
+    # No overlap means segments are trivially identical
+    if overlap_duration_seconds <= 0:
+        return True, {
+            "mean_correlation": 1.0,
+            "relative_rmse": 0.0,
+            "overlap_sample_count": 0.0,
+        }
+    
+    # Compute overlap sample count (minimum across both sampling rates)
+    if not previous_recording.info["sfreq"] == current_recording.info["sfreq"]:
+        raise ValueError(
+            "Checking waveform overlap requires that previous and current recordings have the same sampling rate. "
+            f"Found: previous = {previous_recording.info['sfreq']}, current = {current_recording.info['sfreq']}. "
+            "This is not supported yet."
+       
+        )
+    sfreq = float(previous_recording.info["sfreq"])
+    overlap_sample_count = int(round(overlap_duration_seconds * sfreq))
+    overlap_sample_count = min(
+        overlap_sample_count,
+        previous_recording.n_times,
+        current_recording.n_times,
+    )
+    
+    if overlap_sample_count <= 1:
+        return True, {
+            "mean_correlation": 1.0,
+            "relative_rmse": 0.0,
+            "overlap_sample_count": float(overlap_sample_count),
+        }
+    
+    # Extract tail of previous recording and head of current recording
+    previous_tail_data = previous_recording.get_data(
+        start=previous_recording.n_times - overlap_sample_count,
+        stop=previous_recording.n_times,
+    )
+    current_head_data = current_recording.get_data(
+        start=0,
+        stop=overlap_sample_count,
+    )
+    
+    # Match channel count between previous and current recordings
+    if previous_tail_data.shape[0] != current_head_data.shape[0]:
+        raise ValueError(
+            "Checking waveform overlap requires that previous and current recordings have the same number of channels. "
+            f"Found: previous = {previous_tail_data.shape[0]}, current = {current_head_data.shape[0]}. "
+            "This is not supported yet."
+       
+        )
+    num_channels = previous_tail_data.shape[0]
+    
+    # Compute relative RMSE (normalized by signal RMS of previous segment)
+    difference = previous_tail_data - current_head_data
+    rmse = float(np.sqrt(np.mean(difference**2)))
+    signal_rms = float(np.sqrt(np.mean(previous_tail_data**2)))
+    relative_rmse = rmse / (signal_rms + 1e-12)
+    
+    # Compute per-channel correlation, then average
+    channel_correlations = []
+    for channel_index in range(num_channels):
+        previous_channel = previous_tail_data[channel_index]
+        current_channel = current_head_data[channel_index]
+        
+        previous_std = np.std(previous_channel)
+        current_std = np.std(current_channel)
+        
+        # Skip flat channels (no variation)
+        if previous_std < 1e-12 or current_std < 1e-12:
+            continue
+        
+        correlation = float(np.corrcoef(previous_channel, current_channel)[0, 1])
+        channel_correlations.append(correlation)
+    
+    mean_correlation = (
+        float(np.mean(channel_correlations)) if channel_correlations else 0.0
+    )
+    
+    # Determine similarity based on both thresholds
+    is_similar = (
+        mean_correlation >= correlation_threshold
+        and relative_rmse <= relative_rmse_threshold
+    )
+    
+    return is_similar, {
+        "mean_correlation": mean_correlation,
+        "relative_rmse": relative_rmse,
+        "overlap_sample_count": float(overlap_sample_count),
+    }
+
+
+def _resolve_recording_overlaps(
+    recordings: dict[str, mne.io.Raw],
+    overlap_policy: Literal["shift", "trim", "drop"] = "shift",
+    on_overlap: Literal["ignore", "warn", "raise"] = "warn",
+) -> dict[str, dict]:
+    """Resolve overlaps between consecutive recordings.
+
+    When two recordings overlap in time, the overlapped tail of the earlier file and
+    head of the later file are compared. If waveforms match (duplicate segment), the
+    overlap policy is ignored: only the earlier segment is kept and the duplicate
+    prefix is trimmed from the later recording. If waveforms differ, ``overlap_policy``
+    (shift / trim / drop) is applied.
+
+    Overlap policy options:
+        - "shift":  Later recordings are shifted forward in time to eliminate the overlap.
+        - "trim":   The overlapping segment at the beginning of the later recording is trimmed.
+        - "drop":   The entire later recording is dropped if its start overlaps the previous recording.
+
+    Args:
+        recordings (dict[str, mne.io.Raw]): Dictionary of recording_id -> Raw objects (pre-sorted by meas_date).
+        overlap_policy (Literal["shift", "trim", "drop"]): One of "shift", "trim", or "drop" (used only when waveforms differ).
+        on_overlap (Literal["ignore", "warn", "raise"]): How to handle overlap.
+            - "ignore": Silently ignore waveform overlap.
+            - "warn": Issue a warning and continue (default).
+            - "raise": Raise an error and stop the pipeline.
+
+    Returns:
+        dict[str, dict]: Dictionary mapping recording_id to overlap decision dict with keys:
+            - recording_id: str
+            - keep: bool
+            - time_offset: float
+            - trim_start_samples: int
+            - time_overlap_detected: bool
+            - overlap_duration_seconds: float
+            - waveform_metrics: Optional[dict[str, float]]
+    """
+    decisions: dict[str, dict] = {}
+    first_meas_date = None
+    # Accumulates timeline shifts applied by the "shift" policy so extract_signal
+    # can build non-overlapping timestamps, while overlap detection itself stays
+    # anchored to original recording timepoints.
+    cumulative_time_shift = 0.0
+    previous_end_time_original = None
+    previous_recording_id = None
+    previous_raw = None
+    
+    for recording_id, raw in recordings.items():
+        meas_date = raw.info["meas_date"]
+        if first_meas_date is None:
+            first_meas_date = meas_date
+        
+        # Compute initial offset from measurement date
+        base_offset = (meas_date - first_meas_date).total_seconds()
+        current_offset = base_offset + cumulative_time_shift
+
+        # Original timeline (from meas_date), used for overlap detection only.
+        start_time_original = float(raw.times[0] + base_offset)
+        end_time_original = float(raw.times[-1] + base_offset)
+        
+        time_overlap_detected = False
+        overlap_duration = 0.0
+        waveform_metrics = None
+        keep = True
+        trim_start_samples = 0
+        is_similar = False
+        
+        # Check for overlap with previous recording
+        if (
+            previous_end_time_original is not None
+            and start_time_original < previous_end_time_original
+        ):
+            time_overlap_detected = True
+            overlap_duration = float(previous_end_time_original - start_time_original)
+
+            # Check for waveform overlap between previous and current recordings
+            is_similar, waveform_metrics = _check_overlap_waveform_similarity(
+                previous_recording=previous_raw,
+                current_recording=raw,
+                overlap_duration_seconds=overlap_duration,
+            )
+
+            metrics_suffix = ""
+            if waveform_metrics is not None:
+                metrics_suffix = (
+                    f" Overlap waveform check: "
+                    f"corr={waveform_metrics['mean_correlation']:.4f}, "
+                    f"rmse={waveform_metrics['relative_rmse']:.4f}."
+                )
+
+            if is_similar:
+                # Duplicate segment: keep earlier recording; trim duplicate prefix from later
+                sampling_rate = float(raw.info["sfreq"])
+                trim_start_samples = int(np.ceil(overlap_duration * sampling_rate)) + 1
+                trim_start_samples = min(trim_start_samples, raw.n_times)
+                actual_trim_duration = trim_start_samples / sampling_rate
+
+                if on_overlap == "raise":
+                    raise ValueError(
+                        f"Detected recording overlap between {previous_recording_id} "
+                        f"and {recording_id}: {overlap_duration:.4f}s. "
+                    )
+                elif on_overlap == "warn":
+                    warnings.warn(
+                        f"Detected recording overlap between {previous_recording_id} "
+                        f"and {recording_id}: {overlap_duration:.4f}s. Overlapped segments match; trimming duplicate prefix from the "
+                        f"later recording ({trim_start_samples} samples, {actual_trim_duration:.4f}s).{metrics_suffix}"
+                    )
+                elif on_overlap == "ignore":
+                    pass
+            else:
+                # Different waveforms: apply configured overlap policy
+                base_msg = (
+                    f"Detected recording overlap between {previous_recording_id} and {recording_id}: "
+                    f"{overlap_duration:.4f}s. Overlapped segments differ.{metrics_suffix} "
+                )
+
+                # Choose message suffix based on policy
+                if overlap_policy == "shift":
+                    shift_amount = overlap_duration + (1.0 / float(raw.info["sfreq"]))
+                    cumulative_time_shift += shift_amount
+                    current_offset += shift_amount
+                    action_msg = "Applying 'shift' policy."
+                elif overlap_policy == "trim":
+                    sampling_rate = float(raw.info["sfreq"])
+                    trim_start_samples = int(np.ceil(overlap_duration * sampling_rate)) + 1
+                    trim_start_samples = min(trim_start_samples, raw.n_times)
+                    actual_trim_duration = trim_start_samples / sampling_rate
+                    action_msg = f"Applying 'trim' policy: discarding {trim_start_samples} leading samples ({actual_trim_duration:.4f}s)."
+                elif overlap_policy == "drop":
+                    keep = False
+                    action_msg = f"Applying 'drop' policy: dropping {recording_id}."
+
+                if on_overlap == "raise":
+                    raise ValueError(base_msg + action_msg)
+                elif on_overlap == "warn":
+                    warnings.warn(base_msg + action_msg)
+                elif on_overlap == "ignore":
+                    pass
+        
+        # Store decision
+        decisions[recording_id] = {
+            "recording_id": recording_id,
+            "keep": keep,
+            "time_overlap_detected": time_overlap_detected,
+            "overlap_duration_seconds": overlap_duration,
+            "waveform_metrics": waveform_metrics,
+            "waveform_overlap_detected": is_similar,
+            "time_offset": current_offset,
+            "trim_start_samples": trim_start_samples,
+        }
+        
+        # Update state for next iteration (only if we kept this recording)
+        if keep:
+            previous_end_time_original = end_time_original
+            previous_recording_id = recording_id
+            previous_raw = raw
+
+    return decisions
 
 
 def _verify_baseline_annotations(raw: mne.io.Raw) -> None:
@@ -976,6 +1180,93 @@ def _extract_stim_frequency(description: str) -> str:
     raise ValueError(f"No frequency found in description: {description}")
 
 
+def _extract_interval_trials(
+    recordings: dict[str, mne.io.Raw],
+    overlap_decisions: dict[str, dict],
+    label_extractor: callable,
+) -> tuple[list, list, list, list]:
+    """Extract interval trials from recordings with flexible label filtering.
+
+    This helper centralizes the common logic for extracting trial intervals from annotations:
+    trimming, overlap clipping, and time-offset adjustment. Label assignment and filtering
+    is delegated to the caller via a callback function.
+
+    Args:
+        recordings (dict[str, mne.io.Raw]):
+            A dictionary mapping recording names to MNE Raw objects.
+        overlap_decisions (dict[str, dict]):
+            Must be the output of ``_resolve_recording_overlaps`` for the same ``recordings``.
+        label_extractor (callable):
+            A function that takes an annotation description string and returns either:
+            - A label string (str) to include the annotation in the output
+            - None to skip the annotation
+
+    Returns:
+        tuple[list, list, list, list]:
+            Four lists: (start_times, end_times, labels, recording_ids) in iteration order.
+            These are ready to be converted to numpy arrays and used in an Interval.
+    """
+    start_times = []
+    end_times = []
+    labels = []
+    recording_ids: list[str] = []
+
+    for recording_id, raw in recordings.items():
+        decision = overlap_decisions[recording_id]
+
+        # Skip dropped recordings
+        if not decision["keep"]:
+            continue
+
+        # Determine start sample index based on trim policy
+        start_sample = decision["trim_start_samples"]
+        if start_sample >= raw.n_times:
+            # Entire recording was trimmed due to overlap handling.
+            continue
+        trim_start_time = float(raw.times[start_sample])
+
+        for annotation in raw.annotations:
+            annotation_start = annotation["onset"]
+            annotation_duration = annotation["duration"]
+
+            # Skip annotations that fall entirely within trimmed region
+            if annotation_start + annotation_duration <= trim_start_time:
+                continue
+
+            # Adjust annotation start if it begins in trimmed region
+            if annotation_start < trim_start_time:
+                overlap = trim_start_time - annotation_start
+                annotation_start = trim_start_time
+                annotation_duration -= overlap
+
+            # Skip invalid annotations after trimming
+            if annotation_duration <= 0:
+                continue
+
+            start_time = annotation_start + decision["time_offset"]
+            end_time = start_time + annotation_duration
+
+            if len(end_times) > 0 and start_time < end_times[-1]:
+                # the previous trial goes into the next one
+                # this happens because of numerical precision issues
+                assert end_times[-1] - start_time < 0.1, (
+                    f"found overlap between trials: start time of trial i: {start_time}, end time of trial i-1: {end_times[-1]}"
+                )
+
+                # we can clip the end time of the last trial
+                end_times[-1] = start_time
+
+            desc = annotation["description"]
+            label = label_extractor(desc)
+            if label is not None:
+                start_times.append(start_time)
+                end_times.append(end_time)
+                recording_ids.append(recording_id)
+                labels.append(label)
+
+    return start_times, end_times, labels, recording_ids
+
+
 def _split_baseline_trials(on_vs_off_trials: Interval) -> Interval:
     """
     Splits the 'baseline' trials in the on_vs_off_trials Interval into smaller segments.
@@ -1074,3 +1365,92 @@ def _split_baseline_trials(on_vs_off_trials: Interval) -> Interval:
     new_on_vs_off_trials.sort()
 
     return new_on_vs_off_trials
+
+
+def _causal_counts_per_recording(n: int) -> tuple[int, int, int]:
+    """Return (n_train, n_valid, n_test) trial counts for one recording.
+
+    The number of trials in the train, valid, and test sets is determined by
+    the CAUSAL_TRAIN_RATIO, CAUSAL_VALID_RATIO, and CAUSAL_TEST_RATIO constants.
+
+    Args:
+        n (int): The number of trials in the recording.
+
+    Returns:
+        tuple[int, int, int]: The number of trials in the train, valid, and test sets.
+    """
+    if n == 0:
+        return 0, 0, 0
+    if n < 3:
+        return n, 0, 0
+    nt = int(n * CAUSAL_TRAIN_RATIO)
+    nv = int(n * CAUSAL_VALID_RATIO)
+    nte = n - nt - nv
+    if nte < 0:
+        nte = 0
+        nv = max(0, n - nt - nte)
+        if nt + nv > n:
+            nt = max(0, n - nv)
+    return nt, nv, nte
+
+
+def _causal_train_valid_test_by_recording(
+    intervals: Interval,
+) -> tuple[Interval, Interval, Interval]:
+    """Chronological train / valid / test by trial count within each recording.
+
+    Args:
+        intervals (Interval): The intervals to split.
+
+    Returns:
+        tuple[Interval, Interval, Interval]: The train, valid, and test intervals.
+    """
+    if len(intervals) == 0:
+        return intervals, intervals, intervals
+
+    if not hasattr(intervals, "recording_id"):
+        raise ValueError("intervals must have recording_id for causal splits.")
+
+    rec = np.asarray(intervals.recording_id, dtype=object)
+    train_masks: list[np.ndarray] = []
+    valid_masks: list[np.ndarray] = []
+    test_masks: list[np.ndarray] = []
+
+    for rid in np.unique(rec):
+        idx = np.where(rec == rid)[0]
+        order = idx[np.argsort(intervals.start[idx])]
+        n = len(order)
+        nt, nv, nte = _causal_counts_per_recording(n)
+        train_masks.append(order[:nt])
+        valid_masks.append(order[nt : nt + nv])
+        test_masks.append(order[nt + nv : nt + nv + nte])
+
+    train_idx = (
+        np.concatenate(train_masks)
+        if len(train_masks) > 0
+        else np.array([], dtype=int)
+    )
+    valid_idx = (
+        np.concatenate(valid_masks)
+        if len(valid_masks) > 0
+        else np.array([], dtype=int)
+    )
+    test_idx = (
+        np.concatenate(test_masks)
+        if len(test_masks) > 0
+        else np.array([], dtype=int)
+    )
+
+    train_iv = intervals.select_by_mask(
+        np.isin(np.arange(len(intervals)), train_idx)
+    )
+    valid_iv = intervals.select_by_mask(
+        np.isin(np.arange(len(intervals)), valid_idx)
+    )
+    test_iv = intervals.select_by_mask(
+        np.isin(np.arange(len(intervals)), test_idx)
+    )
+    train_iv.sort()
+    valid_iv.sort()
+    test_iv.sort()
+    return train_iv, valid_iv, test_iv
