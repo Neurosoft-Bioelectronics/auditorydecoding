@@ -212,7 +212,7 @@ lightning_logs/
 logs/
 .vscode/
 profiling_output/
-data/ 
+/data/ 
 uv.lock
 results/
 *.png 
