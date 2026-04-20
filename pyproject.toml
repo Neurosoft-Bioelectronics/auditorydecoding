@@ -24,9 +24,6 @@ temporaldata = { git = "https://github.com/neuro-galaxy/temporaldata", branch = 
 dev = ["pre-commit>=4.5.1", "ruff>=0.15.4"]
 notebooks = ["ipykernel"]
 
-[project.optional-dependencies]
-data = ["mne~=1.11.0", "mne-bids", "scikit-learn==1.7.2"]
-
 [tool.ruff]
 line-length = 80
 
