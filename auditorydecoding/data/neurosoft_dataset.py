@@ -8,10 +8,11 @@ from torch_brain.dataset import Dataset, MultiChannelDatasetMixin
 
 class NeurosoftDataset(MultiChannelDatasetMixin, Dataset):
     """Neurosoft dataset.
-    
+
     ``fold_num`` is not used when ``split_type`` is ``'intrasession-causal'``
     (causal splits are single train/valid/test partitions per recording file).
     """
+
     def __init__(
         self,
         root: str,
@@ -138,21 +139,21 @@ class NeurosoftDataset(MultiChannelDatasetMixin, Dataset):
         return result
 
     def get_recording_hook(self, data):
-            # Let the base hook populate defaults first, then enforce Neurosoft readout.
-            # This avoids parent logic resetting `multitask_readout` to an empty list.
-            super().get_recording_hook(data)
-            if not hasattr(data, "config") or data.config is None:
-                data.config = {}
-            if self.task_type == "on_vs_off":
-                data.config["multitask_readout"] = [
-                    {"readout_id": "neurosoft_on_vs_off"}
-                ]
-            elif self.task_type == "acoustic_stim":
-                data.config["multitask_readout"] = [
-                    {"readout_id": "neurosoft_acoustic_stim"}
-                ]
-            else:
-                raise ValueError(f"Invalid task_type '{self.task_type}'.")
+        # Let the base hook populate defaults first, then enforce Neurosoft readout.
+        # This avoids parent logic resetting `multitask_readout` to an empty list.
+        super().get_recording_hook(data)
+        if not hasattr(data, "config") or data.config is None:
+            data.config = {}
+        if self.task_type == "on_vs_off":
+            data.config["multitask_readout"] = [
+                {"readout_id": "neurosoft_on_vs_off"}
+            ]
+        elif self.task_type == "acoustic_stim":
+            data.config["multitask_readout"] = [
+                {"readout_id": "neurosoft_acoustic_stim"}
+            ]
+        else:
+            raise ValueError(f"Invalid task_type '{self.task_type}'.")
 
 
 class NeurosoftMinipigs2026(NeurosoftDataset):

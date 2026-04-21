@@ -23,7 +23,7 @@ from datetime import datetime, timezone
 try:
     import mne
     from mne_bids import read_raw_bids, get_entities_from_fname, BIDSPath
-    
+
     MNE_BIDS_AVAILABLE = True
 except ImportError:
     MNE_BIDS_AVAILABLE = False
@@ -119,8 +119,9 @@ assert np.isclose(
     1.0,
 )
 
+
 class NeurosoftPipeline(BrainsetPipeline):
-    brainset_id: str = None    
+    brainset_id: str = None
     """A unique identifier for this brainset. Should be set in subclass or instance."""
 
     modality = "ieeg"
@@ -322,7 +323,7 @@ class NeurosoftPipeline(BrainsetPipeline):
 
         device_description = DeviceDescription(id=session_id)
 
-        # Overlap resolution is computed once and reused to avoid 
+        # Overlap resolution is computed once and reused to avoid
         # repeated warnings and ensure signal and behavior intervals
         # are properly aligned.
         recording_overlap_decisions = _resolve_recording_overlaps(
@@ -491,11 +492,14 @@ def extract_on_vs_off_trials(
         Interval:
             An Interval object containing all detected on and off (stimulation, rest, and baseline) trials.
     """
+
     def _label_extractor_on_vs_off(desc: str) -> str | None:
         """Extract label for on/off trials."""
         if desc == "rest" or desc == "baseline":
             return "off"
-        elif "stim" in desc and ("Hz" in desc or "white-noise" in desc or "WhiteNoise" in desc):
+        elif "stim" in desc and (
+            "Hz" in desc or "white-noise" in desc or "WhiteNoise" in desc
+        ):
             return "on"
         return None
 
@@ -538,9 +542,12 @@ def extract_acoustic_stim_trials(
             An Interval object containing start, end, and label information for each detected
             acoustic stimulation trial, along with label IDs.
     """
+
     def _label_extractor_acoustic_stim(desc: str) -> str | None:
         """Extract label for acoustic stimulation trials."""
-        if ("stim" in desc and "white-noise" in desc) or ("stim" in desc and "WhiteNoise" in desc):
+        if ("stim" in desc and "white-noise" in desc) or (
+            "stim" in desc and "WhiteNoise" in desc
+        ):
             return "stim_wn"
         elif "stim" in desc and "Hz" in desc:
             frequency = _extract_stim_frequency(desc)
@@ -589,14 +596,14 @@ def extract_signal(
     timestamps = []
     domain_start = []
     domain_end = []
-    
+
     for recording_id, raw in recordings.items():
         decision = overlap_decisions[recording_id]
-        
+
         # Skip dropped recordings
         if not decision["keep"]:
             continue
-        
+
         # Extract signal data (possibly trimmed)
         start_sample = decision["trim_start_samples"]
         if start_sample >= raw.n_times:
@@ -608,7 +615,7 @@ def extract_signal(
 
         signal_data = raw.get_data(start=start_sample, stop=raw.n_times)
         signal.append(signal_data)
-        
+
         # Compute timestamps with offset and trimming
         recording_times = raw.times[start_sample:].astype(np.float64)
         ts = recording_times + decision["time_offset"]
@@ -616,7 +623,7 @@ def extract_signal(
 
         domain_start.append(ts[0])
         domain_end.append(ts[-1])
-    
+
     if len(signal) == 0:
         raise ValueError(
             "No signal data available after overlap handling; all recordings were dropped or fully trimmed."
@@ -779,19 +786,19 @@ def _check_overlap_waveform_similarity(
     relative_rmse_threshold: float = 0.2,
 ) -> tuple[bool, dict[str, float]]:
     """Compare waveforms in overlapping time windows between consecutive recordings.
-    
+
     Extracts the tail segment of the previous recording and the head segment of the
     current recording (both spanning the overlap duration) and computes similarity metrics.
-    
+
     Args:
         previous_recording (mne.io.Raw): The earlier recording in chronological order.
         current_recording (mne.io.Raw): The later recording in chronological order.
         overlap_duration_seconds (float): Duration of the overlap in seconds (must be positive).
-        correlation_threshold (float): Minimum mean channel correlation (0-1) for segments to be 
+        correlation_threshold (float): Minimum mean channel correlation (0-1) for segments to be
             considered similar. Default is 0.9.
-        relative_rmse_threshold (float): Maximum relative RMSE (normalized by signal RMS) for 
+        relative_rmse_threshold (float): Maximum relative RMSE (normalized by signal RMS) for
             segments to be considered similar. Default is 0.2.
-    
+
     Returns:
         tuple[bool, dict[str, float]]: A tuple containing:
             - is_similar (bool): True if both correlation and RMSE thresholds are met.
@@ -807,14 +814,13 @@ def _check_overlap_waveform_similarity(
             "relative_rmse": 0.0,
             "overlap_sample_count": 0.0,
         }
-    
+
     # Compute overlap sample count (minimum across both sampling rates)
     if not previous_recording.info["sfreq"] == current_recording.info["sfreq"]:
         raise ValueError(
             "Checking waveform overlap requires that previous and current recordings have the same sampling rate. "
             f"Found: previous = {previous_recording.info['sfreq']}, current = {current_recording.info['sfreq']}. "
             "This is not supported yet."
-       
         )
     sfreq = float(previous_recording.info["sfreq"])
     overlap_sample_count = int(round(overlap_duration_seconds * sfreq))
@@ -823,14 +829,14 @@ def _check_overlap_waveform_similarity(
         previous_recording.n_times,
         current_recording.n_times,
     )
-    
+
     if overlap_sample_count <= 1:
         return True, {
             "mean_correlation": 1.0,
             "relative_rmse": 0.0,
             "overlap_sample_count": float(overlap_sample_count),
         }
-    
+
     # Extract tail of previous recording and head of current recording
     previous_tail_data = previous_recording.get_data(
         start=previous_recording.n_times - overlap_sample_count,
@@ -840,49 +846,50 @@ def _check_overlap_waveform_similarity(
         start=0,
         stop=overlap_sample_count,
     )
-    
+
     # Match channel count between previous and current recordings
     if previous_tail_data.shape[0] != current_head_data.shape[0]:
         raise ValueError(
             "Checking waveform overlap requires that previous and current recordings have the same number of channels. "
             f"Found: previous = {previous_tail_data.shape[0]}, current = {current_head_data.shape[0]}. "
             "This is not supported yet."
-       
         )
     num_channels = previous_tail_data.shape[0]
-    
+
     # Compute relative RMSE (normalized by signal RMS of previous segment)
     difference = previous_tail_data - current_head_data
     rmse = float(np.sqrt(np.mean(difference**2)))
     signal_rms = float(np.sqrt(np.mean(previous_tail_data**2)))
     relative_rmse = rmse / (signal_rms + 1e-12)
-    
+
     # Compute per-channel correlation, then average
     channel_correlations = []
     for channel_index in range(num_channels):
         previous_channel = previous_tail_data[channel_index]
         current_channel = current_head_data[channel_index]
-        
+
         previous_std = np.std(previous_channel)
         current_std = np.std(current_channel)
-        
+
         # Skip flat channels (no variation)
         if previous_std < 1e-12 or current_std < 1e-12:
             continue
-        
-        correlation = float(np.corrcoef(previous_channel, current_channel)[0, 1])
+
+        correlation = float(
+            np.corrcoef(previous_channel, current_channel)[0, 1]
+        )
         channel_correlations.append(correlation)
-    
+
     mean_correlation = (
         float(np.mean(channel_correlations)) if channel_correlations else 0.0
     )
-    
+
     # Determine similarity based on both thresholds
     is_similar = (
         mean_correlation >= correlation_threshold
         and relative_rmse <= relative_rmse_threshold
     )
-    
+
     return is_similar, {
         "mean_correlation": mean_correlation,
         "relative_rmse": relative_rmse,
@@ -935,12 +942,12 @@ def _resolve_recording_overlaps(
     previous_end_time_original = None
     previous_recording_id = None
     previous_raw = None
-    
+
     for recording_id, raw in recordings.items():
         meas_date = raw.info["meas_date"]
         if first_meas_date is None:
             first_meas_date = meas_date
-        
+
         # Compute initial offset from measurement date
         base_offset = (meas_date - first_meas_date).total_seconds()
         current_offset = base_offset + cumulative_time_shift
@@ -948,21 +955,23 @@ def _resolve_recording_overlaps(
         # Original timeline (from meas_date), used for overlap detection only.
         start_time_original = float(raw.times[0] + base_offset)
         end_time_original = float(raw.times[-1] + base_offset)
-        
+
         time_overlap_detected = False
         overlap_duration = 0.0
         waveform_metrics = None
         keep = True
         trim_start_samples = 0
         is_similar = False
-        
+
         # Check for overlap with previous recording
         if (
             previous_end_time_original is not None
             and start_time_original < previous_end_time_original
         ):
             time_overlap_detected = True
-            overlap_duration = float(previous_end_time_original - start_time_original)
+            overlap_duration = float(
+                previous_end_time_original - start_time_original
+            )
 
             # Check for waveform overlap between previous and current recordings
             is_similar, waveform_metrics = _check_overlap_waveform_similarity(
@@ -982,7 +991,9 @@ def _resolve_recording_overlaps(
             if is_similar:
                 # Duplicate segment: keep earlier recording; trim duplicate prefix from later
                 sampling_rate = float(raw.info["sfreq"])
-                trim_start_samples = int(np.ceil(overlap_duration * sampling_rate)) + 1
+                trim_start_samples = (
+                    int(np.ceil(overlap_duration * sampling_rate)) + 1
+                )
                 trim_start_samples = min(trim_start_samples, raw.n_times)
                 actual_trim_duration = trim_start_samples / sampling_rate
 
@@ -1008,19 +1019,25 @@ def _resolve_recording_overlaps(
 
                 # Choose message suffix based on policy
                 if overlap_policy == "shift":
-                    shift_amount = overlap_duration + (1.0 / float(raw.info["sfreq"]))
+                    shift_amount = overlap_duration + (
+                        1.0 / float(raw.info["sfreq"])
+                    )
                     cumulative_time_shift += shift_amount
                     current_offset += shift_amount
                     action_msg = "Applying 'shift' policy."
                 elif overlap_policy == "trim":
                     sampling_rate = float(raw.info["sfreq"])
-                    trim_start_samples = int(np.ceil(overlap_duration * sampling_rate)) + 1
+                    trim_start_samples = (
+                        int(np.ceil(overlap_duration * sampling_rate)) + 1
+                    )
                     trim_start_samples = min(trim_start_samples, raw.n_times)
                     actual_trim_duration = trim_start_samples / sampling_rate
                     action_msg = f"Applying 'trim' policy: discarding {trim_start_samples} leading samples ({actual_trim_duration:.4f}s)."
                 elif overlap_policy == "drop":
                     keep = False
-                    action_msg = f"Applying 'drop' policy: dropping {recording_id}."
+                    action_msg = (
+                        f"Applying 'drop' policy: dropping {recording_id}."
+                    )
 
                 if on_overlap == "raise":
                     raise ValueError(base_msg + action_msg)
@@ -1028,7 +1045,7 @@ def _resolve_recording_overlaps(
                     warnings.warn(base_msg + action_msg)
                 elif on_overlap == "ignore":
                     pass
-        
+
         # Store decision
         decisions[recording_id] = {
             "recording_id": recording_id,
@@ -1040,7 +1057,7 @@ def _resolve_recording_overlaps(
             "time_offset": current_offset,
             "trim_start_samples": trim_start_samples,
         }
-        
+
         # Update state for next iteration (only if we kept this recording)
         if keep:
             previous_end_time_original = end_time_original
