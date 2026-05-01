@@ -1,3 +1,5 @@
+from collections import defaultdict
+
 import numpy as np
 from pathlib import Path
 from typing import Callable, Literal, Optional
@@ -137,6 +139,46 @@ class NeurosoftDataset(MultiChannelDatasetMixin, Dataset):
             else:
                 result[rid] = _empty_interval()
         return result
+
+    def get_subject_sampling_weights(
+        self,
+        split: Literal["train", "valid", "test"] = "train",
+    ) -> dict[str, float]:
+        """Per-recording sampling weights that equalise total weight across subjects.
+
+        Useful when the training set is dominated by one subject (e.g. monkeys
+        dataset where sub-01 has 12 sessions vs. 1 each for others). Feed the
+        returned weights into a ``WeightedRandomSampler`` or scale the loss.
+
+        Each subject receives equal aggregate weight (``1/N_subjects``),
+        distributed uniformly across its active recordings in the requested
+        *split*.  Recordings that are empty for the split get weight 0.
+        """
+        intervals = self.get_sampling_intervals(split)
+
+        subject_recording_counts: dict[str, int] = defaultdict(int)
+        rid_to_subject: dict[str, str] = {}
+        for rid in self.recording_ids:
+            data = self.get_recording(rid)
+            sub = str(data.subject.id)
+            rid_to_subject[rid] = sub
+            if len(intervals[rid]) > 0:
+                subject_recording_counts[sub] += 1
+
+        n_subjects = len(subject_recording_counts)
+        if n_subjects == 0:
+            return {rid: 0.0 for rid in self.recording_ids}
+
+        weights: dict[str, float] = {}
+        for rid in self.recording_ids:
+            sub = rid_to_subject[rid]
+            if sub in subject_recording_counts and len(intervals[rid]) > 0:
+                weights[rid] = 1.0 / (
+                    subject_recording_counts[sub] * n_subjects
+                )
+            else:
+                weights[rid] = 0.0
+        return weights
 
     def get_recording_hook(self, data):
         # Let the base hook populate defaults first, then enforce Neurosoft readout.

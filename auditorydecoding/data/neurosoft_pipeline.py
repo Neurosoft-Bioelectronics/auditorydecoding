@@ -35,7 +35,6 @@ except ImportError:
 from pathlib import Path
 
 from brainsets.utils.split import (
-    generate_string_kfold_assignment,
     generate_stratified_folds,
 )
 
@@ -118,6 +117,74 @@ assert np.isclose(
     CAUSAL_TRAIN_RATIO + CAUSAL_VALID_RATIO + CAUSAL_TEST_RATIO,
     1.0,
 )
+
+# ── Manual parallel-split configurations per dataset ─────────────────────
+# Each config defines a fixed test vault and per-fold validation buckets.
+# The test vault is constant across folds; only the validation/training
+# boundary rotates.
+#
+# See auditorydecoding/data/SPLITS_README.md for the full rationale.
+
+MINIPIGS_SPLIT_CONFIG = {
+    "test_subjects": {"sub-04", "sub-07"},
+    # For the intersession split, early sessions of test-vault subjects go into
+    # training so the model can learn their baseline before being evaluated on
+    # their later sessions.  All sessions remain "test" in the intersubject split.
+    "test_subject_early_sessions": {
+        "sub-04": {"ses-01", "ses-02"},
+        "sub-07": {"ses-01", "ses-02"},
+    },
+    "folds": [
+        {
+            "intersubject_valid_subjects": {"sub-02"},
+            "intersession_valid_sessions": {
+                ("sub-01", "ses-02"),
+                ("sub-03", "ses-07"),
+                ("sub-05", "ses-02"),
+            },
+        },
+        {
+            "intersubject_valid_subjects": {"sub-05"},
+            "intersession_valid_sessions": {
+                ("sub-01", "ses-02"),
+                ("sub-02", "ses-02"),
+                ("sub-03", "ses-07"),
+            },
+        },
+    ],
+}
+
+MONKEYS_SPLIT_CONFIG = {
+    "test_subjects": {"sub-02"},
+    "test_subject_early_sessions": {
+        "sub-02": {"ses-01", "ses-02"},
+    },
+    "folds": [
+        {
+            "intersubject_valid_subjects": {"sub-04"},
+            "intersession_valid_sessions": {
+                ("sub-01", "ses-13"),
+                ("sub-01", "ses-14"),
+                ("sub-01", "ses-15"),
+                ("sub-01", "ses-16"),
+            },
+        },
+        {
+            "intersubject_valid_subjects": {"sub-06"},
+            "intersession_valid_sessions": {
+                ("sub-01", "ses-13"),
+                ("sub-01", "ses-14"),
+                ("sub-01", "ses-15"),
+                ("sub-01", "ses-16"),
+            },
+        },
+    ],
+}
+
+SPLIT_CONFIGS = {
+    "neurosoft_minipigs_2026": MINIPIGS_SPLIT_CONFIG,
+    "neurosoft_monkeys_2026": MONKEYS_SPLIT_CONFIG,
+}
 
 
 class NeurosoftPipeline(BrainsetPipeline):
@@ -353,7 +420,11 @@ class NeurosoftPipeline(BrainsetPipeline):
 
         self.update_status("Generating splits")
         splits = generate_splits(
-            subject_id, session_id, on_vs_off_trials, acoustic_stim_trials
+            self.brainset_id,
+            subject_id,
+            session_id,
+            on_vs_off_trials,
+            acoustic_stim_trials,
         )
 
         self.update_status("Creating Data Object")
@@ -375,29 +446,99 @@ class NeurosoftPipeline(BrainsetPipeline):
             data.to_hdf5(file, serialize_fn_map=serialize_fn_map)
 
 
+def _get_manual_split_assignments(
+    brainset_id: str,
+    session_id: str,
+) -> dict[str, list[str]]:
+    """Look up the manual intersubject / intersession assignment for one session.
+
+    Returns a dict with keys ``"intersubject"`` and ``"intersession"``, each
+    mapping to a list whose length equals the number of folds defined in the
+    config.  Each fold may produce a different assignment because the
+    validation/training boundary rotates across folds (while the test vault
+    stays fixed).
+
+    Assignments are one of ``"train"``, ``"valid"``, ``"test"``, or
+    ``"excluded"`` (session returns empty intervals for every split query).
+    """
+    config = SPLIT_CONFIGS[brainset_id]
+    entities = get_entities_from_fname(session_id, on_error="raise")
+    sub = f"sub-{entities['subject']}"
+    ses = f"ses-{entities['session']}"
+    is_anesthesia = "anest" in session_id
+    is_filtered = "desc-filtered" in session_id
+
+    intersubject_assignments: list[str] = []
+    intersession_assignments: list[str] = []
+
+    for fold_config in config["folds"]:
+        # ── intersubject assignment ──────────────────────────────────────
+        if sub in config["test_subjects"]:
+            intersubject = "test"
+        elif sub in fold_config["intersubject_valid_subjects"]:
+            intersubject = "valid"
+        else:
+            intersubject = "train"
+
+        # ── intersession assignment ──────────────────────────────────────
+        # Intersubject-valid subjects are placed in "train" here so they
+        # contribute data when training under the intersession split.
+        # WARNING: this means the intersubject and intersession splits must
+        # be used in SEPARATE training runs.
+        #
+        # Test-vault subjects are split by timeline: early sessions go into
+        # training (so the model learns their baseline), later sessions are
+        # kept as "test" for temporal-drift evaluation.
+        early_sessions = config.get("test_subject_early_sessions", {})
+        if sub in config["test_subjects"]:
+            if sub in early_sessions and ses in early_sessions[sub]:
+                intersession = "train"
+            else:
+                intersession = "test"
+        elif (sub, ses) in fold_config["intersession_valid_sessions"]:
+            intersession = "valid"
+        else:
+            intersession = "train"
+
+        # Anesthesia sessions must never be used for evaluation
+        if is_anesthesia:
+            if intersubject in ("test", "valid"):
+                intersubject = "train"
+            if intersession in ("test", "valid"):
+                intersession = "train"
+
+        # desc-filtered sessions are excluded from cross-subject/session splits
+        # (they are still processed and available for intrasession analysis)
+        if is_filtered:
+            intersubject = "excluded"
+            intersession = "excluded"
+
+        intersubject_assignments.append(intersubject)
+        intersession_assignments.append(intersession)
+
+    return {
+        "intersubject": intersubject_assignments,
+        "intersession": intersession_assignments,
+    }
+
+
 def generate_splits(
+    brainset_id: str,
     subject_id: str,
     session_id: str,
     on_vs_off_trials: Interval,
     acoustic_stim_trials: Interval,
 ) -> Data:
-    subject_assignments = generate_string_kfold_assignment(
-        string_id=subject_id, n_folds=3, val_ratio=0.2, seed=42
-    )
-    session_assignments = generate_string_kfold_assignment(
-        string_id=f"{subject_id}_{session_id}",
-        n_folds=3,
-        val_ratio=0.2,
-        seed=42,
-    )
+    assignments = _get_manual_split_assignments(brainset_id, session_id)
+
     namespaced_assignments = {
-        f"intersubject_fold_{fold_idx}_assignment": assignment
-        for fold_idx, assignment in enumerate(subject_assignments)
+        f"intersubject_fold_{k}_assignment": assignments["intersubject"][k]
+        for k in range(len(assignments["intersubject"]))
     }
     namespaced_assignments.update(
         {
-            f"intersession_fold_{fold_idx}_assignment": assignment
-            for fold_idx, assignment in enumerate(session_assignments)
+            f"intersession_fold_{k}_assignment": assignments["intersession"][k]
+            for k in range(len(assignments["intersession"]))
         }
     )
 
