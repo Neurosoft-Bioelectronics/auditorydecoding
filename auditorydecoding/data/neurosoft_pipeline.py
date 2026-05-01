@@ -118,74 +118,6 @@ assert np.isclose(
     1.0,
 )
 
-# ── Manual parallel-split configurations per dataset ─────────────────────
-# Each config defines a fixed test vault and per-fold validation buckets.
-# The test vault is constant across folds; only the validation/training
-# boundary rotates.
-#
-# See auditorydecoding/data/SPLITS_README.md for the full rationale.
-
-MINIPIGS_SPLIT_CONFIG = {
-    "test_subjects": {"sub-04", "sub-07"},
-    # For the intersession split, early sessions of test-vault subjects go into
-    # training so the model can learn their baseline before being evaluated on
-    # their later sessions.  All sessions remain "test" in the intersubject split.
-    "test_subject_early_sessions": {
-        "sub-04": {"ses-01", "ses-02"},
-        "sub-07": {"ses-01", "ses-02"},
-    },
-    "folds": [
-        {
-            "intersubject_valid_subjects": {"sub-02"},
-            "intersession_valid_sessions": {
-                ("sub-01", "ses-02"),
-                ("sub-03", "ses-07"),
-                ("sub-05", "ses-02"),
-            },
-        },
-        {
-            "intersubject_valid_subjects": {"sub-05"},
-            "intersession_valid_sessions": {
-                ("sub-01", "ses-02"),
-                ("sub-02", "ses-02"),
-                ("sub-03", "ses-07"),
-            },
-        },
-    ],
-}
-
-MONKEYS_SPLIT_CONFIG = {
-    "test_subjects": {"sub-02"},
-    "test_subject_early_sessions": {
-        "sub-02": {"ses-01", "ses-02"},
-    },
-    "folds": [
-        {
-            "intersubject_valid_subjects": {"sub-04"},
-            "intersession_valid_sessions": {
-                ("sub-01", "ses-13"),
-                ("sub-01", "ses-14"),
-                ("sub-01", "ses-15"),
-                ("sub-01", "ses-16"),
-            },
-        },
-        {
-            "intersubject_valid_subjects": {"sub-06"},
-            "intersession_valid_sessions": {
-                ("sub-01", "ses-13"),
-                ("sub-01", "ses-14"),
-                ("sub-01", "ses-15"),
-                ("sub-01", "ses-16"),
-            },
-        },
-    ],
-}
-
-SPLIT_CONFIGS = {
-    "neurosoft_minipigs_2026": MINIPIGS_SPLIT_CONFIG,
-    "neurosoft_monkeys_2026": MONKEYS_SPLIT_CONFIG,
-}
-
 
 class NeurosoftPipeline(BrainsetPipeline):
     brainset_id: str = None
@@ -208,6 +140,11 @@ class NeurosoftPipeline(BrainsetPipeline):
     - 'trim': Remove overlapping segments from the later recording.
     - 'drop': Drop the later recording if it overlaps.
     """
+
+    split_config: dict = None
+    """Manual split configuration for intersubject/intersession evaluation.
+    Must be set in each per-animal pipeline subclass.
+    See auditorydecoding/data/SPLITS_README.md for the full schema."""
 
     @classmethod
     def get_manifest(
@@ -420,7 +357,7 @@ class NeurosoftPipeline(BrainsetPipeline):
 
         self.update_status("Generating splits")
         splits = generate_splits(
-            self.brainset_id,
+            self.split_config,
             subject_id,
             session_id,
             on_vs_off_trials,
@@ -447,7 +384,7 @@ class NeurosoftPipeline(BrainsetPipeline):
 
 
 def _get_manual_split_assignments(
-    brainset_id: str,
+    split_config: dict,
     session_id: str,
 ) -> dict[str, list[str]]:
     """Look up the manual intersubject / intersession assignment for one session.
@@ -455,13 +392,13 @@ def _get_manual_split_assignments(
     Returns a dict with keys ``"intersubject"`` and ``"intersession"``, each
     mapping to a list whose length equals the number of folds defined in the
     config.  Each fold may produce a different assignment because the
-    validation/training boundary rotates across folds (while the test vault
+    validation/training boundary rotates across folds (while the test set
     stays fixed).
 
     Assignments are one of ``"train"``, ``"valid"``, ``"test"``, or
     ``"excluded"`` (session returns empty intervals for every split query).
     """
-    config = SPLIT_CONFIGS[brainset_id]
+    config = split_config
     entities = get_entities_from_fname(session_id, on_error="raise")
     sub = f"sub-{entities['subject']}"
     ses = f"ses-{entities['session']}"
@@ -486,7 +423,7 @@ def _get_manual_split_assignments(
         # WARNING: this means the intersubject and intersession splits must
         # be used in SEPARATE training runs.
         #
-        # Test-vault subjects are split by timeline: early sessions go into
+        # Test-set subjects are split by timeline: early sessions go into
         # training (so the model learns their baseline), later sessions are
         # kept as "test" for temporal-drift evaluation.
         early_sessions = config.get("test_subject_early_sessions", {})
@@ -523,13 +460,13 @@ def _get_manual_split_assignments(
 
 
 def generate_splits(
-    brainset_id: str,
+    split_config: dict,
     subject_id: str,
     session_id: str,
     on_vs_off_trials: Interval,
     acoustic_stim_trials: Interval,
 ) -> Data:
-    assignments = _get_manual_split_assignments(brainset_id, session_id)
+    assignments = _get_manual_split_assignments(split_config, session_id)
 
     namespaced_assignments = {
         f"intersubject_fold_{k}_assignment": assignments["intersubject"][k]

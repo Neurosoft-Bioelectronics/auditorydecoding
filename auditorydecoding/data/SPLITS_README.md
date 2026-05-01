@@ -1,7 +1,7 @@
-# Neurosoft Split Architecture
+# Neurosoft Data Split Schemas
 
-This document describes the manual parallel-split design used by the Neurosoft
-pipelines for cross-subject and cross-session evaluation.
+This document describes the split design used by the Neurosoft pipelines for
+cross-subject and cross-session evaluation.
 
 ## Overview
 
@@ -13,10 +13,10 @@ control how that session participates in training and evaluation:
 - **`intersession_fold_{k}_assignment`** — for evaluating generalisation to
   *unseen sessions* from subjects seen during training.
 
-There are **2 folds** (`k = 0, 1`). The test vault is constant across folds;
-only the validation/training boundary rotates. This gives cross-validated
-validation estimates by using a different subject for intersubject validation
-in each fold.
+There are **2 folds** (`k = 0, 1`). The test set is constant across folds;
+only the validation/training boundary rotates. For the intersubject split this
+means a different subject is held out for validation in each fold; for the
+intersession split a different set of late sessions rotates into validation.
 
 ### Assignment values
 
@@ -28,35 +28,45 @@ in each fold.
 | `"excluded"` | Session is invisible to this split type (returns empty intervals for every query) |
 
 
-## The Bucket Design
+## How Assignments Are Determined
 
-Sessions are placed into buckets. Each bucket maps to a different assignment
-depending on which split type is active:
+Each session receives an assignment (`"train"`, `"valid"`, `"test"`, or
+`"excluded"`) based on which **group** it belongs to. A session's group is
+determined by its subject and its chronological position within that subject's
+recordings:
 
-| Bucket | Purpose | `intersubject` | `intersession` |
-|--------|---------|---------------|----------------|
-| **Test Vault (early sessions)** | Baseline sessions of test subjects | `"test"` | `"train"` |
-| **Test Vault (late sessions)** | Later sessions of test subjects for temporal-drift testing | `"test"` | `"test"` |
-| **Intersubject Valid** | Entire subject for cross-subject validation during training | `"valid"` | `"train"` |
-| **Intersession Valid** | Latest sessions from training subjects for temporal-drift validation | `"train"` | `"valid"` |
-| **Core Training** | Everything else | `"train"` | `"train"` |
+- **Early sessions** — the first 1–2 sessions of a subject (used to learn
+  baseline activity).
+- **Late sessions** — all subsequent sessions from that subject (used for
+  temporal-drift evaluation).
 
-The key difference for test-vault subjects: in the **intersubject** split all
+The same session can receive different assignments depending on which split
+type is active. The table below shows how each group maps to an assignment
+under each split type:
+
+| Group | Description | `intersubject` assignment | `intersession` assignment |
+|-------|-------------|--------------------------|--------------------------|
+| **Test subjects (early sessions)** | First sessions of held-out test subjects | `"test"` | `"train"` |
+| **Test subjects (late sessions)** | Later sessions of held-out test subjects | `"test"` | `"test"` |
+| **Intersubject-validation subject** | All sessions of the subject held out for cross-subject validation | `"valid"` | `"train"` |
+| **Intersession-validation sessions** | Late sessions from training subjects held out for temporal-drift validation | `"train"` | `"valid"` |
+| **Training** | All remaining sessions | `"train"` | `"train"` |
+
+The key difference for test subjects: in the **intersubject** split *all*
 their sessions are `"test"` (the model never sees them). In the
 **intersession** split their early sessions go into `"train"` so the model
-learns each subject's baseline, then later sessions are `"test"` for
+learns each subject's baseline, then their late sessions become `"test"` for
 temporal-drift evaluation.
 
-Which subjects/sessions populate the Intersubject Valid and Intersession Valid
-buckets differs per fold (see per-dataset tables below). The test vault and
-the bucket logic are constant.
+Which subjects/sessions populate the validation groups differs per fold (see
+per-dataset tables below). The test set is constant across folds.
 
 
 ## Dataset 1 — Minipigs (`neurosoft_minipigs_2026`)
 
 **Subjects:** 01, 02, 03, 04, 05, 06, 07
 
-**Test Vault (both folds):** sub-04 (4 sessions) and sub-07 (5 sessions)
+**Test Set (both folds):** sub-04 (4 sessions) and sub-07 (5 sessions)
 
 - `intersubject`: all sessions are `"test"`
 - `intersession`: ses-01, ses-02 are `"train"` (early baseline); remaining
@@ -64,22 +74,22 @@ the bucket logic are constant.
 
 ### Fold 0
 
-| Bucket | Sessions |
-|--------|----------|
-| Intersubject Valid | All of **sub-02** (2 sessions) |
-| Intersession Valid | `sub-01_ses-02`, `sub-03_ses-07`, `sub-05_ses-02` |
-| Core Training | `sub-01_ses-01`, `sub-03_ses-{01,03,04,06}`, `sub-05_ses-01`, `sub-06_ses-02` |
+| Group | Sessions |
+|-------|----------|
+| Intersubject-validation subject | All of **sub-02** (2 sessions) |
+| Intersession-validation sessions | `sub-01_ses-02`, `sub-03_ses-07`, `sub-05_ses-02` |
+| Training | `sub-01_ses-01`, `sub-03_ses-{01,03,04,06}`, `sub-05_ses-01`, `sub-06_ses-02` |
 
 ### Fold 1
 
 Sub-05 rotates into intersubject validation; sub-02 moves to training (its
 last session enters intersession validation).
 
-| Bucket | Sessions |
-|--------|----------|
-| Intersubject Valid | All of **sub-05** (2 sessions) |
-| Intersession Valid | `sub-01_ses-02`, `sub-02_ses-02`, `sub-03_ses-07` |
-| Core Training | `sub-01_ses-01`, `sub-02_ses-01`, `sub-03_ses-{01,03,04,06}`, `sub-06_ses-02` |
+| Group | Sessions |
+|-------|----------|
+| Intersubject-validation subject | All of **sub-05** (2 sessions) |
+| Intersession-validation sessions | `sub-01_ses-02`, `sub-02_ses-02`, `sub-03_ses-07` |
+| Training | `sub-01_ses-01`, `sub-02_ses-01`, `sub-03_ses-{01,03,04,06}`, `sub-06_ses-02` |
 
 ### Minipigs-specific rules
 
@@ -92,14 +102,14 @@ last session enters intersession validation).
   do not participate in cross-subject or cross-session evaluation.
 - **Hemisphere (`acq-LH` / `acq-RH`)**: both hemispheres of the same
   subject+session receive the same assignment. They are treated as separate
-  recording files but belong to the same bucket.
+  recording files but belong to the same group.
 
 
 ## Dataset 2 — Monkeys (`neurosoft_monkeys_2026`)
 
 **Subjects:** 01, 02, 03, 04, 05, 06
 
-**Test Vault (both folds):** sub-02 (5 sessions)
+**Test Set (both folds):** sub-02 (5 sessions)
 
 - `intersubject`: all sessions are `"test"`
 - `intersession`: ses-01, ses-02 are `"train"` (early baseline); ses-03,
@@ -111,21 +121,21 @@ rotates into intersubject validation.
 
 ### Fold 0
 
-| Bucket | Sessions |
-|--------|----------|
-| Intersubject Valid | **sub-04** (1 session) |
-| Intersession Valid | `sub-01_ses-{13,14,15,16}` |
-| Core Training | `sub-01_ses-{01..12}`, `sub-03_ses-01`, `sub-05_ses-01`, `sub-06_ses-01` |
+| Group | Sessions |
+|-------|----------|
+| Intersubject-validation subject | **sub-04** (1 session) |
+| Intersession-validation sessions | `sub-01_ses-{13,14,15,16}` |
+| Training | `sub-01_ses-{01..12}`, `sub-03_ses-01`, `sub-05_ses-01`, `sub-06_ses-01` |
 
 ### Fold 1
 
 Sub-06 rotates into intersubject validation; sub-04 moves to training.
 
-| Bucket | Sessions |
-|--------|----------|
-| Intersubject Valid | **sub-06** (1 session) |
-| Intersession Valid | `sub-01_ses-{13,14,15,16}` |
-| Core Training | `sub-01_ses-{01..12}`, `sub-03_ses-01`, `sub-04_ses-01`, `sub-05_ses-01` |
+| Group | Sessions |
+|-------|----------|
+| Intersubject-validation subject | **sub-06** (1 session) |
+| Intersession-validation sessions | `sub-01_ses-{13,14,15,16}` |
+| Training | `sub-01_ses-{01..12}`, `sub-03_ses-01`, `sub-04_ses-01`, `sub-05_ses-01` |
 
 ### Subject imbalance warning
 
@@ -153,15 +163,16 @@ weights = dataset.get_subject_sampling_weights(split="train")
 
 ## How to Run Each Training Scenario
 
-There are two `split_type` modes for cross-subject/session evaluation. Each
-uses the same four buckets but differs in what goes into train vs. valid.
+There are two modes: `split_type="intersubject"` and
+`split_type="intersession"`. Each uses the same groups but differs in what
+goes into train vs. valid.
 Run each fold separately and average the validation metrics for a
 cross-validated estimate.
 
 ### `"intersubject"` — evaluate cross-subject generalisation
 
 Train on all `"train"` sessions, validate on the held-out subject, test on the
-vault subjects.
+test-set subjects.
 
 ```python
 for fold in (0, 1):
@@ -199,7 +210,7 @@ for fold in (0, 1):
 ```
 
 The intersession training set includes the intersubject-validation subject
-(e.g. sub-02 in fold 0) and the early sessions from test-vault subjects
+(e.g. sub-02 in fold 0) and the early sessions from test-set subjects
 (e.g. sub-04 ses-01/02) to maximise training data.
 
 **Important:** the intersubject and intersession splits are designed to be used
@@ -211,7 +222,7 @@ simultaneously would involve data leakage.
 ## Other split types (unchanged)
 
 The intrasession splits are orthogonal to the cross-subject/session design and
-are unaffected by this architecture:
+are unaffected by the intersubject/intersession design:
 
 - **`intrasession-block`** — stratified random train/valid/test within each
   session file (3 folds).
@@ -224,15 +235,14 @@ intersubject/intersession assignment.
 
 ## Configuration reference
 
-Split configs are defined as module-level constants in
-`auditorydecoding/data/neurosoft_pipeline.py`:
+Split configs are defined as the `split_config` class attribute on each
+per-animal pipeline:
 
-- `MINIPIGS_SPLIT_CONFIG`
-- `MONKEYS_SPLIT_CONFIG`
-- `SPLIT_CONFIGS` (maps `brainset_id` to the appropriate config)
+- `pipelines/neurosoft_minipigs_2026/pipeline.py` → `Pipeline.split_config`
+- `pipelines/neurosoft_monkeys_2026/pipeline.py` → `Pipeline.split_config`
 
-Each config has:
-- `test_subjects` — set of subjects in the test vault (constant across folds)
+Each config dict has:
+- `test_subjects` — set of subjects in the test set (constant across folds)
 - `test_subject_early_sessions` — dict mapping each test subject to its early
   sessions that go into intersession training
 - `folds` — list of per-fold dicts, each with `intersubject_valid_subjects`

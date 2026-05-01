@@ -15,7 +15,32 @@ from auditorydecoding import NeurosoftPipeline
 class Pipeline(NeurosoftPipeline):
     brainset_id = "neurosoft_minipigs_2026"
 
-    # unannotated sessions
+    split_config = {
+        "test_subjects": {"sub-04", "sub-07"},
+        "test_subject_early_sessions": {
+            "sub-04": {"ses-01", "ses-02"},
+            "sub-07": {"ses-01", "ses-02"},
+        },
+        "folds": [
+            {
+                "intersubject_valid_subjects": {"sub-02"},
+                "intersession_valid_sessions": {
+                    ("sub-01", "ses-02"),
+                    ("sub-03", "ses-07"),
+                    ("sub-05", "ses-02"),
+                },
+            },
+            {
+                "intersubject_valid_subjects": {"sub-05"},
+                "intersession_valid_sessions": {
+                    ("sub-01", "ses-02"),
+                    ("sub-02", "ses-02"),
+                    ("sub-03", "ses-07"),
+                },
+            },
+        ],
+    }
+
     skip_sessions = [
         "sub-03_ses-02_task-AcousStim_acq-RH_desc-raw",
         "sub-03_ses-03_task-AcousStim_acq-RH_desc-raw",
