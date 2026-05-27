@@ -7,31 +7,40 @@ name = "auditorydecoding"
 version = "0.1.0"
 description = "Auditory decoding of brain activity in different animals"
 readme = "README.md"
-requires-python = ">=3.11"
+requires-python = ">=3.11, <3.14"
+
 dependencies = [
     "brainsets",
     "matplotlib>=3.10.8",
     "torch-brain",
+    "torch==2.6.0",
+    "scikit-learn>=1.8.0",
+    "scipy>=1.17.1",
     "temporaldata",
+    "pyyaml>=6.0.3",
+    "ray>=2.10",
+    "seaborn>=0.13.2",
+    "ipykernel>=7.2.0",
+    "pywavelet>=0.2.10",
+    "pywavelets>=1.9.0",
+    "mne>=1.12.1",
 ]
 
 [tool.uv.sources]
-brainsets = { git = "https://github.com/neuro-galaxy/brainsets", branch = "main" }
+brainsets = { git = "https://github.com/neuro-galaxy/brainsets", branch = "suarez/mne-bids-utils" }
 torch-brain = { git = "https://github.com/neuro-galaxy/torch_brain", branch = "main" }
+foundry = { git = "https://github.com/ProjectNFM/Foundry", branch = "auditory-decoding" }
 temporaldata = { git = "https://github.com/neuro-galaxy/temporaldata", branch = "main" }
 
 [dependency-groups]
 dev = ["pre-commit>=4.5.1", "ruff>=0.15.4"]
-notebooks = ["ipykernel"]
+notebooks = ["ipykernel>=7.2.0"]
+
+[tool.hatch.build.targets.wheel]
+packages = ["auditorydecoding"]
 
 [tool.ruff]
 line-length = 80
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"
-
-[tool.hatch.build.targets.sdist]
-include = ["auditorydecoding*"]
-
-[tool.hatch.build.targets.wheel]
-include = ["auditorydecoding*"]

@@ -13,7 +13,7 @@ from auditorydecoding import NeurosoftPipeline
 
 
 class Pipeline(NeurosoftPipeline):
-    brainset_id = "neurosoft_monkeys_2026"
+    brainset_id = "nsb-monkeys-v1.1"
 
     # unannotated sessions
     skip_sessions = []
