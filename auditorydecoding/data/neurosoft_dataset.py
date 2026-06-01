@@ -2,6 +2,7 @@ import numpy as np
 from pathlib import Path
 from typing import Callable, Literal, Optional
 from temporaldata import Interval
+import random
 
 from torch_brain.dataset import Dataset, MultiChannelDatasetMixin
 
@@ -32,6 +33,15 @@ class NeurosoftDataset(MultiChannelDatasetMixin, Dataset):
         task_type: Optional[
             Literal["on_vs_off", "acoustic_stim"]
         ] = "on_vs_off",
+        class_balance: Optional[
+            Literal["threshold", "downsample", "d-threshold", "percentile"]
+        ] = None,
+        balance_threshold: Optional[
+            int
+        ] = 25,
+        min_trials: Optional[
+            int
+        ] = 0,
         **kwargs,
     ):
         super().__init__(
@@ -44,6 +54,9 @@ class NeurosoftDataset(MultiChannelDatasetMixin, Dataset):
         self.fold_num = fold_num
         self.split_type = split_type
         self.task_type = task_type
+        self.class_balance = class_balance
+        self.min_trials = min_trials
+        self.percentile_threshold = balance_threshold
 
     def get_sampling_intervals(
         self,
@@ -68,7 +81,7 @@ class NeurosoftDataset(MultiChannelDatasetMixin, Dataset):
             st = "intrasession-block"
 
         if st == "intrasession-causal":
-            return self._get_intrasession_causal_intervals(split)
+            intervals = self._get_intrasession_causal_intervals(split)
 
         if self.fold_num is None:
             raise ValueError(
@@ -77,10 +90,16 @@ class NeurosoftDataset(MultiChannelDatasetMixin, Dataset):
             )
 
         if st == "intrasession-block":
-            return self._get_intrasession_block_intervals(split)
+            intervals = self._get_intrasession_block_intervals(split)
         if self.split_type in ("intersubject", "intersession"):
-            return self._get_intersubject_or_intersession_intervals(split)
-        raise ValueError(f"Invalid split_type '{self.split_type}'.")
+            intervals = self._get_intersubject_or_intersession_intervals(split)
+        else:
+            raise ValueError(f"Invalid split_type '{self.split_type}'.")
+
+        if self.class_balance is not None:
+            intervals = self._balance_intervals(intervals)
+
+        return intervals
 
     def _get_intrasession_block_intervals(
         self, split: Literal["train", "valid", "test"]
@@ -154,7 +173,76 @@ class NeurosoftDataset(MultiChannelDatasetMixin, Dataset):
             ]
         else:
             raise ValueError(f"Invalid task_type '{self.task_type}'.")
+        
+    def _balance_intervals(self, intervals: dict) -> dict:
+        """Return a balanced view of *intervals* according to ``self.class_balance``.
 
+        * 'downsample': keep at most *min_count* trials per class, where
+          *min_count* is the size of the smallest class present in this
+          recording's intervals.  Trials within each class are chosen with a
+          fixed random seed for reproducibility.
+        * 'threshold': drop every class whose trial count is strictly below
+          ``self.min_trials_per_class``.
+        * 'd-threshold': first apply the threshold procedure then apply downsample
+        """
+        
+        all_labels = np.concatenate([
+            np.asarray(iv.behavior_labels) for iv in intervals.values() if len(iv) > 0 and hasattr(iv, "behavior_labels")
+        ])
+
+        if len(all_labels) == 0:
+            return intervals
+        
+        unique_classes, counts = np.unique(all_labels, return_counts=True)
+
+        if self.class_balance == "percentile":
+            self.min_trials = np.percentile(counts, self.percentile_threshold)
+            valid_classes = set(
+                unique_classes[(counts >= self.min_trials)]
+            )
+            intervals = self._filter_intervals_by_classes(intervals, valid_classes)
+
+        if self.class_balance in ("threshold", "d-threshold"):
+            valid_classes = set(
+                unique_classes[counts >= self.min_trials]
+            )
+            intervals = self._filter_intervals_by_classes(intervals, valid_classes)
+
+        if self.class_balance in ("downsample", "d-threshold", "percentile"):
+            global_limit = int(counts[counts >= self.min_trials].min())
+            rng = np.random.default_rng(self.balance_seed)
+            all_indices = {cls: [] for cls in unique_classes}
+            for rid, iv in intervals.items():
+                if len(iv) > 0 and hasattr(iv, "behavior_labels"):
+                    for i, lbl in enumerate(iv.behavior_labels):
+                        if lbl in all_indices:
+                            all_indices[lbl].append((rid, i))
+            kept = {rid: np.zeros(len(iv), dtype=bool) for rid, iv in intervals.items()}
+            for cls, idx_list in all_indices.items():
+                if len(idx_list) == 0:
+                    continue
+                n = min(global_limit, len(idx_list))
+                chosen = rng.choice(len(idx_list), size=n, replace=False)
+                for i in chosen:
+                    rid, local_i = idx_list[i]
+                    kept[rid][local_i] = True
+            intervals = {
+                rid: iv.select_by_mask(kept[rid]) for rid, iv in intervals.items()
+            }
+
+        return intervals
+
+    def _filter_intervals_by_classes(self, intervals: dict, valid_classes: set) -> dict:
+        return {
+            rid: (
+                iv.select_by_mask(
+                    np.isin(np.asarray(iv.behavior_labels), list(valid_classes))
+                )
+                if len(iv) > 0 and hasattr(iv, "behavior_labels")
+                else iv
+            )
+            for rid, iv in intervals.items()
+        }
 
 class NeurosoftMinipigs2026(NeurosoftDataset):
     def __init__(self, **kwargs):
