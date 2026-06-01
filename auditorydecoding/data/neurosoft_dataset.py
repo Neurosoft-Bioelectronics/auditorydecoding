@@ -39,6 +39,9 @@ class NeurosoftDataset(MultiChannelDatasetMixin, Dataset):
         balance_threshold: Optional[
             int
         ] = 25,
+        balance_seed: Optional[
+            int
+        ] = 42,
         min_trials: Optional[
             int
         ] = 0,
@@ -57,6 +60,7 @@ class NeurosoftDataset(MultiChannelDatasetMixin, Dataset):
         self.class_balance = class_balance
         self.min_trials = min_trials
         self.percentile_threshold = balance_threshold
+        self.balance_seed = balance_seed
 
     def get_sampling_intervals(
         self,
