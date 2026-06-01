@@ -93,8 +93,6 @@ class NeurosoftDataset(MultiChannelDatasetMixin, Dataset):
             intervals = self._get_intrasession_block_intervals(split)
         if self.split_type in ("intersubject", "intersession"):
             intervals = self._get_intersubject_or_intersession_intervals(split)
-        else:
-            raise ValueError(f"Invalid split_type '{self.split_type}'.")
 
         if self.class_balance is not None:
             intervals = self._balance_intervals(intervals)
