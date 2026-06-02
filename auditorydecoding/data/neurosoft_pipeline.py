@@ -60,12 +60,15 @@ from temporaldata import (
     IrregularTimeSeries,
 )
 
+from brainsets.taxonomy import(
+    Species,
+)
+
 from brainsets.descriptions import (
     BrainsetDescription,
     SessionDescription,
     DeviceDescription,
     SubjectDescription,
-    Species,
 )
 from brainsets import serialize_fn_map
 
