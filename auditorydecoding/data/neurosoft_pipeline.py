@@ -65,7 +65,6 @@ from brainsets.descriptions import (
     SessionDescription,
     DeviceDescription,
     SubjectDescription,
-    Species,
 )
 from brainsets import serialize_fn_map
 
@@ -310,7 +309,7 @@ class NeurosoftPipeline(BrainsetPipeline):
         )
         subject_description = SubjectDescription(
             id=subject_id,
-            species=Species.UNKNOWN,
+            species="unknown",
             age=subject_info["age"],
             sex=subject_info["sex"],
         )
