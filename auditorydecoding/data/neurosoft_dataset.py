@@ -86,17 +86,19 @@ class NeurosoftDataset(MultiChannelDatasetMixin, Dataset):
 
         if st == "intrasession-causal":
             intervals = self._get_intrasession_causal_intervals(split)
+        else:
+            if self.fold_num is None:
+                raise ValueError(
+                    "fold_num must be set when split is not None, except for "
+                    "split_type 'intrasession-causal'."
+                )
 
-        if self.fold_num is None:
-            raise ValueError(
-                "fold_num must be set when split is not None, except for "
-                "split_type 'intrasession-causal'."
-            )
-
-        if st == "intrasession-block":
-            intervals = self._get_intrasession_block_intervals(split)
-        if self.split_type in ("intersubject", "intersession"):
-            intervals = self._get_intersubject_or_intersession_intervals(split)
+            if st == "intrasession-block":
+                intervals = self._get_intrasession_block_intervals(split)
+            elif self.split_type in ("intersubject", "intersession"):
+                intervals = self._get_intersubject_or_intersession_intervals(split)
+            else:
+                raise ValueError(f"Unknown split_type '{self.split_type}'.")
 
         if self.class_balance is not None:
             intervals = self._balance_intervals(intervals)
