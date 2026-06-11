@@ -221,7 +221,7 @@ class NeurosoftDataset(MultiChannelDatasetMixin, Dataset):
         for rid, interval in intervals.items():
             self.get_recording(rid).set_nested_attribute(key, interval)
 
-    def _get_intrasession_causal_intervals(
+    def _set_intrasession_causal_intervals(
         self, intervals: dict, split: Literal["train", "valid", "test"]
     ) -> dict:
         if self.task_type == "on_vs_off":
@@ -234,7 +234,7 @@ class NeurosoftDataset(MultiChannelDatasetMixin, Dataset):
             self.get_recording(rid).set_nested_attribute(key, interval)
 
 
-    def _get_intersubject_or_intersession_intervals(
+    def _set_intersubject_or_intersession_intervals(
         self, intervals: dict, split: Literal["train", "valid", "test"]
     ) -> dict:
         if self.split_type == "intersubject":
