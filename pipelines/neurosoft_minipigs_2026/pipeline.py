@@ -21,24 +21,21 @@ class Pipeline(NeurosoftPipeline):
             "sub-04": {"ses-01", "ses-02"},
             "sub-07": {"ses-01", "ses-02"},
         },
-        "folds": [
-            {
-                "intersubject_valid_subjects": {"sub-02"},
-                "intersession_valid_sessions": {
-                    ("sub-01", "ses-02"),
-                    ("sub-03", "ses-07"),
-                    ("sub-05", "ses-02"),
-                },
-            },
-            {
-                "intersubject_valid_subjects": {"sub-05"},
-                "intersession_valid_sessions": {
-                    ("sub-01", "ses-02"),
-                    ("sub-02", "ses-02"),
-                    ("sub-03", "ses-07"),
-                },
-            },
+        "intersubject_subjects": [
+            "sub-01",
+            "sub-02",
+            "sub-03",
+            "sub-05",
+            "sub-06",
         ],
+        "subject_sessions": {
+            "sub-01": ["ses-01", "ses-02"],
+            "sub-02": ["ses-01", "ses-02"],
+            "sub-03": ["ses-01", "ses-03", "ses-04", "ses-06", "ses-07"],
+            "sub-05": ["ses-01", "ses-02"],
+            "sub-06": ["ses-02"],
+        },
+        "intersession_train_ratio": 0.7,
     }
 
     skip_sessions = [

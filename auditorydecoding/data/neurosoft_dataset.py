@@ -11,8 +11,9 @@ from torch_brain.dataset import Dataset, MultiChannelDatasetMixin
 class NeurosoftDataset(MultiChannelDatasetMixin, Dataset):
     """Neurosoft dataset.
 
-    ``fold_num`` is not used when ``split_type`` is ``'intrasession-causal'``
-    (causal splits are single train/valid/test partitions per recording file).
+    ``fold_num`` is not required when ``split_type`` is
+    ``'intrasession-causal'`` or ``'intersession'`` (both are single-fold
+    partitions).  For ``'intersession'`` it defaults to ``0`` if omitted.
     """
 
     def __init__(
@@ -72,25 +73,33 @@ class NeurosoftDataset(MultiChannelDatasetMixin, Dataset):
         if st == "intrasession-causal":
             return self._get_intrasession_causal_intervals(split)
 
-        if self.fold_num is None:
+        if st == "intersession" and self.fold_num is None:
+            fold_num_resolved = 0
+        elif self.fold_num is not None:
+            fold_num_resolved = self.fold_num
+        else:
             raise ValueError(
                 "fold_num must be set when split is not None, except for "
-                "split_type 'intrasession-causal'."
+                "split_type 'intrasession-causal' or 'intersession'."
             )
 
         if st == "intrasession-block":
-            return self._get_intrasession_block_intervals(split)
+            return self._get_intrasession_block_intervals(
+                split, fold_num_resolved
+            )
         if self.split_type in ("intersubject", "intersession"):
-            return self._get_intersubject_or_intersession_intervals(split)
+            return self._get_intersubject_or_intersession_intervals(
+                split, fold_num_resolved
+            )
         raise ValueError(f"Invalid split_type '{self.split_type}'.")
 
     def _get_intrasession_block_intervals(
-        self, split: Literal["train", "valid", "test"]
+        self, split: Literal["train", "valid", "test"], fold_num: int
     ) -> dict:
         if self.task_type == "on_vs_off":
-            key = f"splits.on_vs_off_block_fold_{self.fold_num}_{split}"
+            key = f"splits.on_vs_off_block_fold_{fold_num}_{split}"
         elif self.task_type == "acoustic_stim":
-            key = f"splits.acoustic_stim_block_fold_{self.fold_num}_{split}"
+            key = f"splits.acoustic_stim_block_fold_{fold_num}_{split}"
         else:
             raise ValueError(f"Invalid task_type '{self.task_type}'.")
         return {
@@ -113,16 +122,12 @@ class NeurosoftDataset(MultiChannelDatasetMixin, Dataset):
         }
 
     def _get_intersubject_or_intersession_intervals(
-        self, split: Literal["train", "valid", "test"]
+        self, split: Literal["train", "valid", "test"], fold_num: int
     ) -> dict:
         if self.split_type == "intersubject":
-            assignment_key = (
-                f"splits.intersubject_fold_{self.fold_num}_assignment"
-            )
+            assignment_key = f"splits.intersubject_fold_{fold_num}_assignment"
         else:
-            assignment_key = (
-                f"splits.intersession_fold_{self.fold_num}_assignment"
-            )
+            assignment_key = f"splits.intersession_fold_{fold_num}_assignment"
 
         result = {}
         for rid in self.recording_ids:

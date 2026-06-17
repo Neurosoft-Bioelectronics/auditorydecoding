@@ -108,6 +108,10 @@ STIM_FREQUENCY_TO_ID = {
     "stim_wn": 25,
 }
 
+# Cross-session split: fraction of a subject's sessions (chronological order)
+# assigned to training; the remainder become validation.
+INTERSESSION_TRAIN_RATIO = 0.7
+
 # Per-recording causal split: contiguous chronological blocks by trial count.
 # Must sum to 1.0 (train earliest → test latest within each recording).
 CAUSAL_TRAIN_RATIO = 0.6
@@ -390,10 +394,12 @@ def _get_manual_split_assignments(
     """Look up the manual intersubject / intersession assignment for one session.
 
     Returns a dict with keys ``"intersubject"`` and ``"intersession"``, each
-    mapping to a list whose length equals the number of folds defined in the
-    config.  Each fold may produce a different assignment because the
-    validation/training boundary rotates across folds (while the test set
-    stays fixed).
+    mapping to a list of assignment strings.
+
+    - ``"intersubject"`` has one entry per LOO fold (one fold per non-test
+      subject listed in ``intersubject_subjects``).
+    - ``"intersession"`` has a single entry (deterministic chronological
+      split with ~70% training / ~30% validation per subject).
 
     Assignments are one of ``"train"``, ``"valid"``, ``"test"``, or
     ``"excluded"`` (session returns empty intervals for every split query).
@@ -405,53 +411,58 @@ def _get_manual_split_assignments(
     is_anesthesia = "anest" in session_id
     is_filtered = "desc-filtered" in session_id
 
+    # ── intersubject assignments (leave-one-out) ─────────────────────────
     intersubject_assignments: list[str] = []
-    intersession_assignments: list[str] = []
-
-    for fold_config in config["folds"]:
-        # ── intersubject assignment ──────────────────────────────────────
+    for loo_subject in config["intersubject_subjects"]:
         if sub in config["test_subjects"]:
             intersubject = "test"
-        elif sub in fold_config["intersubject_valid_subjects"]:
+        elif sub == loo_subject:
             intersubject = "valid"
         else:
             intersubject = "train"
 
-        # ── intersession assignment ──────────────────────────────────────
-        # Intersubject-valid subjects are placed in "train" here so they
-        # contribute data when training under the intersession split.
-        # WARNING: this means the intersubject and intersession splits must
-        # be used in SEPARATE training runs.
-        #
-        # Test-set subjects are split by timeline: early sessions go into
-        # training (so the model learns their baseline), later sessions are
-        # kept as "test" for temporal-drift evaluation.
-        early_sessions = config.get("test_subject_early_sessions", {})
-        if sub in config["test_subjects"]:
-            if sub in early_sessions and ses in early_sessions[sub]:
-                intersession = "train"
-            else:
-                intersession = "test"
-        elif (sub, ses) in fold_config["intersession_valid_sessions"]:
-            intersession = "valid"
-        else:
-            intersession = "train"
-
-        # Anesthesia sessions must never be used for evaluation
-        if is_anesthesia:
-            if intersubject in ("test", "valid"):
-                intersubject = "train"
-            if intersession in ("test", "valid"):
-                intersession = "train"
-
-        # desc-filtered sessions are excluded from cross-subject/session splits
-        # (they are still processed and available for intrasession analysis)
+        if is_anesthesia and intersubject in ("test", "valid"):
+            intersubject = "train"
         if is_filtered:
             intersubject = "excluded"
-            intersession = "excluded"
 
         intersubject_assignments.append(intersubject)
-        intersession_assignments.append(intersession)
+
+    # ── intersession assignment (single deterministic fold) ──────────────
+    # Test-set subjects are split by timeline: early sessions go into
+    # training (so the model learns their baseline), later sessions are
+    # kept as "test" for temporal-drift evaluation.
+    #
+    # Non-test subjects use a chronological split: the first ~70% of
+    # sessions are training, the remainder are validation. Single-session
+    # subjects contribute only to training.
+    early_sessions = config.get("test_subject_early_sessions", {})
+    train_ratio = config.get(
+        "intersession_train_ratio", INTERSESSION_TRAIN_RATIO
+    )
+    subject_sessions = config.get("subject_sessions", {})
+
+    if sub in config["test_subjects"]:
+        if sub in early_sessions and ses in early_sessions[sub]:
+            intersession = "train"
+        else:
+            intersession = "test"
+    elif sub in subject_sessions:
+        ordered = subject_sessions[sub]
+        n_train = max(int(len(ordered) * train_ratio), 1)
+        if ses in set(ordered[:n_train]):
+            intersession = "train"
+        else:
+            intersession = "valid"
+    else:
+        intersession = "train"
+
+    if is_anesthesia and intersession in ("test", "valid"):
+        intersession = "train"
+    if is_filtered:
+        intersession = "excluded"
+
+    intersession_assignments = [intersession]
 
     return {
         "intersubject": intersubject_assignments,
