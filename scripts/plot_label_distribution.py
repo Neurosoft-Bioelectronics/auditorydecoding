@@ -50,29 +50,38 @@ CLASS_MAPPING = {
     "stim_300Hz": "sub_bass",
     "stim_400Hz": "sub_bass",
     "stim_500Hz": "sub_bass",
-    "stim_650Hz": "low",
-    "stim_800Hz": "low",
+    "stim_650Hz": "sub_bass",
+    "stim_800Hz": "low_lo",
     "stim_1000Hz": "low",
     "stim_1500Hz": "low",
     "stim_2000Hz": "low_mid",
     "stim_3000Hz": "low_mid",
     "stim_4000Hz": "low_mid",
     "stim_5000Hz": "mid",
-    "stim_7700Hz": "mid",
-    "stim_8000Hz": "mid",
-    "stim_9500Hz": "mid",
-    "stim_10000Hz": "high_mid",
-    "stim_12000Hz": "high_mid",
-    "stim_13000Hz": "high_mid",
-    "stim_15000Hz": "high_mid",
-    "stim_16000Hz": "high_mid",
+    "stim_7700Hz": "mid_hi",
+    "stim_8000Hz": "mid_hi",
+    "stim_9500Hz": "mid_hi",
+    "stim_10000Hz": "high_lo",
+    "stim_12000Hz": "high",
+    "stim_13000Hz": "high",
+    "stim_15000Hz": "high",
+    "stim_16000Hz": "high",
     "stim_18000Hz": "high",
     "stim_20000Hz": "high",
     "stim_30000Hz": "high",
     "stim_40000Hz": "high",
 }
 
-CLASS_ORDER = ["sub_bass", "low", "low_mid", "mid", "high_mid", "high"]
+CLASS_ORDER = [
+    "sub_bass",
+    "low_lo",
+    "low",
+    "low_mid",
+    "mid",
+    "mid_hi",
+    "high_lo",
+    "high",
+]
 
 SPLIT_CONFIGS = {
     "intersubject": {"folds": list(range(5)), "needs_fold": True},
@@ -82,6 +91,48 @@ SPLIT_CONFIGS = {
 }
 
 EXCLUDE_LABELS = {"stim_wn"}
+
+RECORDING_IDS = [
+    "sub-01_ses-01_task-AcousStim_acq-LH_desc-raw",
+    "sub-01_ses-02_task-AcousStim_acq-LH_desc-raw",
+    "sub-02_ses-01_task-AcousStim_acq-LH_desc-raw",
+    "sub-02_ses-01_task-AcousStim_acq-RH_desc-raw",
+    "sub-02_ses-02_task-AcousStim_acq-LH_desc-raw",
+    "sub-02_ses-02_task-AcousStim_acq-RH_desc-raw",
+    "sub-03_ses-01_task-AcousStim_acq-LH_desc-raw",
+    "sub-03_ses-01_task-AcousStim_acq-RH_desc-raw",
+    # "sub-03_ses-03_task-AcousStim_acq-LHanest_desc-raw",
+    # "sub-03_ses-03_task-AcousStim_acq-RHanest_desc-raw",
+    # "sub-03_ses-04_task-AcousStim_acq-LHanest_desc-raw",
+    # "sub-03_ses-04_task-AcousStim_acq-RHanest_desc-raw",
+    "sub-03_ses-06_task-AcousStim_acq-LH_desc-raw",
+    "sub-03_ses-06_task-AcousStim_acq-RH_desc-raw",
+    # "sub-03_ses-07_task-AcousStim_acq-LHanest_desc-raw",
+    "sub-03_ses-07_task-AcousStim_acq-RH_desc-raw",
+    # "sub-03_ses-07_task-AcousStim_acq-RHanest_desc-raw",
+    "sub-04_ses-01_task-AcousStim_acq-LH_desc-raw",
+    "sub-04_ses-01_task-AcousStim_acq-RH_desc-raw",
+    "sub-04_ses-02_task-AcousStim_acq-LH_desc-raw",
+    "sub-04_ses-02_task-AcousStim_acq-RH_desc-raw",
+    "sub-04_ses-03_task-AcousStim_acq-LH_desc-raw",
+    "sub-04_ses-03_task-AcousStim_acq-RH_desc-raw",
+    "sub-04_ses-04_task-AcousStim_acq-LH_desc-raw",
+    "sub-04_ses-04_task-AcousStim_acq-RH_desc-raw",
+    "sub-05_ses-01_task-AcousStim_acq-LH_desc-raw",
+    "sub-05_ses-01_task-AcousStim_acq-RH_desc-raw",
+    "sub-05_ses-02_task-AcousStim_acq-LH_desc-raw",
+    "sub-05_ses-02_task-AcousStim_acq-RH_desc-raw",
+    "sub-06_ses-02_task-AcousStim_acq-LH_desc-raw",
+    "sub-06_ses-02_task-AcousStim_acq-RH_desc-raw",
+    "sub-07_ses-01_task-AcousStim_acq-LH_desc-raw",
+    "sub-07_ses-02_task-AcousStim_acq-LH_desc-raw",
+    "sub-07_ses-03_task-AcousStim_acq-LH_desc-raw",
+    "sub-07_ses-03_task-AcousStim_acq-RH_desc-raw",
+    "sub-07_ses-04_task-AcousStim_acq-LH_desc-raw",
+    "sub-07_ses-04_task-AcousStim_acq-RH_desc-raw",
+    "sub-07_ses-05_task-AcousStim_acq-LH_desc-raw",
+    "sub-07_ses-05_task-AcousStim_acq-RH_desc-raw",
+]
 
 
 def parse_args() -> argparse.Namespace:
@@ -956,6 +1007,7 @@ def analyze_single(
         split_type=split_type,
         fold_num=fold,
         task_type=task,
+        recording_ids=RECORDING_IDS,
     )
 
     splits = ["train", "valid", "test"]
