@@ -34,7 +34,9 @@ unseen subject**. It uses leave-one-out cross-validation: there is one fold per
 non-test subject, and in each fold that subject is held out entirely for
 validation while the remaining non-test subjects form the training set.
 
-The test set (fixed subjects across all folds) is always held out.
+Furthermore, there is a test set (fixed set of subjects) that is always held out and 
+hence does not make part of the LOO rotation. The test set is common across the intersession 
+and intersubject splits.
 
 ### Assignment rules
 
@@ -46,14 +48,14 @@ The test set (fixed subjects across all folds) is always held out.
 
 The number of folds equals the number of non-test subjects.
 
-## Intersession Split — Chronological 70/30
+## Intersession Split — Causal 70/30
 
 The intersession split evaluates how well the model handles **temporal drift**
 — performing on later sessions from subjects it has already seen. It is a
 single deterministic fold (no cross-validation).
 
-For each non-test subject with multiple sessions, the sessions are ordered
-chronologically: the first ~70% are assigned to training and the remaining
+For each subject with multiple sessions, the sessions are ordered
+causally: the first ~70% are assigned to training and the remaining
 ~30% to validation. Subjects with only one session contribute that session to
 training only.
 
@@ -225,7 +227,7 @@ for fold in range(n_folds):
     )
     train_intervals = dataset.get_sampling_intervals("train")
     valid_intervals = dataset.get_sampling_intervals("valid")
-    test_intervals  = dataset.get_sampling_intervals("test")
+    test_intervals = dataset.get_sampling_intervals("test")
 ```
 
 ### `"intersession"` — evaluate temporal-drift generalisation
@@ -241,7 +243,7 @@ dataset = NeurosoftMinipigs2026(
 )
 train_intervals = dataset.get_sampling_intervals("train")
 valid_intervals = dataset.get_sampling_intervals("valid")
-test_intervals  = dataset.get_sampling_intervals("test")
+test_intervals = dataset.get_sampling_intervals("test")
 ```
 
 ## Other split types (unchanged)
@@ -249,9 +251,9 @@ test_intervals  = dataset.get_sampling_intervals("test")
 The intrasession splits are orthogonal to the cross-subject/session design and
 are unaffected by the intersubject/intersession design:
 
-- `**intrasession-block`** — stratified random train/valid/test within each
+- **intrasession-block** — stratified random train/valid/test within each
 session file (3 folds).
-- `**intrasession-causal**` — chronological 60/10/30 train/valid/test within
+- **intrasession-causal** — chronological 60/10/30 train/valid/test within
 each recording (single partition).
 
 These splits operate on trials *within* a session and do not depend on the
@@ -272,7 +274,7 @@ Each config dict has:
 sessions that go into intersession training
 - `intersubject_subjects` — ordered list of non-test subjects; each index
 corresponds to one LOO fold
-- `subject_sessions` — dict mapping each non-test subject to its chronologically
+- `intersession_sessions` — dict mapping each non-test subject to its chronologically
 ordered list of sessions
 - `intersession_train_ratio` — fraction of sessions per subject used for
 training (default 0.7)

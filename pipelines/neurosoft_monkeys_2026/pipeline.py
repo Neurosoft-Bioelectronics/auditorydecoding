@@ -27,7 +27,7 @@ class Pipeline(NeurosoftPipeline):
             "sub-05",
             "sub-06",
         ],
-        "subject_sessions": {
+        "intersession_sessions": {
             "sub-01": [
                 "ses-01",
                 "ses-02",

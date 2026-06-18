@@ -186,14 +186,12 @@ class NeurosoftPipeline(BrainsetPipeline):
 
         manifest_list = []
         for session_id, recordings in grouped_recordings.items():
-            manifest_list.append(
-                {
-                    "session_id": session_id,
-                    "recording_ids": [
-                        recording["recording_id"] for recording in recordings
-                    ],
-                }
-            )
+            manifest_list.append({
+                "session_id": session_id,
+                "recording_ids": [
+                    recording["recording_id"] for recording in recordings
+                ],
+            })
 
         if not manifest_list:
             raise ValueError(f"No iEEG recordings found in BIDS root {raw_dir}")
@@ -439,15 +437,15 @@ def _get_manual_split_assignments(
     train_ratio = config.get(
         "intersession_train_ratio", INTERSESSION_TRAIN_RATIO
     )
-    subject_sessions = config.get("subject_sessions", {})
+    intersession_sessions = config.get("intersession_sessions", {})
 
     if sub in config["test_subjects"]:
         if sub in early_sessions and ses in early_sessions[sub]:
             intersession = "train"
         else:
             intersession = "test"
-    elif sub in subject_sessions:
-        ordered = subject_sessions[sub]
+    elif sub in intersession_sessions:
+        ordered = intersession_sessions[sub]
         n_train = max(int(len(ordered) * train_ratio), 1)
         if ses in set(ordered[:n_train]):
             intersession = "train"
@@ -482,12 +480,10 @@ def generate_splits(
         f"intersubject_fold_{k}_assignment": assignments["intersubject"][k]
         for k in range(len(assignments["intersubject"]))
     }
-    namespaced_assignments.update(
-        {
-            f"intersession_fold_{k}_assignment": assignments["intersession"][k]
-            for k in range(len(assignments["intersession"]))
-        }
-    )
+    namespaced_assignments.update({
+        f"intersession_fold_{k}_assignment": assignments["intersession"][k]
+        for k in range(len(assignments["intersession"]))
+    })
 
     # split the 'baseline' trials from the on_vs_off_trials into smaller segments
     on_vs_off_trials = _split_baseline_trials(on_vs_off_trials)
@@ -1417,45 +1413,35 @@ def _split_baseline_trials(on_vs_off_trials: Interval) -> Interval:
     split_baseline_trials = baseline_trials.subdivide(0.5, drop_short=False)
 
     # Create a new Interval with the the split baseline trials
-    start_times = np.concatenate(
-        [
-            on_trials.start,
-            rest_trials.start,
-            split_baseline_trials.start,
-        ]
-    )
+    start_times = np.concatenate([
+        on_trials.start,
+        rest_trials.start,
+        split_baseline_trials.start,
+    ])
 
-    end_times = np.concatenate(
-        [
-            on_trials.end,
-            rest_trials.end,
-            split_baseline_trials.end,
-        ]
-    )
+    end_times = np.concatenate([
+        on_trials.end,
+        rest_trials.end,
+        split_baseline_trials.end,
+    ])
 
-    behavior_labels = np.concatenate(
-        [
-            on_trials.behavior_labels,
-            rest_trials.behavior_labels,
-            split_baseline_trials.behavior_labels,
-        ]
-    )
+    behavior_labels = np.concatenate([
+        on_trials.behavior_labels,
+        rest_trials.behavior_labels,
+        split_baseline_trials.behavior_labels,
+    ])
 
-    behavior_ids = np.concatenate(
-        [
-            on_trials.behavior_ids,
-            rest_trials.behavior_ids,
-            split_baseline_trials.behavior_ids,
-        ]
-    )
+    behavior_ids = np.concatenate([
+        on_trials.behavior_ids,
+        rest_trials.behavior_ids,
+        split_baseline_trials.behavior_ids,
+    ])
 
-    recording_ids = np.concatenate(
-        [
-            on_trials.recording_id,
-            rest_trials.recording_id,
-            split_baseline_trials.recording_id,
-        ]
-    )
+    recording_ids = np.concatenate([
+        on_trials.recording_id,
+        rest_trials.recording_id,
+        split_baseline_trials.recording_id,
+    ])
 
     new_kwargs = {
         "start": start_times,
