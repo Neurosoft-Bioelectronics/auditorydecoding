@@ -27,6 +27,7 @@ notebooks = ["ipykernel"]
 [tool.ruff]
 line-length = 80
 format.preview = true
+extend-exclude = ["*.ipynb"]
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"
