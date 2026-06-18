@@ -1,0 +1,6136 @@
+[
+  {
+    "dataset": "minipigs",
+    "split_type": "intersubject",
+    "fold": 0,
+    "task": "acoustic_stim",
+    "n_recordings": 56,
+    "subjects": {
+      "train": [
+        "sub-02",
+        "sub-03",
+        "sub-05",
+        "sub-06"
+      ],
+      "valid": [
+        "sub-01"
+      ],
+      "test": [
+        "sub-04",
+        "sub-07"
+      ]
+    },
+    "original": {
+      "train": {
+        "counts": {
+          "stim_5000Hz": 3800,
+          "stim_500Hz": 3292,
+          "stim_2000Hz": 4220,
+          "stim_10000Hz": 3620,
+          "stim_1000Hz": 3346,
+          "stim_15000Hz": 2408,
+          "stim_20000Hz": 2576,
+          "stim_8000Hz": 2377,
+          "stim_30000Hz": 482,
+          "stim_800Hz": 2896,
+          "stim_40000Hz": 744,
+          "stim_400Hz": 492,
+          "stim_200Hz": 728,
+          "stim_100Hz": 474,
+          "stim_16000Hz": 764,
+          "stim_300Hz": 476
+        },
+        "imbalance": {
+          "max_min_ratio": 8.90295358649789,
+          "cv": 0.666062606837384,
+          "max_class": "stim_2000Hz",
+          "max_count": 4220,
+          "min_class": "stim_100Hz",
+          "min_count": 474,
+          "mean_count": 2043.4375,
+          "total": 32695,
+          "n_classes": 16
+        }
+      },
+      "valid": {
+        "counts": {
+          "stim_5000Hz": 477,
+          "stim_500Hz": 489,
+          "stim_2000Hz": 305,
+          "stim_15000Hz": 297,
+          "stim_1000Hz": 477,
+          "stim_20000Hz": 416,
+          "stim_10000Hz": 298,
+          "stim_40000Hz": 266,
+          "stim_8000Hz": 124,
+          "stim_30000Hz": 241,
+          "stim_200Hz": 119,
+          "stim_800Hz": 120,
+          "stim_400Hz": 120,
+          "stim_100Hz": 123,
+          "stim_16000Hz": 120
+        },
+        "imbalance": {
+          "max_min_ratio": 4.109243697478991,
+          "cv": 0.523875159700355,
+          "max_class": "stim_500Hz",
+          "max_count": 489,
+          "min_class": "stim_200Hz",
+          "min_count": 119,
+          "mean_count": 266.1333333333333,
+          "total": 3992,
+          "n_classes": 15
+        }
+      },
+      "test": {
+        "counts": {
+          "stim_5000Hz": 1995,
+          "stim_1000Hz": 1839,
+          "stim_8000Hz": 1791,
+          "stim_10000Hz": 2283,
+          "stim_20000Hz": 482,
+          "stim_500Hz": 1957,
+          "stim_800Hz": 1957,
+          "stim_300Hz": 474,
+          "stim_15000Hz": 806,
+          "stim_2000Hz": 1667,
+          "stim_16000Hz": 246,
+          "stim_100Hz": 292
+        },
+        "imbalance": {
+          "max_min_ratio": 9.28048780487805,
+          "cv": 0.5678317409083165,
+          "max_class": "stim_10000Hz",
+          "max_count": 2283,
+          "min_class": "stim_16000Hz",
+          "min_count": 246,
+          "mean_count": 1315.75,
+          "total": 15789,
+          "n_classes": 12
+        }
+      },
+      "proportion_stability": {
+        "stim_20000Hz": {
+          "proportions": {
+            "train": 7.88,
+            "valid": 10.42,
+            "test": 3.05
+          },
+          "std": 3.06,
+          "max_diff": 7.37
+        },
+        "stim_300Hz": {
+          "proportions": {
+            "train": 1.46,
+            "valid": 0.0,
+            "test": 3.0
+          },
+          "std": 1.23,
+          "max_diff": 3.0
+        },
+        "stim_2000Hz": {
+          "proportions": {
+            "train": 12.91,
+            "valid": 7.64,
+            "test": 10.56
+          },
+          "std": 2.15,
+          "max_diff": 5.27
+        },
+        "stim_500Hz": {
+          "proportions": {
+            "train": 10.07,
+            "valid": 12.25,
+            "test": 12.39
+          },
+          "std": 1.06,
+          "max_diff": 2.33
+        },
+        "stim_40000Hz": {
+          "proportions": {
+            "train": 2.28,
+            "valid": 6.66,
+            "test": 0.0
+          },
+          "std": 2.77,
+          "max_diff": 6.66
+        },
+        "stim_15000Hz": {
+          "proportions": {
+            "train": 7.37,
+            "valid": 7.44,
+            "test": 5.1
+          },
+          "std": 1.08,
+          "max_diff": 2.34
+        },
+        "stim_800Hz": {
+          "proportions": {
+            "train": 8.86,
+            "valid": 3.01,
+            "test": 12.39
+          },
+          "std": 3.87,
+          "max_diff": 9.39
+        },
+        "stim_1000Hz": {
+          "proportions": {
+            "train": 10.23,
+            "valid": 11.95,
+            "test": 11.65
+          },
+          "std": 0.75,
+          "max_diff": 1.71
+        },
+        "stim_16000Hz": {
+          "proportions": {
+            "train": 2.34,
+            "valid": 3.01,
+            "test": 1.56
+          },
+          "std": 0.59,
+          "max_diff": 1.45
+        },
+        "stim_200Hz": {
+          "proportions": {
+            "train": 2.23,
+            "valid": 2.98,
+            "test": 0.0
+          },
+          "std": 1.27,
+          "max_diff": 2.98
+        },
+        "stim_10000Hz": {
+          "proportions": {
+            "train": 11.07,
+            "valid": 7.46,
+            "test": 14.46
+          },
+          "std": 2.86,
+          "max_diff": 6.99
+        },
+        "stim_400Hz": {
+          "proportions": {
+            "train": 1.5,
+            "valid": 3.01,
+            "test": 0.0
+          },
+          "std": 1.23,
+          "max_diff": 3.01
+        },
+        "stim_8000Hz": {
+          "proportions": {
+            "train": 7.27,
+            "valid": 3.11,
+            "test": 11.34
+          },
+          "std": 3.36,
+          "max_diff": 8.24
+        },
+        "stim_5000Hz": {
+          "proportions": {
+            "train": 11.62,
+            "valid": 11.95,
+            "test": 12.64
+          },
+          "std": 0.42,
+          "max_diff": 1.01
+        },
+        "stim_30000Hz": {
+          "proportions": {
+            "train": 1.47,
+            "valid": 6.04,
+            "test": 0.0
+          },
+          "std": 2.57,
+          "max_diff": 6.04
+        },
+        "stim_100Hz": {
+          "proportions": {
+            "train": 1.45,
+            "valid": 3.08,
+            "test": 1.85
+          },
+          "std": 0.69,
+          "max_diff": 1.63
+        }
+      },
+      "trainval_vs_test": {
+        "trainval": {
+          "max_min_ratio": 9.506302521008404,
+          "cv": 0.6406774052732881,
+          "max_class": "stim_2000Hz",
+          "max_count": 4525,
+          "min_class": "stim_300Hz",
+          "min_count": 476,
+          "mean_count": 2292.9375,
+          "total": 36687,
+          "n_classes": 16
+        },
+        "test": {
+          "max_min_ratio": 9.28048780487805,
+          "cv": 0.5678317409083165,
+          "max_class": "stim_10000Hz",
+          "max_count": 2283,
+          "min_class": "stim_16000Hz",
+          "min_count": 246,
+          "mean_count": 1315.75,
+          "total": 15789,
+          "n_classes": 12
+        }
+      },
+      "trainval_test_stability": {
+        "stim_20000Hz": {
+          "proportions": {
+            "train+valid": 8.16,
+            "test": 3.05
+          },
+          "std": 2.55,
+          "max_diff": 5.1
+        },
+        "stim_300Hz": {
+          "proportions": {
+            "train+valid": 1.3,
+            "test": 3.0
+          },
+          "std": 0.85,
+          "max_diff": 1.7
+        },
+        "stim_2000Hz": {
+          "proportions": {
+            "train+valid": 12.33,
+            "test": 10.56
+          },
+          "std": 0.89,
+          "max_diff": 1.78
+        },
+        "stim_500Hz": {
+          "proportions": {
+            "train+valid": 10.31,
+            "test": 12.39
+          },
+          "std": 1.04,
+          "max_diff": 2.09
+        },
+        "stim_40000Hz": {
+          "proportions": {
+            "train+valid": 2.75,
+            "test": 0.0
+          },
+          "std": 1.38,
+          "max_diff": 2.75
+        },
+        "stim_15000Hz": {
+          "proportions": {
+            "train+valid": 7.37,
+            "test": 5.1
+          },
+          "std": 1.13,
+          "max_diff": 2.27
+        },
+        "stim_800Hz": {
+          "proportions": {
+            "train+valid": 8.22,
+            "test": 12.39
+          },
+          "std": 2.09,
+          "max_diff": 4.17
+        },
+        "stim_1000Hz": {
+          "proportions": {
+            "train+valid": 10.42,
+            "test": 11.65
+          },
+          "std": 0.61,
+          "max_diff": 1.23
+        },
+        "stim_16000Hz": {
+          "proportions": {
+            "train+valid": 2.41,
+            "test": 1.56
+          },
+          "std": 0.43,
+          "max_diff": 0.85
+        },
+        "stim_200Hz": {
+          "proportions": {
+            "train+valid": 2.31,
+            "test": 0.0
+          },
+          "std": 1.15,
+          "max_diff": 2.31
+        },
+        "stim_10000Hz": {
+          "proportions": {
+            "train+valid": 10.68,
+            "test": 14.46
+          },
+          "std": 1.89,
+          "max_diff": 3.78
+        },
+        "stim_400Hz": {
+          "proportions": {
+            "train+valid": 1.67,
+            "test": 0.0
+          },
+          "std": 0.83,
+          "max_diff": 1.67
+        },
+        "stim_8000Hz": {
+          "proportions": {
+            "train+valid": 6.82,
+            "test": 11.34
+          },
+          "std": 2.26,
+          "max_diff": 4.53
+        },
+        "stim_5000Hz": {
+          "proportions": {
+            "train+valid": 11.66,
+            "test": 12.64
+          },
+          "std": 0.49,
+          "max_diff": 0.98
+        },
+        "stim_30000Hz": {
+          "proportions": {
+            "train+valid": 1.97,
+            "test": 0.0
+          },
+          "std": 0.99,
+          "max_diff": 1.97
+        },
+        "stim_100Hz": {
+          "proportions": {
+            "train+valid": 1.63,
+            "test": 1.85
+          },
+          "std": 0.11,
+          "max_diff": 0.22
+        }
+      }
+    },
+    "remapped": {
+      "train": {
+        "counts": {
+          "mid": 6177,
+          "sub_bass": 5462,
+          "low_mid": 4220,
+          "high_mid": 6792,
+          "low": 6242,
+          "high": 3802
+        },
+        "imbalance": {
+          "max_min_ratio": 1.7864281956864807,
+          "cv": 0.20083012080094578,
+          "max_class": "high_mid",
+          "max_count": 6792,
+          "min_class": "high",
+          "min_count": 3802,
+          "mean_count": 5449.166666666667,
+          "total": 32695,
+          "n_classes": 6
+        }
+      },
+      "valid": {
+        "counts": {
+          "mid": 601,
+          "sub_bass": 851,
+          "low_mid": 305,
+          "high_mid": 715,
+          "low": 597,
+          "high": 923
+        },
+        "imbalance": {
+          "max_min_ratio": 3.0262295081967214,
+          "cv": 0.30183821961115004,
+          "max_class": "high",
+          "max_count": 923,
+          "min_class": "low_mid",
+          "min_count": 305,
+          "mean_count": 665.3333333333334,
+          "total": 3992,
+          "n_classes": 6
+        }
+      },
+      "test": {
+        "counts": {
+          "mid": 3786,
+          "low": 3796,
+          "high_mid": 3335,
+          "high": 482,
+          "sub_bass": 2723,
+          "low_mid": 1667
+        },
+        "imbalance": {
+          "max_min_ratio": 7.875518672199171,
+          "cv": 0.4587191866943074,
+          "max_class": "low",
+          "max_count": 3796,
+          "min_class": "high",
+          "min_count": 482,
+          "mean_count": 2631.5,
+          "total": 15789,
+          "n_classes": 6
+        }
+      },
+      "proportion_stability": {
+        "high_mid": {
+          "proportions": {
+            "train": 20.77,
+            "valid": 17.91,
+            "test": 21.12
+          },
+          "std": 1.44,
+          "max_diff": 3.21
+        },
+        "sub_bass": {
+          "proportions": {
+            "train": 16.71,
+            "valid": 21.32,
+            "test": 17.25
+          },
+          "std": 2.06,
+          "max_diff": 4.61
+        },
+        "mid": {
+          "proportions": {
+            "train": 18.89,
+            "valid": 15.06,
+            "test": 23.98
+          },
+          "std": 3.65,
+          "max_diff": 8.92
+        },
+        "high": {
+          "proportions": {
+            "train": 11.63,
+            "valid": 23.12,
+            "test": 3.05
+          },
+          "std": 8.22,
+          "max_diff": 20.07
+        },
+        "low_mid": {
+          "proportions": {
+            "train": 12.91,
+            "valid": 7.64,
+            "test": 10.56
+          },
+          "std": 2.15,
+          "max_diff": 5.27
+        },
+        "low": {
+          "proportions": {
+            "train": 19.09,
+            "valid": 14.95,
+            "test": 24.04
+          },
+          "std": 3.71,
+          "max_diff": 9.09
+        }
+      },
+      "trainval_vs_test": {
+        "trainval": {
+          "max_min_ratio": 1.6590055248618785,
+          "cv": 0.18163648832806437,
+          "max_class": "high_mid",
+          "max_count": 7507,
+          "min_class": "low_mid",
+          "min_count": 4525,
+          "mean_count": 6114.5,
+          "total": 36687,
+          "n_classes": 6
+        },
+        "test": {
+          "max_min_ratio": 7.875518672199171,
+          "cv": 0.4587191866943074,
+          "max_class": "low",
+          "max_count": 3796,
+          "min_class": "high",
+          "min_count": 482,
+          "mean_count": 2631.5,
+          "total": 15789,
+          "n_classes": 6
+        }
+      },
+      "trainval_test_stability": {
+        "high_mid": {
+          "proportions": {
+            "train+valid": 20.46,
+            "test": 21.12
+          },
+          "std": 0.33,
+          "max_diff": 0.66
+        },
+        "sub_bass": {
+          "proportions": {
+            "train+valid": 17.21,
+            "test": 17.25
+          },
+          "std": 0.02,
+          "max_diff": 0.04
+        },
+        "mid": {
+          "proportions": {
+            "train+valid": 18.48,
+            "test": 23.98
+          },
+          "std": 2.75,
+          "max_diff": 5.5
+        },
+        "high": {
+          "proportions": {
+            "train+valid": 12.88,
+            "test": 3.05
+          },
+          "std": 4.91,
+          "max_diff": 9.83
+        },
+        "low_mid": {
+          "proportions": {
+            "train+valid": 12.33,
+            "test": 10.56
+          },
+          "std": 0.89,
+          "max_diff": 1.78
+        },
+        "low": {
+          "proportions": {
+            "train+valid": 18.64,
+            "test": 24.04
+          },
+          "std": 2.7,
+          "max_diff": 5.4
+        }
+      }
+    }
+  },
+  {
+    "dataset": "minipigs",
+    "split_type": "intersubject",
+    "fold": 1,
+    "task": "acoustic_stim",
+    "n_recordings": 56,
+    "subjects": {
+      "train": [
+        "sub-01",
+        "sub-03",
+        "sub-05",
+        "sub-06"
+      ],
+      "valid": [
+        "sub-02"
+      ],
+      "test": [
+        "sub-04",
+        "sub-07"
+      ]
+    },
+    "original": {
+      "train": {
+        "counts": {
+          "stim_5000Hz": 3535,
+          "stim_500Hz": 3186,
+          "stim_2000Hz": 3721,
+          "stim_15000Hz": 2164,
+          "stim_1000Hz": 3348,
+          "stim_20000Hz": 2513,
+          "stim_10000Hz": 3442,
+          "stim_40000Hz": 772,
+          "stim_8000Hz": 2265,
+          "stim_30000Hz": 485,
+          "stim_200Hz": 599,
+          "stim_800Hz": 2778,
+          "stim_400Hz": 356,
+          "stim_100Hz": 361,
+          "stim_16000Hz": 636,
+          "stim_300Hz": 476
+        },
+        "imbalance": {
+          "max_min_ratio": 10.452247191011235,
+          "cv": 0.676008092470947,
+          "max_class": "stim_2000Hz",
+          "max_count": 3721,
+          "min_class": "stim_400Hz",
+          "min_count": 356,
+          "mean_count": 1914.8125,
+          "total": 30637,
+          "n_classes": 16
+        }
+      },
+      "valid": {
+        "counts": {
+          "stim_5000Hz": 742,
+          "stim_500Hz": 595,
+          "stim_2000Hz": 804,
+          "stim_10000Hz": 476,
+          "stim_1000Hz": 475,
+          "stim_15000Hz": 541,
+          "stim_20000Hz": 479,
+          "stim_8000Hz": 236,
+          "stim_30000Hz": 238,
+          "stim_800Hz": 238,
+          "stim_40000Hz": 238,
+          "stim_400Hz": 256,
+          "stim_200Hz": 248,
+          "stim_100Hz": 236,
+          "stim_16000Hz": 248
+        },
+        "imbalance": {
+          "max_min_ratio": 3.406779661016949,
+          "cv": 0.47692295150619773,
+          "max_class": "stim_2000Hz",
+          "max_count": 804,
+          "min_class": "stim_8000Hz",
+          "min_count": 236,
+          "mean_count": 403.3333333333333,
+          "total": 6050,
+          "n_classes": 15
+        }
+      },
+      "test": {
+        "counts": {
+          "stim_5000Hz": 1995,
+          "stim_1000Hz": 1839,
+          "stim_8000Hz": 1791,
+          "stim_10000Hz": 2283,
+          "stim_20000Hz": 482,
+          "stim_500Hz": 1957,
+          "stim_800Hz": 1957,
+          "stim_300Hz": 474,
+          "stim_15000Hz": 806,
+          "stim_2000Hz": 1667,
+          "stim_16000Hz": 246,
+          "stim_100Hz": 292
+        },
+        "imbalance": {
+          "max_min_ratio": 9.28048780487805,
+          "cv": 0.5678317409083165,
+          "max_class": "stim_10000Hz",
+          "max_count": 2283,
+          "min_class": "stim_16000Hz",
+          "min_count": 246,
+          "mean_count": 1315.75,
+          "total": 15789,
+          "n_classes": 12
+        }
+      },
+      "proportion_stability": {
+        "stim_20000Hz": {
+          "proportions": {
+            "train": 8.2,
+            "valid": 7.92,
+            "test": 3.05
+          },
+          "std": 2.36,
+          "max_diff": 5.15
+        },
+        "stim_300Hz": {
+          "proportions": {
+            "train": 1.55,
+            "valid": 0.0,
+            "test": 3.0
+          },
+          "std": 1.23,
+          "max_diff": 3.0
+        },
+        "stim_2000Hz": {
+          "proportions": {
+            "train": 12.15,
+            "valid": 13.29,
+            "test": 10.56
+          },
+          "std": 1.12,
+          "max_diff": 2.73
+        },
+        "stim_500Hz": {
+          "proportions": {
+            "train": 10.4,
+            "valid": 9.83,
+            "test": 12.39
+          },
+          "std": 1.1,
+          "max_diff": 2.56
+        },
+        "stim_40000Hz": {
+          "proportions": {
+            "train": 2.52,
+            "valid": 3.93,
+            "test": 0.0
+          },
+          "std": 1.63,
+          "max_diff": 3.93
+        },
+        "stim_15000Hz": {
+          "proportions": {
+            "train": 7.06,
+            "valid": 8.94,
+            "test": 5.1
+          },
+          "std": 1.57,
+          "max_diff": 3.84
+        },
+        "stim_800Hz": {
+          "proportions": {
+            "train": 9.07,
+            "valid": 3.93,
+            "test": 12.39
+          },
+          "std": 3.48,
+          "max_diff": 8.46
+        },
+        "stim_1000Hz": {
+          "proportions": {
+            "train": 10.93,
+            "valid": 7.85,
+            "test": 11.65
+          },
+          "std": 1.65,
+          "max_diff": 3.8
+        },
+        "stim_16000Hz": {
+          "proportions": {
+            "train": 2.08,
+            "valid": 4.1,
+            "test": 1.56
+          },
+          "std": 1.1,
+          "max_diff": 2.54
+        },
+        "stim_200Hz": {
+          "proportions": {
+            "train": 1.96,
+            "valid": 4.1,
+            "test": 0.0
+          },
+          "std": 1.67,
+          "max_diff": 4.1
+        },
+        "stim_10000Hz": {
+          "proportions": {
+            "train": 11.23,
+            "valid": 7.87,
+            "test": 14.46
+          },
+          "std": 2.69,
+          "max_diff": 6.59
+        },
+        "stim_400Hz": {
+          "proportions": {
+            "train": 1.16,
+            "valid": 4.23,
+            "test": 0.0
+          },
+          "std": 1.79,
+          "max_diff": 4.23
+        },
+        "stim_8000Hz": {
+          "proportions": {
+            "train": 7.39,
+            "valid": 3.9,
+            "test": 11.34
+          },
+          "std": 3.04,
+          "max_diff": 7.44
+        },
+        "stim_5000Hz": {
+          "proportions": {
+            "train": 11.54,
+            "valid": 12.26,
+            "test": 12.64
+          },
+          "std": 0.46,
+          "max_diff": 1.1
+        },
+        "stim_30000Hz": {
+          "proportions": {
+            "train": 1.58,
+            "valid": 3.93,
+            "test": 0.0
+          },
+          "std": 1.62,
+          "max_diff": 3.93
+        },
+        "stim_100Hz": {
+          "proportions": {
+            "train": 1.18,
+            "valid": 3.9,
+            "test": 1.85
+          },
+          "std": 1.16,
+          "max_diff": 2.72
+        }
+      },
+      "trainval_vs_test": {
+        "trainval": {
+          "max_min_ratio": 9.506302521008404,
+          "cv": 0.6406774052732881,
+          "max_class": "stim_2000Hz",
+          "max_count": 4525,
+          "min_class": "stim_300Hz",
+          "min_count": 476,
+          "mean_count": 2292.9375,
+          "total": 36687,
+          "n_classes": 16
+        },
+        "test": {
+          "max_min_ratio": 9.28048780487805,
+          "cv": 0.5678317409083165,
+          "max_class": "stim_10000Hz",
+          "max_count": 2283,
+          "min_class": "stim_16000Hz",
+          "min_count": 246,
+          "mean_count": 1315.75,
+          "total": 15789,
+          "n_classes": 12
+        }
+      },
+      "trainval_test_stability": {
+        "stim_20000Hz": {
+          "proportions": {
+            "train+valid": 8.16,
+            "test": 3.05
+          },
+          "std": 2.55,
+          "max_diff": 5.1
+        },
+        "stim_300Hz": {
+          "proportions": {
+            "train+valid": 1.3,
+            "test": 3.0
+          },
+          "std": 0.85,
+          "max_diff": 1.7
+        },
+        "stim_2000Hz": {
+          "proportions": {
+            "train+valid": 12.33,
+            "test": 10.56
+          },
+          "std": 0.89,
+          "max_diff": 1.78
+        },
+        "stim_500Hz": {
+          "proportions": {
+            "train+valid": 10.31,
+            "test": 12.39
+          },
+          "std": 1.04,
+          "max_diff": 2.09
+        },
+        "stim_40000Hz": {
+          "proportions": {
+            "train+valid": 2.75,
+            "test": 0.0
+          },
+          "std": 1.38,
+          "max_diff": 2.75
+        },
+        "stim_15000Hz": {
+          "proportions": {
+            "train+valid": 7.37,
+            "test": 5.1
+          },
+          "std": 1.13,
+          "max_diff": 2.27
+        },
+        "stim_800Hz": {
+          "proportions": {
+            "train+valid": 8.22,
+            "test": 12.39
+          },
+          "std": 2.09,
+          "max_diff": 4.17
+        },
+        "stim_1000Hz": {
+          "proportions": {
+            "train+valid": 10.42,
+            "test": 11.65
+          },
+          "std": 0.61,
+          "max_diff": 1.23
+        },
+        "stim_16000Hz": {
+          "proportions": {
+            "train+valid": 2.41,
+            "test": 1.56
+          },
+          "std": 0.43,
+          "max_diff": 0.85
+        },
+        "stim_200Hz": {
+          "proportions": {
+            "train+valid": 2.31,
+            "test": 0.0
+          },
+          "std": 1.15,
+          "max_diff": 2.31
+        },
+        "stim_10000Hz": {
+          "proportions": {
+            "train+valid": 10.68,
+            "test": 14.46
+          },
+          "std": 1.89,
+          "max_diff": 3.78
+        },
+        "stim_400Hz": {
+          "proportions": {
+            "train+valid": 1.67,
+            "test": 0.0
+          },
+          "std": 0.83,
+          "max_diff": 1.67
+        },
+        "stim_8000Hz": {
+          "proportions": {
+            "train+valid": 6.82,
+            "test": 11.34
+          },
+          "std": 2.26,
+          "max_diff": 4.53
+        },
+        "stim_5000Hz": {
+          "proportions": {
+            "train+valid": 11.66,
+            "test": 12.64
+          },
+          "std": 0.49,
+          "max_diff": 0.98
+        },
+        "stim_30000Hz": {
+          "proportions": {
+            "train+valid": 1.97,
+            "test": 0.0
+          },
+          "std": 0.99,
+          "max_diff": 1.97
+        },
+        "stim_100Hz": {
+          "proportions": {
+            "train+valid": 1.63,
+            "test": 1.85
+          },
+          "std": 0.11,
+          "max_diff": 0.22
+        }
+      }
+    },
+    "remapped": {
+      "train": {
+        "counts": {
+          "mid": 5800,
+          "sub_bass": 4978,
+          "low_mid": 3721,
+          "high_mid": 6242,
+          "low": 6126,
+          "high": 3770
+        },
+        "imbalance": {
+          "max_min_ratio": 1.6775060467616232,
+          "cv": 0.20434014683476698,
+          "max_class": "high_mid",
+          "max_count": 6242,
+          "min_class": "low_mid",
+          "min_count": 3721,
+          "mean_count": 5106.166666666667,
+          "total": 30637,
+          "n_classes": 6
+        }
+      },
+      "valid": {
+        "counts": {
+          "mid": 978,
+          "sub_bass": 1335,
+          "low_mid": 804,
+          "high_mid": 1265,
+          "low": 713,
+          "high": 955
+        },
+        "imbalance": {
+          "max_min_ratio": 1.8723702664796633,
+          "cv": 0.22371911511933137,
+          "max_class": "sub_bass",
+          "max_count": 1335,
+          "min_class": "low",
+          "min_count": 713,
+          "mean_count": 1008.3333333333334,
+          "total": 6050,
+          "n_classes": 6
+        }
+      },
+      "test": {
+        "counts": {
+          "mid": 3786,
+          "low": 3796,
+          "high_mid": 3335,
+          "high": 482,
+          "sub_bass": 2723,
+          "low_mid": 1667
+        },
+        "imbalance": {
+          "max_min_ratio": 7.875518672199171,
+          "cv": 0.4587191866943074,
+          "max_class": "low",
+          "max_count": 3796,
+          "min_class": "high",
+          "min_count": 482,
+          "mean_count": 2631.5,
+          "total": 15789,
+          "n_classes": 6
+        }
+      },
+      "proportion_stability": {
+        "high_mid": {
+          "proportions": {
+            "train": 20.37,
+            "valid": 20.91,
+            "test": 21.12
+          },
+          "std": 0.31,
+          "max_diff": 0.75
+        },
+        "sub_bass": {
+          "proportions": {
+            "train": 16.25,
+            "valid": 22.07,
+            "test": 17.25
+          },
+          "std": 2.54,
+          "max_diff": 5.82
+        },
+        "mid": {
+          "proportions": {
+            "train": 18.93,
+            "valid": 16.17,
+            "test": 23.98
+          },
+          "std": 3.23,
+          "max_diff": 7.81
+        },
+        "high": {
+          "proportions": {
+            "train": 12.31,
+            "valid": 15.79,
+            "test": 3.05
+          },
+          "std": 5.37,
+          "max_diff": 12.73
+        },
+        "low_mid": {
+          "proportions": {
+            "train": 12.15,
+            "valid": 13.29,
+            "test": 10.56
+          },
+          "std": 1.12,
+          "max_diff": 2.73
+        },
+        "low": {
+          "proportions": {
+            "train": 20.0,
+            "valid": 11.79,
+            "test": 24.04
+          },
+          "std": 5.1,
+          "max_diff": 12.26
+        }
+      },
+      "trainval_vs_test": {
+        "trainval": {
+          "max_min_ratio": 1.6590055248618785,
+          "cv": 0.18163648832806437,
+          "max_class": "high_mid",
+          "max_count": 7507,
+          "min_class": "low_mid",
+          "min_count": 4525,
+          "mean_count": 6114.5,
+          "total": 36687,
+          "n_classes": 6
+        },
+        "test": {
+          "max_min_ratio": 7.875518672199171,
+          "cv": 0.4587191866943074,
+          "max_class": "low",
+          "max_count": 3796,
+          "min_class": "high",
+          "min_count": 482,
+          "mean_count": 2631.5,
+          "total": 15789,
+          "n_classes": 6
+        }
+      },
+      "trainval_test_stability": {
+        "high_mid": {
+          "proportions": {
+            "train+valid": 20.46,
+            "test": 21.12
+          },
+          "std": 0.33,
+          "max_diff": 0.66
+        },
+        "sub_bass": {
+          "proportions": {
+            "train+valid": 17.21,
+            "test": 17.25
+          },
+          "std": 0.02,
+          "max_diff": 0.04
+        },
+        "mid": {
+          "proportions": {
+            "train+valid": 18.48,
+            "test": 23.98
+          },
+          "std": 2.75,
+          "max_diff": 5.5
+        },
+        "high": {
+          "proportions": {
+            "train+valid": 12.88,
+            "test": 3.05
+          },
+          "std": 4.91,
+          "max_diff": 9.83
+        },
+        "low_mid": {
+          "proportions": {
+            "train+valid": 12.33,
+            "test": 10.56
+          },
+          "std": 0.89,
+          "max_diff": 1.78
+        },
+        "low": {
+          "proportions": {
+            "train+valid": 18.64,
+            "test": 24.04
+          },
+          "std": 2.7,
+          "max_diff": 5.4
+        }
+      }
+    }
+  },
+  {
+    "dataset": "minipigs",
+    "split_type": "intersubject",
+    "fold": 2,
+    "task": "acoustic_stim",
+    "n_recordings": 56,
+    "subjects": {
+      "train": [
+        "sub-01",
+        "sub-02",
+        "sub-03",
+        "sub-05",
+        "sub-06"
+      ],
+      "valid": [
+        "sub-03"
+      ],
+      "test": [
+        "sub-04",
+        "sub-07"
+      ]
+    },
+    "original": {
+      "train": {
+        "counts": {
+          "stim_5000Hz": 3495,
+          "stim_500Hz": 2990,
+          "stim_2000Hz": 3393,
+          "stim_15000Hz": 2076,
+          "stim_1000Hz": 3016,
+          "stim_20000Hz": 2397,
+          "stim_10000Hz": 3138,
+          "stim_40000Hz": 1010,
+          "stim_8000Hz": 2086,
+          "stim_30000Hz": 723,
+          "stim_200Hz": 609,
+          "stim_800Hz": 2300,
+          "stim_400Hz": 612,
+          "stim_100Hz": 359,
+          "stim_16000Hz": 884,
+          "stim_300Hz": 476
+        },
+        "imbalance": {
+          "max_min_ratio": 9.735376044568245,
+          "cv": 0.6066790522221531,
+          "max_class": "stim_5000Hz",
+          "max_count": 3495,
+          "min_class": "stim_100Hz",
+          "min_count": 359,
+          "mean_count": 1847.75,
+          "total": 29564,
+          "n_classes": 16
+        }
+      },
+      "valid": {
+        "counts": {
+          "stim_1000Hz": 807,
+          "stim_5000Hz": 782,
+          "stim_500Hz": 791,
+          "stim_20000Hz": 595,
+          "stim_10000Hz": 780,
+          "stim_2000Hz": 1132,
+          "stim_15000Hz": 629,
+          "stim_800Hz": 716,
+          "stim_8000Hz": 415,
+          "stim_100Hz": 238,
+          "stim_200Hz": 238
+        },
+        "imbalance": {
+          "max_min_ratio": 4.756302521008403,
+          "cv": 0.39334627113897397,
+          "max_class": "stim_2000Hz",
+          "max_count": 1132,
+          "min_class": "stim_100Hz",
+          "min_count": 238,
+          "mean_count": 647.5454545454545,
+          "total": 7123,
+          "n_classes": 11
+        }
+      },
+      "test": {
+        "counts": {
+          "stim_5000Hz": 1995,
+          "stim_1000Hz": 1839,
+          "stim_8000Hz": 1791,
+          "stim_10000Hz": 2283,
+          "stim_20000Hz": 482,
+          "stim_500Hz": 1957,
+          "stim_800Hz": 1957,
+          "stim_300Hz": 474,
+          "stim_15000Hz": 806,
+          "stim_2000Hz": 1667,
+          "stim_16000Hz": 246,
+          "stim_100Hz": 292
+        },
+        "imbalance": {
+          "max_min_ratio": 9.28048780487805,
+          "cv": 0.5678317409083165,
+          "max_class": "stim_10000Hz",
+          "max_count": 2283,
+          "min_class": "stim_16000Hz",
+          "min_count": 246,
+          "mean_count": 1315.75,
+          "total": 15789,
+          "n_classes": 12
+        }
+      },
+      "proportion_stability": {
+        "stim_20000Hz": {
+          "proportions": {
+            "train": 8.11,
+            "valid": 8.35,
+            "test": 3.05
+          },
+          "std": 2.44,
+          "max_diff": 5.3
+        },
+        "stim_300Hz": {
+          "proportions": {
+            "train": 1.61,
+            "valid": 0.0,
+            "test": 3.0
+          },
+          "std": 1.23,
+          "max_diff": 3.0
+        },
+        "stim_2000Hz": {
+          "proportions": {
+            "train": 11.48,
+            "valid": 15.89,
+            "test": 10.56
+          },
+          "std": 2.33,
+          "max_diff": 5.33
+        },
+        "stim_500Hz": {
+          "proportions": {
+            "train": 10.11,
+            "valid": 11.1,
+            "test": 12.39
+          },
+          "std": 0.93,
+          "max_diff": 2.28
+        },
+        "stim_40000Hz": {
+          "proportions": {
+            "train": 3.42,
+            "valid": 0.0,
+            "test": 0.0
+          },
+          "std": 1.61,
+          "max_diff": 3.42
+        },
+        "stim_15000Hz": {
+          "proportions": {
+            "train": 7.02,
+            "valid": 8.83,
+            "test": 5.1
+          },
+          "std": 1.52,
+          "max_diff": 3.73
+        },
+        "stim_800Hz": {
+          "proportions": {
+            "train": 7.78,
+            "valid": 10.05,
+            "test": 12.39
+          },
+          "std": 1.88,
+          "max_diff": 4.61
+        },
+        "stim_1000Hz": {
+          "proportions": {
+            "train": 10.2,
+            "valid": 11.33,
+            "test": 11.65
+          },
+          "std": 0.62,
+          "max_diff": 1.45
+        },
+        "stim_16000Hz": {
+          "proportions": {
+            "train": 2.99,
+            "valid": 0.0,
+            "test": 1.56
+          },
+          "std": 1.22,
+          "max_diff": 2.99
+        },
+        "stim_200Hz": {
+          "proportions": {
+            "train": 2.06,
+            "valid": 3.34,
+            "test": 0.0
+          },
+          "std": 1.38,
+          "max_diff": 3.34
+        },
+        "stim_10000Hz": {
+          "proportions": {
+            "train": 10.61,
+            "valid": 10.95,
+            "test": 14.46
+          },
+          "std": 1.74,
+          "max_diff": 3.85
+        },
+        "stim_400Hz": {
+          "proportions": {
+            "train": 2.07,
+            "valid": 0.0,
+            "test": 0.0
+          },
+          "std": 0.98,
+          "max_diff": 2.07
+        },
+        "stim_8000Hz": {
+          "proportions": {
+            "train": 7.06,
+            "valid": 5.83,
+            "test": 11.34
+          },
+          "std": 2.36,
+          "max_diff": 5.52
+        },
+        "stim_5000Hz": {
+          "proportions": {
+            "train": 11.82,
+            "valid": 10.98,
+            "test": 12.64
+          },
+          "std": 0.68,
+          "max_diff": 1.66
+        },
+        "stim_30000Hz": {
+          "proportions": {
+            "train": 2.45,
+            "valid": 0.0,
+            "test": 0.0
+          },
+          "std": 1.15,
+          "max_diff": 2.45
+        },
+        "stim_100Hz": {
+          "proportions": {
+            "train": 1.21,
+            "valid": 3.34,
+            "test": 1.85
+          },
+          "std": 0.89,
+          "max_diff": 2.13
+        }
+      },
+      "trainval_vs_test": {
+        "trainval": {
+          "max_min_ratio": 9.506302521008404,
+          "cv": 0.6406774052732881,
+          "max_class": "stim_2000Hz",
+          "max_count": 4525,
+          "min_class": "stim_300Hz",
+          "min_count": 476,
+          "mean_count": 2292.9375,
+          "total": 36687,
+          "n_classes": 16
+        },
+        "test": {
+          "max_min_ratio": 9.28048780487805,
+          "cv": 0.5678317409083165,
+          "max_class": "stim_10000Hz",
+          "max_count": 2283,
+          "min_class": "stim_16000Hz",
+          "min_count": 246,
+          "mean_count": 1315.75,
+          "total": 15789,
+          "n_classes": 12
+        }
+      },
+      "trainval_test_stability": {
+        "stim_20000Hz": {
+          "proportions": {
+            "train+valid": 8.16,
+            "test": 3.05
+          },
+          "std": 2.55,
+          "max_diff": 5.1
+        },
+        "stim_300Hz": {
+          "proportions": {
+            "train+valid": 1.3,
+            "test": 3.0
+          },
+          "std": 0.85,
+          "max_diff": 1.7
+        },
+        "stim_2000Hz": {
+          "proportions": {
+            "train+valid": 12.33,
+            "test": 10.56
+          },
+          "std": 0.89,
+          "max_diff": 1.78
+        },
+        "stim_500Hz": {
+          "proportions": {
+            "train+valid": 10.31,
+            "test": 12.39
+          },
+          "std": 1.04,
+          "max_diff": 2.09
+        },
+        "stim_40000Hz": {
+          "proportions": {
+            "train+valid": 2.75,
+            "test": 0.0
+          },
+          "std": 1.38,
+          "max_diff": 2.75
+        },
+        "stim_15000Hz": {
+          "proportions": {
+            "train+valid": 7.37,
+            "test": 5.1
+          },
+          "std": 1.13,
+          "max_diff": 2.27
+        },
+        "stim_800Hz": {
+          "proportions": {
+            "train+valid": 8.22,
+            "test": 12.39
+          },
+          "std": 2.09,
+          "max_diff": 4.17
+        },
+        "stim_1000Hz": {
+          "proportions": {
+            "train+valid": 10.42,
+            "test": 11.65
+          },
+          "std": 0.61,
+          "max_diff": 1.23
+        },
+        "stim_16000Hz": {
+          "proportions": {
+            "train+valid": 2.41,
+            "test": 1.56
+          },
+          "std": 0.43,
+          "max_diff": 0.85
+        },
+        "stim_200Hz": {
+          "proportions": {
+            "train+valid": 2.31,
+            "test": 0.0
+          },
+          "std": 1.15,
+          "max_diff": 2.31
+        },
+        "stim_10000Hz": {
+          "proportions": {
+            "train+valid": 10.68,
+            "test": 14.46
+          },
+          "std": 1.89,
+          "max_diff": 3.78
+        },
+        "stim_400Hz": {
+          "proportions": {
+            "train+valid": 1.67,
+            "test": 0.0
+          },
+          "std": 0.83,
+          "max_diff": 1.67
+        },
+        "stim_8000Hz": {
+          "proportions": {
+            "train+valid": 6.82,
+            "test": 11.34
+          },
+          "std": 2.26,
+          "max_diff": 4.53
+        },
+        "stim_5000Hz": {
+          "proportions": {
+            "train+valid": 11.66,
+            "test": 12.64
+          },
+          "std": 0.49,
+          "max_diff": 0.98
+        },
+        "stim_30000Hz": {
+          "proportions": {
+            "train+valid": 1.97,
+            "test": 0.0
+          },
+          "std": 0.99,
+          "max_diff": 1.97
+        },
+        "stim_100Hz": {
+          "proportions": {
+            "train+valid": 1.63,
+            "test": 1.85
+          },
+          "std": 0.11,
+          "max_diff": 0.22
+        }
+      }
+    },
+    "remapped": {
+      "train": {
+        "counts": {
+          "mid": 5581,
+          "sub_bass": 5046,
+          "low_mid": 3393,
+          "high_mid": 6098,
+          "low": 5316,
+          "high": 4130
+        },
+        "imbalance": {
+          "max_min_ratio": 1.7972295903330386,
+          "cv": 0.1843902585293009,
+          "max_class": "high_mid",
+          "max_count": 6098,
+          "min_class": "low_mid",
+          "min_count": 3393,
+          "mean_count": 4927.333333333333,
+          "total": 29564,
+          "n_classes": 6
+        }
+      },
+      "valid": {
+        "counts": {
+          "low": 1523,
+          "mid": 1197,
+          "sub_bass": 1267,
+          "high": 595,
+          "high_mid": 1409,
+          "low_mid": 1132
+        },
+        "imbalance": {
+          "max_min_ratio": 2.5596638655462183,
+          "cv": 0.24849528578072758,
+          "max_class": "low",
+          "max_count": 1523,
+          "min_class": "high",
+          "min_count": 595,
+          "mean_count": 1187.1666666666667,
+          "total": 7123,
+          "n_classes": 6
+        }
+      },
+      "test": {
+        "counts": {
+          "mid": 3786,
+          "low": 3796,
+          "high_mid": 3335,
+          "high": 482,
+          "sub_bass": 2723,
+          "low_mid": 1667
+        },
+        "imbalance": {
+          "max_min_ratio": 7.875518672199171,
+          "cv": 0.4587191866943074,
+          "max_class": "low",
+          "max_count": 3796,
+          "min_class": "high",
+          "min_count": 482,
+          "mean_count": 2631.5,
+          "total": 15789,
+          "n_classes": 6
+        }
+      },
+      "proportion_stability": {
+        "high_mid": {
+          "proportions": {
+            "train": 20.63,
+            "valid": 19.78,
+            "test": 21.12
+          },
+          "std": 0.55,
+          "max_diff": 1.34
+        },
+        "sub_bass": {
+          "proportions": {
+            "train": 17.07,
+            "valid": 17.79,
+            "test": 17.25
+          },
+          "std": 0.31,
+          "max_diff": 0.72
+        },
+        "mid": {
+          "proportions": {
+            "train": 18.88,
+            "valid": 16.8,
+            "test": 23.98
+          },
+          "std": 3.01,
+          "max_diff": 7.17
+        },
+        "high": {
+          "proportions": {
+            "train": 13.97,
+            "valid": 8.35,
+            "test": 3.05
+          },
+          "std": 4.46,
+          "max_diff": 10.92
+        },
+        "low_mid": {
+          "proportions": {
+            "train": 11.48,
+            "valid": 15.89,
+            "test": 10.56
+          },
+          "std": 2.33,
+          "max_diff": 5.33
+        },
+        "low": {
+          "proportions": {
+            "train": 17.98,
+            "valid": 21.38,
+            "test": 24.04
+          },
+          "std": 2.48,
+          "max_diff": 6.06
+        }
+      },
+      "trainval_vs_test": {
+        "trainval": {
+          "max_min_ratio": 1.6590055248618785,
+          "cv": 0.18163648832806437,
+          "max_class": "high_mid",
+          "max_count": 7507,
+          "min_class": "low_mid",
+          "min_count": 4525,
+          "mean_count": 6114.5,
+          "total": 36687,
+          "n_classes": 6
+        },
+        "test": {
+          "max_min_ratio": 7.875518672199171,
+          "cv": 0.4587191866943074,
+          "max_class": "low",
+          "max_count": 3796,
+          "min_class": "high",
+          "min_count": 482,
+          "mean_count": 2631.5,
+          "total": 15789,
+          "n_classes": 6
+        }
+      },
+      "trainval_test_stability": {
+        "high_mid": {
+          "proportions": {
+            "train+valid": 20.46,
+            "test": 21.12
+          },
+          "std": 0.33,
+          "max_diff": 0.66
+        },
+        "sub_bass": {
+          "proportions": {
+            "train+valid": 17.21,
+            "test": 17.25
+          },
+          "std": 0.02,
+          "max_diff": 0.04
+        },
+        "mid": {
+          "proportions": {
+            "train+valid": 18.48,
+            "test": 23.98
+          },
+          "std": 2.75,
+          "max_diff": 5.5
+        },
+        "high": {
+          "proportions": {
+            "train+valid": 12.88,
+            "test": 3.05
+          },
+          "std": 4.91,
+          "max_diff": 9.83
+        },
+        "low_mid": {
+          "proportions": {
+            "train+valid": 12.33,
+            "test": 10.56
+          },
+          "std": 0.89,
+          "max_diff": 1.78
+        },
+        "low": {
+          "proportions": {
+            "train+valid": 18.64,
+            "test": 24.04
+          },
+          "std": 2.7,
+          "max_diff": 5.4
+        }
+      }
+    }
+  },
+  {
+    "dataset": "minipigs",
+    "split_type": "intersubject",
+    "fold": 3,
+    "task": "acoustic_stim",
+    "n_recordings": 56,
+    "subjects": {
+      "train": [
+        "sub-01",
+        "sub-02",
+        "sub-03",
+        "sub-06"
+      ],
+      "valid": [
+        "sub-05"
+      ],
+      "test": [
+        "sub-04",
+        "sub-07"
+      ]
+    },
+    "original": {
+      "train": {
+        "counts": {
+          "stim_5000Hz": 3767,
+          "stim_500Hz": 3079,
+          "stim_2000Hz": 4019,
+          "stim_15000Hz": 2423,
+          "stim_1000Hz": 3249,
+          "stim_20000Hz": 2992,
+          "stim_10000Hz": 3314,
+          "stim_40000Hz": 1010,
+          "stim_8000Hz": 2013,
+          "stim_30000Hz": 723,
+          "stim_200Hz": 847,
+          "stim_800Hz": 2760,
+          "stim_400Hz": 612,
+          "stim_100Hz": 597,
+          "stim_16000Hz": 884,
+          "stim_300Hz": 236
+        },
+        "imbalance": {
+          "max_min_ratio": 17.029661016949152,
+          "cv": 0.6218257424771783,
+          "max_class": "stim_2000Hz",
+          "max_count": 4019,
+          "min_class": "stim_300Hz",
+          "min_count": 236,
+          "mean_count": 2032.8125,
+          "total": 32525,
+          "n_classes": 16
+        }
+      },
+      "valid": {
+        "counts": {
+          "stim_2000Hz": 506,
+          "stim_5000Hz": 510,
+          "stim_10000Hz": 604,
+          "stim_1000Hz": 574,
+          "stim_500Hz": 702,
+          "stim_8000Hz": 488,
+          "stim_300Hz": 240,
+          "stim_15000Hz": 282,
+          "stim_800Hz": 256
+        },
+        "imbalance": {
+          "max_min_ratio": 2.925,
+          "cv": 0.33758279020120224,
+          "max_class": "stim_500Hz",
+          "max_count": 702,
+          "min_class": "stim_300Hz",
+          "min_count": 240,
+          "mean_count": 462.44444444444446,
+          "total": 4162,
+          "n_classes": 9
+        }
+      },
+      "test": {
+        "counts": {
+          "stim_5000Hz": 1995,
+          "stim_1000Hz": 1839,
+          "stim_8000Hz": 1791,
+          "stim_10000Hz": 2283,
+          "stim_20000Hz": 482,
+          "stim_500Hz": 1957,
+          "stim_800Hz": 1957,
+          "stim_300Hz": 474,
+          "stim_15000Hz": 806,
+          "stim_2000Hz": 1667,
+          "stim_16000Hz": 246,
+          "stim_100Hz": 292
+        },
+        "imbalance": {
+          "max_min_ratio": 9.28048780487805,
+          "cv": 0.5678317409083165,
+          "max_class": "stim_10000Hz",
+          "max_count": 2283,
+          "min_class": "stim_16000Hz",
+          "min_count": 246,
+          "mean_count": 1315.75,
+          "total": 15789,
+          "n_classes": 12
+        }
+      },
+      "proportion_stability": {
+        "stim_20000Hz": {
+          "proportions": {
+            "train": 9.2,
+            "valid": 0.0,
+            "test": 3.05
+          },
+          "std": 3.83,
+          "max_diff": 9.2
+        },
+        "stim_300Hz": {
+          "proportions": {
+            "train": 0.73,
+            "valid": 5.77,
+            "test": 3.0
+          },
+          "std": 2.06,
+          "max_diff": 5.04
+        },
+        "stim_2000Hz": {
+          "proportions": {
+            "train": 12.36,
+            "valid": 12.16,
+            "test": 10.56
+          },
+          "std": 0.81,
+          "max_diff": 1.8
+        },
+        "stim_500Hz": {
+          "proportions": {
+            "train": 9.47,
+            "valid": 16.87,
+            "test": 12.39
+          },
+          "std": 3.04,
+          "max_diff": 7.4
+        },
+        "stim_40000Hz": {
+          "proportions": {
+            "train": 3.11,
+            "valid": 0.0,
+            "test": 0.0
+          },
+          "std": 1.46,
+          "max_diff": 3.11
+        },
+        "stim_15000Hz": {
+          "proportions": {
+            "train": 7.45,
+            "valid": 6.78,
+            "test": 5.1
+          },
+          "std": 0.99,
+          "max_diff": 2.34
+        },
+        "stim_800Hz": {
+          "proportions": {
+            "train": 8.49,
+            "valid": 6.15,
+            "test": 12.39
+          },
+          "std": 2.58,
+          "max_diff": 6.24
+        },
+        "stim_1000Hz": {
+          "proportions": {
+            "train": 9.99,
+            "valid": 13.79,
+            "test": 11.65
+          },
+          "std": 1.56,
+          "max_diff": 3.8
+        },
+        "stim_16000Hz": {
+          "proportions": {
+            "train": 2.72,
+            "valid": 0.0,
+            "test": 1.56
+          },
+          "std": 1.11,
+          "max_diff": 2.72
+        },
+        "stim_200Hz": {
+          "proportions": {
+            "train": 2.6,
+            "valid": 0.0,
+            "test": 0.0
+          },
+          "std": 1.23,
+          "max_diff": 2.6
+        },
+        "stim_10000Hz": {
+          "proportions": {
+            "train": 10.19,
+            "valid": 14.51,
+            "test": 14.46
+          },
+          "std": 2.03,
+          "max_diff": 4.32
+        },
+        "stim_400Hz": {
+          "proportions": {
+            "train": 1.88,
+            "valid": 0.0,
+            "test": 0.0
+          },
+          "std": 0.89,
+          "max_diff": 1.88
+        },
+        "stim_8000Hz": {
+          "proportions": {
+            "train": 6.19,
+            "valid": 11.73,
+            "test": 11.34
+          },
+          "std": 2.52,
+          "max_diff": 5.54
+        },
+        "stim_5000Hz": {
+          "proportions": {
+            "train": 11.58,
+            "valid": 12.25,
+            "test": 12.64
+          },
+          "std": 0.44,
+          "max_diff": 1.05
+        },
+        "stim_30000Hz": {
+          "proportions": {
+            "train": 2.22,
+            "valid": 0.0,
+            "test": 0.0
+          },
+          "std": 1.05,
+          "max_diff": 2.22
+        },
+        "stim_100Hz": {
+          "proportions": {
+            "train": 1.84,
+            "valid": 0.0,
+            "test": 1.85
+          },
+          "std": 0.87,
+          "max_diff": 1.85
+        }
+      },
+      "trainval_vs_test": {
+        "trainval": {
+          "max_min_ratio": 9.506302521008404,
+          "cv": 0.6406774052732881,
+          "max_class": "stim_2000Hz",
+          "max_count": 4525,
+          "min_class": "stim_300Hz",
+          "min_count": 476,
+          "mean_count": 2292.9375,
+          "total": 36687,
+          "n_classes": 16
+        },
+        "test": {
+          "max_min_ratio": 9.28048780487805,
+          "cv": 0.5678317409083165,
+          "max_class": "stim_10000Hz",
+          "max_count": 2283,
+          "min_class": "stim_16000Hz",
+          "min_count": 246,
+          "mean_count": 1315.75,
+          "total": 15789,
+          "n_classes": 12
+        }
+      },
+      "trainval_test_stability": {
+        "stim_20000Hz": {
+          "proportions": {
+            "train+valid": 8.16,
+            "test": 3.05
+          },
+          "std": 2.55,
+          "max_diff": 5.1
+        },
+        "stim_300Hz": {
+          "proportions": {
+            "train+valid": 1.3,
+            "test": 3.0
+          },
+          "std": 0.85,
+          "max_diff": 1.7
+        },
+        "stim_2000Hz": {
+          "proportions": {
+            "train+valid": 12.33,
+            "test": 10.56
+          },
+          "std": 0.89,
+          "max_diff": 1.78
+        },
+        "stim_500Hz": {
+          "proportions": {
+            "train+valid": 10.31,
+            "test": 12.39
+          },
+          "std": 1.04,
+          "max_diff": 2.09
+        },
+        "stim_40000Hz": {
+          "proportions": {
+            "train+valid": 2.75,
+            "test": 0.0
+          },
+          "std": 1.38,
+          "max_diff": 2.75
+        },
+        "stim_15000Hz": {
+          "proportions": {
+            "train+valid": 7.37,
+            "test": 5.1
+          },
+          "std": 1.13,
+          "max_diff": 2.27
+        },
+        "stim_800Hz": {
+          "proportions": {
+            "train+valid": 8.22,
+            "test": 12.39
+          },
+          "std": 2.09,
+          "max_diff": 4.17
+        },
+        "stim_1000Hz": {
+          "proportions": {
+            "train+valid": 10.42,
+            "test": 11.65
+          },
+          "std": 0.61,
+          "max_diff": 1.23
+        },
+        "stim_16000Hz": {
+          "proportions": {
+            "train+valid": 2.41,
+            "test": 1.56
+          },
+          "std": 0.43,
+          "max_diff": 0.85
+        },
+        "stim_200Hz": {
+          "proportions": {
+            "train+valid": 2.31,
+            "test": 0.0
+          },
+          "std": 1.15,
+          "max_diff": 2.31
+        },
+        "stim_10000Hz": {
+          "proportions": {
+            "train+valid": 10.68,
+            "test": 14.46
+          },
+          "std": 1.89,
+          "max_diff": 3.78
+        },
+        "stim_400Hz": {
+          "proportions": {
+            "train+valid": 1.67,
+            "test": 0.0
+          },
+          "std": 0.83,
+          "max_diff": 1.67
+        },
+        "stim_8000Hz": {
+          "proportions": {
+            "train+valid": 6.82,
+            "test": 11.34
+          },
+          "std": 2.26,
+          "max_diff": 4.53
+        },
+        "stim_5000Hz": {
+          "proportions": {
+            "train+valid": 11.66,
+            "test": 12.64
+          },
+          "std": 0.49,
+          "max_diff": 0.98
+        },
+        "stim_30000Hz": {
+          "proportions": {
+            "train+valid": 1.97,
+            "test": 0.0
+          },
+          "std": 0.99,
+          "max_diff": 1.97
+        },
+        "stim_100Hz": {
+          "proportions": {
+            "train+valid": 1.63,
+            "test": 1.85
+          },
+          "std": 0.11,
+          "max_diff": 0.22
+        }
+      }
+    },
+    "remapped": {
+      "train": {
+        "counts": {
+          "mid": 5780,
+          "sub_bass": 5371,
+          "low_mid": 4019,
+          "high_mid": 6621,
+          "low": 6009,
+          "high": 4725
+        },
+        "imbalance": {
+          "max_min_ratio": 1.6474247325205276,
+          "cv": 0.15738274563940566,
+          "max_class": "high_mid",
+          "max_count": 6621,
+          "min_class": "low_mid",
+          "min_count": 4019,
+          "mean_count": 5420.833333333333,
+          "total": 32525,
+          "n_classes": 6
+        }
+      },
+      "valid": {
+        "counts": {
+          "low_mid": 506,
+          "mid": 998,
+          "high_mid": 886,
+          "low": 830,
+          "sub_bass": 942
+        },
+        "imbalance": {
+          "max_min_ratio": 1.9723320158102766,
+          "cv": 0.20728080965820908,
+          "max_class": "mid",
+          "max_count": 998,
+          "min_class": "low_mid",
+          "min_count": 506,
+          "mean_count": 832.4,
+          "total": 4162,
+          "n_classes": 5
+        }
+      },
+      "test": {
+        "counts": {
+          "mid": 3786,
+          "low": 3796,
+          "high_mid": 3335,
+          "high": 482,
+          "sub_bass": 2723,
+          "low_mid": 1667
+        },
+        "imbalance": {
+          "max_min_ratio": 7.875518672199171,
+          "cv": 0.4587191866943074,
+          "max_class": "low",
+          "max_count": 3796,
+          "min_class": "high",
+          "min_count": 482,
+          "mean_count": 2631.5,
+          "total": 15789,
+          "n_classes": 6
+        }
+      },
+      "proportion_stability": {
+        "high_mid": {
+          "proportions": {
+            "train": 20.36,
+            "valid": 21.29,
+            "test": 21.12
+          },
+          "std": 0.41,
+          "max_diff": 0.93
+        },
+        "sub_bass": {
+          "proportions": {
+            "train": 16.51,
+            "valid": 22.63,
+            "test": 17.25
+          },
+          "std": 2.73,
+          "max_diff": 6.12
+        },
+        "mid": {
+          "proportions": {
+            "train": 17.77,
+            "valid": 23.98,
+            "test": 23.98
+          },
+          "std": 2.93,
+          "max_diff": 6.21
+        },
+        "high": {
+          "proportions": {
+            "train": 14.53,
+            "valid": 0.0,
+            "test": 3.05
+          },
+          "std": 6.25,
+          "max_diff": 14.53
+        },
+        "low_mid": {
+          "proportions": {
+            "train": 12.36,
+            "valid": 12.16,
+            "test": 10.56
+          },
+          "std": 0.81,
+          "max_diff": 1.8
+        },
+        "low": {
+          "proportions": {
+            "train": 18.48,
+            "valid": 19.94,
+            "test": 24.04
+          },
+          "std": 2.36,
+          "max_diff": 5.57
+        }
+      },
+      "trainval_vs_test": {
+        "trainval": {
+          "max_min_ratio": 1.6590055248618785,
+          "cv": 0.18163648832806437,
+          "max_class": "high_mid",
+          "max_count": 7507,
+          "min_class": "low_mid",
+          "min_count": 4525,
+          "mean_count": 6114.5,
+          "total": 36687,
+          "n_classes": 6
+        },
+        "test": {
+          "max_min_ratio": 7.875518672199171,
+          "cv": 0.4587191866943074,
+          "max_class": "low",
+          "max_count": 3796,
+          "min_class": "high",
+          "min_count": 482,
+          "mean_count": 2631.5,
+          "total": 15789,
+          "n_classes": 6
+        }
+      },
+      "trainval_test_stability": {
+        "high_mid": {
+          "proportions": {
+            "train+valid": 20.46,
+            "test": 21.12
+          },
+          "std": 0.33,
+          "max_diff": 0.66
+        },
+        "sub_bass": {
+          "proportions": {
+            "train+valid": 17.21,
+            "test": 17.25
+          },
+          "std": 0.02,
+          "max_diff": 0.04
+        },
+        "mid": {
+          "proportions": {
+            "train+valid": 18.48,
+            "test": 23.98
+          },
+          "std": 2.75,
+          "max_diff": 5.5
+        },
+        "high": {
+          "proportions": {
+            "train+valid": 12.88,
+            "test": 3.05
+          },
+          "std": 4.91,
+          "max_diff": 9.83
+        },
+        "low_mid": {
+          "proportions": {
+            "train+valid": 12.33,
+            "test": 10.56
+          },
+          "std": 0.89,
+          "max_diff": 1.78
+        },
+        "low": {
+          "proportions": {
+            "train+valid": 18.64,
+            "test": 24.04
+          },
+          "std": 2.7,
+          "max_diff": 5.4
+        }
+      }
+    }
+  },
+  {
+    "dataset": "minipigs",
+    "split_type": "intersubject",
+    "fold": 4,
+    "task": "acoustic_stim",
+    "n_recordings": 56,
+    "subjects": {
+      "train": [
+        "sub-01",
+        "sub-02",
+        "sub-03",
+        "sub-05"
+      ],
+      "valid": [
+        "sub-06"
+      ],
+      "test": [
+        "sub-04",
+        "sub-07"
+      ]
+    },
+    "original": {
+      "train": {
+        "counts": {
+          "stim_5000Hz": 4033,
+          "stim_500Hz": 3535,
+          "stim_2000Hz": 4043,
+          "stim_15000Hz": 2467,
+          "stim_1000Hz": 3583,
+          "stim_20000Hz": 2510,
+          "stim_10000Hz": 3430,
+          "stim_40000Hz": 1010,
+          "stim_8000Hz": 2263,
+          "stim_30000Hz": 723,
+          "stim_200Hz": 847,
+          "stim_800Hz": 2526,
+          "stim_400Hz": 612,
+          "stim_100Hz": 597,
+          "stim_16000Hz": 644,
+          "stim_300Hz": 240
+        },
+        "imbalance": {
+          "max_min_ratio": 16.845833333333335,
+          "cv": 0.648563836143529,
+          "max_class": "stim_2000Hz",
+          "max_count": 4043,
+          "min_class": "stim_300Hz",
+          "min_count": 240,
+          "mean_count": 2066.4375,
+          "total": 33063,
+          "n_classes": 16
+        }
+      },
+      "valid": {
+        "counts": {
+          "stim_5000Hz": 244,
+          "stim_10000Hz": 488,
+          "stim_800Hz": 490,
+          "stim_8000Hz": 238,
+          "stim_300Hz": 236,
+          "stim_15000Hz": 238,
+          "stim_2000Hz": 482,
+          "stim_1000Hz": 240,
+          "stim_500Hz": 246,
+          "stim_20000Hz": 482,
+          "stim_16000Hz": 240
+        },
+        "imbalance": {
+          "max_min_ratio": 2.0762711864406778,
+          "cv": 0.358192004540742,
+          "max_class": "stim_800Hz",
+          "max_count": 490,
+          "min_class": "stim_300Hz",
+          "min_count": 236,
+          "mean_count": 329.45454545454544,
+          "total": 3624,
+          "n_classes": 11
+        }
+      },
+      "test": {
+        "counts": {
+          "stim_5000Hz": 1995,
+          "stim_1000Hz": 1839,
+          "stim_8000Hz": 1791,
+          "stim_10000Hz": 2283,
+          "stim_20000Hz": 482,
+          "stim_500Hz": 1957,
+          "stim_800Hz": 1957,
+          "stim_300Hz": 474,
+          "stim_15000Hz": 806,
+          "stim_2000Hz": 1667,
+          "stim_16000Hz": 246,
+          "stim_100Hz": 292
+        },
+        "imbalance": {
+          "max_min_ratio": 9.28048780487805,
+          "cv": 0.5678317409083165,
+          "max_class": "stim_10000Hz",
+          "max_count": 2283,
+          "min_class": "stim_16000Hz",
+          "min_count": 246,
+          "mean_count": 1315.75,
+          "total": 15789,
+          "n_classes": 12
+        }
+      },
+      "proportion_stability": {
+        "stim_20000Hz": {
+          "proportions": {
+            "train": 7.59,
+            "valid": 13.3,
+            "test": 3.05
+          },
+          "std": 4.19,
+          "max_diff": 10.25
+        },
+        "stim_300Hz": {
+          "proportions": {
+            "train": 0.73,
+            "valid": 6.51,
+            "test": 3.0
+          },
+          "std": 2.38,
+          "max_diff": 5.79
+        },
+        "stim_2000Hz": {
+          "proportions": {
+            "train": 12.23,
+            "valid": 13.3,
+            "test": 10.56
+          },
+          "std": 1.13,
+          "max_diff": 2.74
+        },
+        "stim_500Hz": {
+          "proportions": {
+            "train": 10.69,
+            "valid": 6.79,
+            "test": 12.39
+          },
+          "std": 2.35,
+          "max_diff": 5.61
+        },
+        "stim_40000Hz": {
+          "proportions": {
+            "train": 3.05,
+            "valid": 0.0,
+            "test": 0.0
+          },
+          "std": 1.44,
+          "max_diff": 3.05
+        },
+        "stim_15000Hz": {
+          "proportions": {
+            "train": 7.46,
+            "valid": 6.57,
+            "test": 5.1
+          },
+          "std": 0.97,
+          "max_diff": 2.36
+        },
+        "stim_800Hz": {
+          "proportions": {
+            "train": 7.64,
+            "valid": 13.52,
+            "test": 12.39
+          },
+          "std": 2.55,
+          "max_diff": 5.88
+        },
+        "stim_1000Hz": {
+          "proportions": {
+            "train": 10.84,
+            "valid": 6.62,
+            "test": 11.65
+          },
+          "std": 2.2,
+          "max_diff": 5.02
+        },
+        "stim_16000Hz": {
+          "proportions": {
+            "train": 1.95,
+            "valid": 6.62,
+            "test": 1.56
+          },
+          "std": 2.3,
+          "max_diff": 5.06
+        },
+        "stim_200Hz": {
+          "proportions": {
+            "train": 2.56,
+            "valid": 0.0,
+            "test": 0.0
+          },
+          "std": 1.21,
+          "max_diff": 2.56
+        },
+        "stim_10000Hz": {
+          "proportions": {
+            "train": 10.37,
+            "valid": 13.47,
+            "test": 14.46
+          },
+          "std": 1.74,
+          "max_diff": 4.09
+        },
+        "stim_400Hz": {
+          "proportions": {
+            "train": 1.85,
+            "valid": 0.0,
+            "test": 0.0
+          },
+          "std": 0.87,
+          "max_diff": 1.85
+        },
+        "stim_8000Hz": {
+          "proportions": {
+            "train": 6.84,
+            "valid": 6.57,
+            "test": 11.34
+          },
+          "std": 2.19,
+          "max_diff": 4.78
+        },
+        "stim_5000Hz": {
+          "proportions": {
+            "train": 12.2,
+            "valid": 6.73,
+            "test": 12.64
+          },
+          "std": 2.69,
+          "max_diff": 5.9
+        },
+        "stim_30000Hz": {
+          "proportions": {
+            "train": 2.19,
+            "valid": 0.0,
+            "test": 0.0
+          },
+          "std": 1.03,
+          "max_diff": 2.19
+        },
+        "stim_100Hz": {
+          "proportions": {
+            "train": 1.81,
+            "valid": 0.0,
+            "test": 1.85
+          },
+          "std": 0.86,
+          "max_diff": 1.85
+        }
+      },
+      "trainval_vs_test": {
+        "trainval": {
+          "max_min_ratio": 9.506302521008404,
+          "cv": 0.6406774052732881,
+          "max_class": "stim_2000Hz",
+          "max_count": 4525,
+          "min_class": "stim_300Hz",
+          "min_count": 476,
+          "mean_count": 2292.9375,
+          "total": 36687,
+          "n_classes": 16
+        },
+        "test": {
+          "max_min_ratio": 9.28048780487805,
+          "cv": 0.5678317409083165,
+          "max_class": "stim_10000Hz",
+          "max_count": 2283,
+          "min_class": "stim_16000Hz",
+          "min_count": 246,
+          "mean_count": 1315.75,
+          "total": 15789,
+          "n_classes": 12
+        }
+      },
+      "trainval_test_stability": {
+        "stim_20000Hz": {
+          "proportions": {
+            "train+valid": 8.16,
+            "test": 3.05
+          },
+          "std": 2.55,
+          "max_diff": 5.1
+        },
+        "stim_300Hz": {
+          "proportions": {
+            "train+valid": 1.3,
+            "test": 3.0
+          },
+          "std": 0.85,
+          "max_diff": 1.7
+        },
+        "stim_2000Hz": {
+          "proportions": {
+            "train+valid": 12.33,
+            "test": 10.56
+          },
+          "std": 0.89,
+          "max_diff": 1.78
+        },
+        "stim_500Hz": {
+          "proportions": {
+            "train+valid": 10.31,
+            "test": 12.39
+          },
+          "std": 1.04,
+          "max_diff": 2.09
+        },
+        "stim_40000Hz": {
+          "proportions": {
+            "train+valid": 2.75,
+            "test": 0.0
+          },
+          "std": 1.38,
+          "max_diff": 2.75
+        },
+        "stim_15000Hz": {
+          "proportions": {
+            "train+valid": 7.37,
+            "test": 5.1
+          },
+          "std": 1.13,
+          "max_diff": 2.27
+        },
+        "stim_800Hz": {
+          "proportions": {
+            "train+valid": 8.22,
+            "test": 12.39
+          },
+          "std": 2.09,
+          "max_diff": 4.17
+        },
+        "stim_1000Hz": {
+          "proportions": {
+            "train+valid": 10.42,
+            "test": 11.65
+          },
+          "std": 0.61,
+          "max_diff": 1.23
+        },
+        "stim_16000Hz": {
+          "proportions": {
+            "train+valid": 2.41,
+            "test": 1.56
+          },
+          "std": 0.43,
+          "max_diff": 0.85
+        },
+        "stim_200Hz": {
+          "proportions": {
+            "train+valid": 2.31,
+            "test": 0.0
+          },
+          "std": 1.15,
+          "max_diff": 2.31
+        },
+        "stim_10000Hz": {
+          "proportions": {
+            "train+valid": 10.68,
+            "test": 14.46
+          },
+          "std": 1.89,
+          "max_diff": 3.78
+        },
+        "stim_400Hz": {
+          "proportions": {
+            "train+valid": 1.67,
+            "test": 0.0
+          },
+          "std": 0.83,
+          "max_diff": 1.67
+        },
+        "stim_8000Hz": {
+          "proportions": {
+            "train+valid": 6.82,
+            "test": 11.34
+          },
+          "std": 2.26,
+          "max_diff": 4.53
+        },
+        "stim_5000Hz": {
+          "proportions": {
+            "train+valid": 11.66,
+            "test": 12.64
+          },
+          "std": 0.49,
+          "max_diff": 0.98
+        },
+        "stim_30000Hz": {
+          "proportions": {
+            "train+valid": 1.97,
+            "test": 0.0
+          },
+          "std": 0.99,
+          "max_diff": 1.97
+        },
+        "stim_100Hz": {
+          "proportions": {
+            "train+valid": 1.63,
+            "test": 1.85
+          },
+          "std": 0.11,
+          "max_diff": 0.22
+        }
+      }
+    },
+    "remapped": {
+      "train": {
+        "counts": {
+          "mid": 6296,
+          "sub_bass": 5831,
+          "low_mid": 4043,
+          "high_mid": 6541,
+          "low": 6109,
+          "high": 4243
+        },
+        "imbalance": {
+          "max_min_ratio": 1.6178580262181548,
+          "cv": 0.17995274351593085,
+          "max_class": "high_mid",
+          "max_count": 6541,
+          "min_class": "low_mid",
+          "min_count": 4043,
+          "mean_count": 5510.5,
+          "total": 33063,
+          "n_classes": 6
+        }
+      },
+      "valid": {
+        "counts": {
+          "mid": 482,
+          "high_mid": 966,
+          "low": 730,
+          "sub_bass": 482,
+          "low_mid": 482,
+          "high": 482
+        },
+        "imbalance": {
+          "max_min_ratio": 2.004149377593361,
+          "cv": 0.3071151145428875,
+          "max_class": "high_mid",
+          "max_count": 966,
+          "min_class": "mid",
+          "min_count": 482,
+          "mean_count": 604.0,
+          "total": 3624,
+          "n_classes": 6
+        }
+      },
+      "test": {
+        "counts": {
+          "mid": 3786,
+          "low": 3796,
+          "high_mid": 3335,
+          "high": 482,
+          "sub_bass": 2723,
+          "low_mid": 1667
+        },
+        "imbalance": {
+          "max_min_ratio": 7.875518672199171,
+          "cv": 0.4587191866943074,
+          "max_class": "low",
+          "max_count": 3796,
+          "min_class": "high",
+          "min_count": 482,
+          "mean_count": 2631.5,
+          "total": 15789,
+          "n_classes": 6
+        }
+      },
+      "proportion_stability": {
+        "high_mid": {
+          "proportions": {
+            "train": 19.78,
+            "valid": 26.66,
+            "test": 21.12
+          },
+          "std": 2.97,
+          "max_diff": 6.87
+        },
+        "sub_bass": {
+          "proportions": {
+            "train": 17.64,
+            "valid": 13.3,
+            "test": 17.25
+          },
+          "std": 1.96,
+          "max_diff": 4.34
+        },
+        "mid": {
+          "proportions": {
+            "train": 19.04,
+            "valid": 13.3,
+            "test": 23.98
+          },
+          "std": 4.36,
+          "max_diff": 10.68
+        },
+        "high": {
+          "proportions": {
+            "train": 12.83,
+            "valid": 13.3,
+            "test": 3.05
+          },
+          "std": 4.72,
+          "max_diff": 10.25
+        },
+        "low_mid": {
+          "proportions": {
+            "train": 12.23,
+            "valid": 13.3,
+            "test": 10.56
+          },
+          "std": 1.13,
+          "max_diff": 2.74
+        },
+        "low": {
+          "proportions": {
+            "train": 18.48,
+            "valid": 20.14,
+            "test": 24.04
+          },
+          "std": 2.33,
+          "max_diff": 5.57
+        }
+      },
+      "trainval_vs_test": {
+        "trainval": {
+          "max_min_ratio": 1.6590055248618785,
+          "cv": 0.18163648832806437,
+          "max_class": "high_mid",
+          "max_count": 7507,
+          "min_class": "low_mid",
+          "min_count": 4525,
+          "mean_count": 6114.5,
+          "total": 36687,
+          "n_classes": 6
+        },
+        "test": {
+          "max_min_ratio": 7.875518672199171,
+          "cv": 0.4587191866943074,
+          "max_class": "low",
+          "max_count": 3796,
+          "min_class": "high",
+          "min_count": 482,
+          "mean_count": 2631.5,
+          "total": 15789,
+          "n_classes": 6
+        }
+      },
+      "trainval_test_stability": {
+        "high_mid": {
+          "proportions": {
+            "train+valid": 20.46,
+            "test": 21.12
+          },
+          "std": 0.33,
+          "max_diff": 0.66
+        },
+        "sub_bass": {
+          "proportions": {
+            "train+valid": 17.21,
+            "test": 17.25
+          },
+          "std": 0.02,
+          "max_diff": 0.04
+        },
+        "mid": {
+          "proportions": {
+            "train+valid": 18.48,
+            "test": 23.98
+          },
+          "std": 2.75,
+          "max_diff": 5.5
+        },
+        "high": {
+          "proportions": {
+            "train+valid": 12.88,
+            "test": 3.05
+          },
+          "std": 4.91,
+          "max_diff": 9.83
+        },
+        "low_mid": {
+          "proportions": {
+            "train+valid": 12.33,
+            "test": 10.56
+          },
+          "std": 0.89,
+          "max_diff": 1.78
+        },
+        "low": {
+          "proportions": {
+            "train+valid": 18.64,
+            "test": 24.04
+          },
+          "std": 2.7,
+          "max_diff": 5.4
+        }
+      }
+    }
+  },
+  {
+    "dataset": "minipigs",
+    "split_type": "intersession",
+    "fold": 0,
+    "task": "acoustic_stim",
+    "n_recordings": 56,
+    "subjects": {
+      "train": [
+        "sub-01",
+        "sub-02",
+        "sub-03",
+        "sub-04",
+        "sub-05",
+        "sub-06",
+        "sub-07"
+      ],
+      "valid": [
+        "sub-01",
+        "sub-02",
+        "sub-03",
+        "sub-05"
+      ],
+      "test": [
+        "sub-04",
+        "sub-07"
+      ]
+    },
+    "original": {
+      "train": {
+        "counts": {
+          "stim_5000Hz": 4145,
+          "stim_500Hz": 3296,
+          "stim_2000Hz": 4017,
+          "stim_15000Hz": 2144,
+          "stim_1000Hz": 3585,
+          "stim_20000Hz": 2761,
+          "stim_10000Hz": 3690,
+          "stim_800Hz": 2929,
+          "stim_8000Hz": 2360,
+          "stim_30000Hz": 244,
+          "stim_40000Hz": 506,
+          "stim_400Hz": 236,
+          "stim_200Hz": 242,
+          "stim_16000Hz": 762,
+          "stim_300Hz": 710
+        },
+        "imbalance": {
+          "max_min_ratio": 17.5635593220339,
+          "cv": 0.6910790315152371,
+          "max_class": "stim_5000Hz",
+          "max_count": 4145,
+          "min_class": "stim_400Hz",
+          "min_count": 236,
+          "mean_count": 2108.4666666666667,
+          "total": 31627,
+          "n_classes": 15
+        }
+      },
+      "valid": {
+        "counts": {
+          "stim_1000Hz": 1145,
+          "stim_40000Hz": 504,
+          "stim_8000Hz": 1025,
+          "stim_30000Hz": 479,
+          "stim_200Hz": 605,
+          "stim_500Hz": 1248,
+          "stim_800Hz": 852,
+          "stim_10000Hz": 1141,
+          "stim_20000Hz": 713,
+          "stim_400Hz": 376,
+          "stim_100Hz": 597,
+          "stim_2000Hz": 1050,
+          "stim_15000Hz": 877,
+          "stim_5000Hz": 1045,
+          "stim_16000Hz": 368,
+          "stim_300Hz": 240
+        },
+        "imbalance": {
+          "max_min_ratio": 5.2,
+          "cv": 0.406993521061467,
+          "max_class": "stim_500Hz",
+          "max_count": 1248,
+          "min_class": "stim_300Hz",
+          "min_count": 240,
+          "mean_count": 766.5625,
+          "total": 12265,
+          "n_classes": 16
+        }
+      },
+      "test": {
+        "counts": {
+          "stim_2000Hz": 1125,
+          "stim_5000Hz": 1082,
+          "stim_500Hz": 1194,
+          "stim_10000Hz": 1370,
+          "stim_800Hz": 1192,
+          "stim_8000Hz": 907,
+          "stim_100Hz": 292,
+          "stim_1000Hz": 932,
+          "stim_15000Hz": 490
+        },
+        "imbalance": {
+          "max_min_ratio": 4.691780821917808,
+          "cv": 0.3475876058054629,
+          "max_class": "stim_10000Hz",
+          "max_count": 1370,
+          "min_class": "stim_100Hz",
+          "min_count": 292,
+          "mean_count": 953.7777777777778,
+          "total": 8584,
+          "n_classes": 9
+        }
+      },
+      "proportion_stability": {
+        "stim_20000Hz": {
+          "proportions": {
+            "train": 8.73,
+            "valid": 5.81,
+            "test": 0.0
+          },
+          "std": 3.63,
+          "max_diff": 8.73
+        },
+        "stim_300Hz": {
+          "proportions": {
+            "train": 2.24,
+            "valid": 1.96,
+            "test": 0.0
+          },
+          "std": 1.0,
+          "max_diff": 2.24
+        },
+        "stim_2000Hz": {
+          "proportions": {
+            "train": 12.7,
+            "valid": 8.56,
+            "test": 13.11
+          },
+          "std": 2.05,
+          "max_diff": 4.54
+        },
+        "stim_500Hz": {
+          "proportions": {
+            "train": 10.42,
+            "valid": 10.18,
+            "test": 13.91
+          },
+          "std": 1.71,
+          "max_diff": 3.73
+        },
+        "stim_40000Hz": {
+          "proportions": {
+            "train": 1.6,
+            "valid": 4.11,
+            "test": 0.0
+          },
+          "std": 1.69,
+          "max_diff": 4.11
+        },
+        "stim_15000Hz": {
+          "proportions": {
+            "train": 6.78,
+            "valid": 7.15,
+            "test": 5.71
+          },
+          "std": 0.61,
+          "max_diff": 1.44
+        },
+        "stim_800Hz": {
+          "proportions": {
+            "train": 9.26,
+            "valid": 6.95,
+            "test": 13.89
+          },
+          "std": 2.88,
+          "max_diff": 6.94
+        },
+        "stim_1000Hz": {
+          "proportions": {
+            "train": 11.34,
+            "valid": 9.34,
+            "test": 10.86
+          },
+          "std": 0.85,
+          "max_diff": 2.0
+        },
+        "stim_16000Hz": {
+          "proportions": {
+            "train": 2.41,
+            "valid": 3.0,
+            "test": 0.0
+          },
+          "std": 1.3,
+          "max_diff": 3.0
+        },
+        "stim_200Hz": {
+          "proportions": {
+            "train": 0.77,
+            "valid": 4.93,
+            "test": 0.0
+          },
+          "std": 2.17,
+          "max_diff": 4.93
+        },
+        "stim_10000Hz": {
+          "proportions": {
+            "train": 11.67,
+            "valid": 9.3,
+            "test": 15.96
+          },
+          "std": 2.76,
+          "max_diff": 6.66
+        },
+        "stim_400Hz": {
+          "proportions": {
+            "train": 0.75,
+            "valid": 3.07,
+            "test": 0.0
+          },
+          "std": 1.31,
+          "max_diff": 3.07
+        },
+        "stim_8000Hz": {
+          "proportions": {
+            "train": 7.46,
+            "valid": 8.36,
+            "test": 10.57
+          },
+          "std": 1.3,
+          "max_diff": 3.1
+        },
+        "stim_5000Hz": {
+          "proportions": {
+            "train": 13.11,
+            "valid": 8.52,
+            "test": 12.6
+          },
+          "std": 2.05,
+          "max_diff": 4.59
+        },
+        "stim_30000Hz": {
+          "proportions": {
+            "train": 0.77,
+            "valid": 3.91,
+            "test": 0.0
+          },
+          "std": 1.69,
+          "max_diff": 3.91
+        },
+        "stim_100Hz": {
+          "proportions": {
+            "train": 0.0,
+            "valid": 4.87,
+            "test": 3.4
+          },
+          "std": 2.04,
+          "max_diff": 4.87
+        }
+      },
+      "trainval_vs_test": {
+        "trainval": {
+          "max_min_ratio": 8.693467336683417,
+          "cv": 0.6487934018324429,
+          "max_class": "stim_5000Hz",
+          "max_count": 5190,
+          "min_class": "stim_100Hz",
+          "min_count": 597,
+          "mean_count": 2743.25,
+          "total": 43892,
+          "n_classes": 16
+        },
+        "test": {
+          "max_min_ratio": 4.691780821917808,
+          "cv": 0.3475876058054629,
+          "max_class": "stim_10000Hz",
+          "max_count": 1370,
+          "min_class": "stim_100Hz",
+          "min_count": 292,
+          "mean_count": 953.7777777777778,
+          "total": 8584,
+          "n_classes": 9
+        }
+      },
+      "trainval_test_stability": {
+        "stim_20000Hz": {
+          "proportions": {
+            "train+valid": 7.91,
+            "test": 0.0
+          },
+          "std": 3.96,
+          "max_diff": 7.91
+        },
+        "stim_300Hz": {
+          "proportions": {
+            "train+valid": 2.16,
+            "test": 0.0
+          },
+          "std": 1.08,
+          "max_diff": 2.16
+        },
+        "stim_2000Hz": {
+          "proportions": {
+            "train+valid": 11.54,
+            "test": 13.11
+          },
+          "std": 0.78,
+          "max_diff": 1.56
+        },
+        "stim_500Hz": {
+          "proportions": {
+            "train+valid": 10.35,
+            "test": 13.91
+          },
+          "std": 1.78,
+          "max_diff": 3.56
+        },
+        "stim_40000Hz": {
+          "proportions": {
+            "train+valid": 2.3,
+            "test": 0.0
+          },
+          "std": 1.15,
+          "max_diff": 2.3
+        },
+        "stim_15000Hz": {
+          "proportions": {
+            "train+valid": 6.88,
+            "test": 5.71
+          },
+          "std": 0.59,
+          "max_diff": 1.17
+        },
+        "stim_800Hz": {
+          "proportions": {
+            "train+valid": 8.61,
+            "test": 13.89
+          },
+          "std": 2.64,
+          "max_diff": 5.27
+        },
+        "stim_1000Hz": {
+          "proportions": {
+            "train+valid": 10.78,
+            "test": 10.86
+          },
+          "std": 0.04,
+          "max_diff": 0.08
+        },
+        "stim_16000Hz": {
+          "proportions": {
+            "train+valid": 2.57,
+            "test": 0.0
+          },
+          "std": 1.29,
+          "max_diff": 2.57
+        },
+        "stim_200Hz": {
+          "proportions": {
+            "train+valid": 1.93,
+            "test": 0.0
+          },
+          "std": 0.96,
+          "max_diff": 1.93
+        },
+        "stim_10000Hz": {
+          "proportions": {
+            "train+valid": 11.01,
+            "test": 15.96
+          },
+          "std": 2.48,
+          "max_diff": 4.95
+        },
+        "stim_400Hz": {
+          "proportions": {
+            "train+valid": 1.39,
+            "test": 0.0
+          },
+          "std": 0.7,
+          "max_diff": 1.39
+        },
+        "stim_8000Hz": {
+          "proportions": {
+            "train+valid": 7.71,
+            "test": 10.57
+          },
+          "std": 1.43,
+          "max_diff": 2.85
+        },
+        "stim_5000Hz": {
+          "proportions": {
+            "train+valid": 11.82,
+            "test": 12.6
+          },
+          "std": 0.39,
+          "max_diff": 0.78
+        },
+        "stim_30000Hz": {
+          "proportions": {
+            "train+valid": 1.65,
+            "test": 0.0
+          },
+          "std": 0.82,
+          "max_diff": 1.65
+        },
+        "stim_100Hz": {
+          "proportions": {
+            "train+valid": 1.36,
+            "test": 3.4
+          },
+          "std": 1.02,
+          "max_diff": 2.04
+        }
+      }
+    },
+    "remapped": {
+      "train": {
+        "counts": {
+          "mid": 6505,
+          "sub_bass": 4484,
+          "low_mid": 4017,
+          "high_mid": 6596,
+          "low": 6514,
+          "high": 3511
+        },
+        "imbalance": {
+          "max_min_ratio": 1.8786670464255197,
+          "cv": 0.24629511690592437,
+          "max_class": "high_mid",
+          "max_count": 6596,
+          "min_class": "high",
+          "min_count": 3511,
+          "mean_count": 5271.166666666667,
+          "total": 31627,
+          "n_classes": 6
+        }
+      },
+      "valid": {
+        "counts": {
+          "low": 1997,
+          "high": 1696,
+          "mid": 2070,
+          "sub_bass": 3066,
+          "high_mid": 2386,
+          "low_mid": 1050
+        },
+        "imbalance": {
+          "max_min_ratio": 2.92,
+          "cv": 0.30112926017233,
+          "max_class": "sub_bass",
+          "max_count": 3066,
+          "min_class": "low_mid",
+          "min_count": 1050,
+          "mean_count": 2044.1666666666667,
+          "total": 12265,
+          "n_classes": 6
+        }
+      },
+      "test": {
+        "counts": {
+          "low_mid": 1125,
+          "mid": 1989,
+          "sub_bass": 1486,
+          "high_mid": 1860,
+          "low": 2124
+        },
+        "imbalance": {
+          "max_min_ratio": 1.888,
+          "cv": 0.2122505633712097,
+          "max_class": "low",
+          "max_count": 2124,
+          "min_class": "low_mid",
+          "min_count": 1125,
+          "mean_count": 1716.8,
+          "total": 8584,
+          "n_classes": 5
+        }
+      },
+      "proportion_stability": {
+        "high_mid": {
+          "proportions": {
+            "train": 20.86,
+            "valid": 19.45,
+            "test": 21.67
+          },
+          "std": 0.91,
+          "max_diff": 2.21
+        },
+        "sub_bass": {
+          "proportions": {
+            "train": 14.18,
+            "valid": 25.0,
+            "test": 17.31
+          },
+          "std": 4.55,
+          "max_diff": 10.82
+        },
+        "mid": {
+          "proportions": {
+            "train": 20.57,
+            "valid": 16.88,
+            "test": 23.17
+          },
+          "std": 2.58,
+          "max_diff": 6.29
+        },
+        "high": {
+          "proportions": {
+            "train": 11.1,
+            "valid": 13.83,
+            "test": 0.0
+          },
+          "std": 5.98,
+          "max_diff": 13.83
+        },
+        "low_mid": {
+          "proportions": {
+            "train": 12.7,
+            "valid": 8.56,
+            "test": 13.11
+          },
+          "std": 2.05,
+          "max_diff": 4.54
+        },
+        "low": {
+          "proportions": {
+            "train": 20.6,
+            "valid": 16.28,
+            "test": 24.74
+          },
+          "std": 3.45,
+          "max_diff": 8.46
+        }
+      },
+      "trainval_vs_test": {
+        "trainval": {
+          "max_min_ratio": 1.7726465364120783,
+          "cv": 0.21864245953356085,
+          "max_class": "high_mid",
+          "max_count": 8982,
+          "min_class": "low_mid",
+          "min_count": 5067,
+          "mean_count": 7315.333333333333,
+          "total": 43892,
+          "n_classes": 6
+        },
+        "test": {
+          "max_min_ratio": 1.888,
+          "cv": 0.2122505633712097,
+          "max_class": "low",
+          "max_count": 2124,
+          "min_class": "low_mid",
+          "min_count": 1125,
+          "mean_count": 1716.8,
+          "total": 8584,
+          "n_classes": 5
+        }
+      },
+      "trainval_test_stability": {
+        "high_mid": {
+          "proportions": {
+            "train+valid": 20.46,
+            "test": 21.67
+          },
+          "std": 0.6,
+          "max_diff": 1.2
+        },
+        "sub_bass": {
+          "proportions": {
+            "train+valid": 17.2,
+            "test": 17.31
+          },
+          "std": 0.05,
+          "max_diff": 0.11
+        },
+        "mid": {
+          "proportions": {
+            "train+valid": 19.54,
+            "test": 23.17
+          },
+          "std": 1.82,
+          "max_diff": 3.63
+        },
+        "high": {
+          "proportions": {
+            "train+valid": 11.86,
+            "test": 0.0
+          },
+          "std": 5.93,
+          "max_diff": 11.86
+        },
+        "low_mid": {
+          "proportions": {
+            "train+valid": 11.54,
+            "test": 13.11
+          },
+          "std": 0.78,
+          "max_diff": 1.56
+        },
+        "low": {
+          "proportions": {
+            "train+valid": 19.39,
+            "test": 24.74
+          },
+          "std": 2.68,
+          "max_diff": 5.35
+        }
+      }
+    }
+  },
+  {
+    "dataset": "minipigs",
+    "split_type": "intrasession-block",
+    "fold": 0,
+    "task": "acoustic_stim",
+    "n_recordings": 56,
+    "subjects": {
+      "train": [
+        "sub-01",
+        "sub-02",
+        "sub-03",
+        "sub-04",
+        "sub-05",
+        "sub-06",
+        "sub-07"
+      ],
+      "valid": [
+        "sub-01",
+        "sub-02",
+        "sub-03",
+        "sub-04",
+        "sub-05",
+        "sub-06",
+        "sub-07"
+      ],
+      "test": [
+        "sub-01",
+        "sub-02",
+        "sub-03",
+        "sub-04",
+        "sub-05",
+        "sub-06",
+        "sub-07"
+      ]
+    },
+    "original": {
+      "train": {
+        "counts": {
+          "stim_5000Hz": 4409,
+          "stim_500Hz": 4080,
+          "stim_2000Hz": 4277,
+          "stim_15000Hz": 2287,
+          "stim_1000Hz": 3969,
+          "stim_20000Hz": 2108,
+          "stim_10000Hz": 4284,
+          "stim_40000Hz": 682,
+          "stim_8000Hz": 3008,
+          "stim_30000Hz": 514,
+          "stim_200Hz": 516,
+          "stim_800Hz": 3240,
+          "stim_400Hz": 388,
+          "stim_100Hz": 540,
+          "stim_16000Hz": 668,
+          "stim_300Hz": 630
+        },
+        "imbalance": {
+          "max_min_ratio": 11.36340206185567,
+          "cv": 0.7174715383957955,
+          "max_class": "stim_5000Hz",
+          "max_count": 4409,
+          "min_class": "stim_400Hz",
+          "min_count": 388,
+          "mean_count": 2225.0,
+          "total": 35600,
+          "n_classes": 16
+        }
+      },
+      "valid": {
+        "counts": {
+          "stim_5000Hz": 1102,
+          "stim_500Hz": 1018,
+          "stim_2000Hz": 1075,
+          "stim_15000Hz": 576,
+          "stim_1000Hz": 993,
+          "stim_20000Hz": 528,
+          "stim_10000Hz": 1074,
+          "stim_40000Hz": 170,
+          "stim_8000Hz": 760,
+          "stim_30000Hz": 128,
+          "stim_200Hz": 128,
+          "stim_800Hz": 814,
+          "stim_400Hz": 98,
+          "stim_100Hz": 132,
+          "stim_16000Hz": 166,
+          "stim_300Hz": 158
+        },
+        "imbalance": {
+          "max_min_ratio": 11.244897959183673,
+          "cv": 0.7181821201637213,
+          "max_class": "stim_5000Hz",
+          "max_count": 1102,
+          "min_class": "stim_400Hz",
+          "min_count": 98,
+          "mean_count": 557.5,
+          "total": 8920,
+          "n_classes": 16
+        }
+      },
+      "test": {
+        "counts": {
+          "stim_5000Hz": 2756,
+          "stim_500Hz": 2546,
+          "stim_2000Hz": 2682,
+          "stim_15000Hz": 1430,
+          "stim_1000Hz": 2484,
+          "stim_20000Hz": 1316,
+          "stim_10000Hz": 2684,
+          "stim_40000Hz": 424,
+          "stim_8000Hz": 1881,
+          "stim_30000Hz": 322,
+          "stim_200Hz": 322,
+          "stim_800Hz": 2022,
+          "stim_400Hz": 246,
+          "stim_100Hz": 340,
+          "stim_16000Hz": 416,
+          "stim_300Hz": 400
+        },
+        "imbalance": {
+          "max_min_ratio": 11.203252032520325,
+          "cv": 0.7171819223325437,
+          "max_class": "stim_5000Hz",
+          "max_count": 2756,
+          "min_class": "stim_400Hz",
+          "min_count": 246,
+          "mean_count": 1391.9375,
+          "total": 22271,
+          "n_classes": 16
+        }
+      },
+      "proportion_stability": {
+        "stim_20000Hz": {
+          "proportions": {
+            "train": 5.92,
+            "valid": 5.92,
+            "test": 5.91
+          },
+          "std": 0.01,
+          "max_diff": 0.01
+        },
+        "stim_300Hz": {
+          "proportions": {
+            "train": 1.77,
+            "valid": 1.77,
+            "test": 1.8
+          },
+          "std": 0.01,
+          "max_diff": 0.03
+        },
+        "stim_2000Hz": {
+          "proportions": {
+            "train": 12.01,
+            "valid": 12.05,
+            "test": 12.04
+          },
+          "std": 0.02,
+          "max_diff": 0.04
+        },
+        "stim_500Hz": {
+          "proportions": {
+            "train": 11.46,
+            "valid": 11.41,
+            "test": 11.43
+          },
+          "std": 0.02,
+          "max_diff": 0.05
+        },
+        "stim_40000Hz": {
+          "proportions": {
+            "train": 1.92,
+            "valid": 1.91,
+            "test": 1.9
+          },
+          "std": 0.01,
+          "max_diff": 0.01
+        },
+        "stim_15000Hz": {
+          "proportions": {
+            "train": 6.42,
+            "valid": 6.46,
+            "test": 6.42
+          },
+          "std": 0.02,
+          "max_diff": 0.04
+        },
+        "stim_800Hz": {
+          "proportions": {
+            "train": 9.1,
+            "valid": 9.13,
+            "test": 9.08
+          },
+          "std": 0.02,
+          "max_diff": 0.05
+        },
+        "stim_1000Hz": {
+          "proportions": {
+            "train": 11.15,
+            "valid": 11.13,
+            "test": 11.15
+          },
+          "std": 0.01,
+          "max_diff": 0.02
+        },
+        "stim_16000Hz": {
+          "proportions": {
+            "train": 1.88,
+            "valid": 1.86,
+            "test": 1.87
+          },
+          "std": 0.01,
+          "max_diff": 0.02
+        },
+        "stim_200Hz": {
+          "proportions": {
+            "train": 1.45,
+            "valid": 1.43,
+            "test": 1.45
+          },
+          "std": 0.01,
+          "max_diff": 0.01
+        },
+        "stim_10000Hz": {
+          "proportions": {
+            "train": 12.03,
+            "valid": 12.04,
+            "test": 12.05
+          },
+          "std": 0.01,
+          "max_diff": 0.02
+        },
+        "stim_400Hz": {
+          "proportions": {
+            "train": 1.09,
+            "valid": 1.1,
+            "test": 1.1
+          },
+          "std": 0.01,
+          "max_diff": 0.01
+        },
+        "stim_8000Hz": {
+          "proportions": {
+            "train": 8.45,
+            "valid": 8.52,
+            "test": 8.45
+          },
+          "std": 0.03,
+          "max_diff": 0.07
+        },
+        "stim_5000Hz": {
+          "proportions": {
+            "train": 12.38,
+            "valid": 12.35,
+            "test": 12.37
+          },
+          "std": 0.01,
+          "max_diff": 0.03
+        },
+        "stim_30000Hz": {
+          "proportions": {
+            "train": 1.44,
+            "valid": 1.43,
+            "test": 1.45
+          },
+          "std": 0.0,
+          "max_diff": 0.01
+        },
+        "stim_100Hz": {
+          "proportions": {
+            "train": 1.52,
+            "valid": 1.48,
+            "test": 1.53
+          },
+          "std": 0.02,
+          "max_diff": 0.05
+        }
+      },
+      "trainval_vs_test": {
+        "trainval": {
+          "max_min_ratio": 11.339506172839506,
+          "cv": 0.7176115084122051,
+          "max_class": "stim_5000Hz",
+          "max_count": 5511,
+          "min_class": "stim_400Hz",
+          "min_count": 486,
+          "mean_count": 2782.5,
+          "total": 44520,
+          "n_classes": 16
+        },
+        "test": {
+          "max_min_ratio": 11.203252032520325,
+          "cv": 0.7171819223325437,
+          "max_class": "stim_5000Hz",
+          "max_count": 2756,
+          "min_class": "stim_400Hz",
+          "min_count": 246,
+          "mean_count": 1391.9375,
+          "total": 22271,
+          "n_classes": 16
+        }
+      },
+      "trainval_test_stability": {
+        "stim_20000Hz": {
+          "proportions": {
+            "train+valid": 5.92,
+            "test": 5.91
+          },
+          "std": 0.01,
+          "max_diff": 0.01
+        },
+        "stim_300Hz": {
+          "proportions": {
+            "train+valid": 1.77,
+            "test": 1.8
+          },
+          "std": 0.01,
+          "max_diff": 0.03
+        },
+        "stim_2000Hz": {
+          "proportions": {
+            "train+valid": 12.02,
+            "test": 12.04
+          },
+          "std": 0.01,
+          "max_diff": 0.02
+        },
+        "stim_500Hz": {
+          "proportions": {
+            "train+valid": 11.45,
+            "test": 11.43
+          },
+          "std": 0.01,
+          "max_diff": 0.02
+        },
+        "stim_40000Hz": {
+          "proportions": {
+            "train+valid": 1.91,
+            "test": 1.9
+          },
+          "std": 0.0,
+          "max_diff": 0.01
+        },
+        "stim_15000Hz": {
+          "proportions": {
+            "train+valid": 6.43,
+            "test": 6.42
+          },
+          "std": 0.0,
+          "max_diff": 0.01
+        },
+        "stim_800Hz": {
+          "proportions": {
+            "train+valid": 9.11,
+            "test": 9.08
+          },
+          "std": 0.01,
+          "max_diff": 0.03
+        },
+        "stim_1000Hz": {
+          "proportions": {
+            "train+valid": 11.15,
+            "test": 11.15
+          },
+          "std": 0.0,
+          "max_diff": 0.01
+        },
+        "stim_16000Hz": {
+          "proportions": {
+            "train+valid": 1.87,
+            "test": 1.87
+          },
+          "std": 0.0,
+          "max_diff": 0.01
+        },
+        "stim_200Hz": {
+          "proportions": {
+            "train+valid": 1.45,
+            "test": 1.45
+          },
+          "std": 0.0,
+          "max_diff": 0.0
+        },
+        "stim_10000Hz": {
+          "proportions": {
+            "train+valid": 12.04,
+            "test": 12.05
+          },
+          "std": 0.01,
+          "max_diff": 0.02
+        },
+        "stim_400Hz": {
+          "proportions": {
+            "train+valid": 1.09,
+            "test": 1.1
+          },
+          "std": 0.01,
+          "max_diff": 0.01
+        },
+        "stim_8000Hz": {
+          "proportions": {
+            "train+valid": 8.46,
+            "test": 8.45
+          },
+          "std": 0.01,
+          "max_diff": 0.02
+        },
+        "stim_5000Hz": {
+          "proportions": {
+            "train+valid": 12.38,
+            "test": 12.37
+          },
+          "std": 0.0,
+          "max_diff": 0.0
+        },
+        "stim_30000Hz": {
+          "proportions": {
+            "train+valid": 1.44,
+            "test": 1.45
+          },
+          "std": 0.0,
+          "max_diff": 0.0
+        },
+        "stim_100Hz": {
+          "proportions": {
+            "train+valid": 1.51,
+            "test": 1.53
+          },
+          "std": 0.01,
+          "max_diff": 0.02
+        }
+      }
+    },
+    "remapped": {
+      "train": {
+        "counts": {
+          "mid": 7417,
+          "sub_bass": 6154,
+          "low_mid": 4277,
+          "high_mid": 7239,
+          "low": 7209,
+          "high": 3304
+        },
+        "imbalance": {
+          "max_min_ratio": 2.2448547215496366,
+          "cv": 0.2685976618504362,
+          "max_class": "mid",
+          "max_count": 7417,
+          "min_class": "high",
+          "min_count": 3304,
+          "mean_count": 5933.333333333333,
+          "total": 35600,
+          "n_classes": 6
+        }
+      },
+      "valid": {
+        "counts": {
+          "mid": 1862,
+          "sub_bass": 1534,
+          "low_mid": 1075,
+          "high_mid": 1816,
+          "low": 1807,
+          "high": 826
+        },
+        "imbalance": {
+          "max_min_ratio": 2.2542372881355934,
+          "cv": 0.2690778206667641,
+          "max_class": "mid",
+          "max_count": 1862,
+          "min_class": "high",
+          "min_count": 826,
+          "mean_count": 1486.6666666666667,
+          "total": 8920,
+          "n_classes": 6
+        }
+      },
+      "test": {
+        "counts": {
+          "mid": 4637,
+          "sub_bass": 3854,
+          "low_mid": 2682,
+          "high_mid": 4530,
+          "low": 4506,
+          "high": 2062
+        },
+        "imbalance": {
+          "max_min_ratio": 2.248787584869059,
+          "cv": 0.2684809322908471,
+          "max_class": "mid",
+          "max_count": 4637,
+          "min_class": "high",
+          "min_count": 2062,
+          "mean_count": 3711.8333333333335,
+          "total": 22271,
+          "n_classes": 6
+        }
+      },
+      "proportion_stability": {
+        "high_mid": {
+          "proportions": {
+            "train": 20.33,
+            "valid": 20.36,
+            "test": 20.34
+          },
+          "std": 0.01,
+          "max_diff": 0.02
+        },
+        "sub_bass": {
+          "proportions": {
+            "train": 17.29,
+            "valid": 17.2,
+            "test": 17.31
+          },
+          "std": 0.05,
+          "max_diff": 0.11
+        },
+        "mid": {
+          "proportions": {
+            "train": 20.83,
+            "valid": 20.87,
+            "test": 20.82
+          },
+          "std": 0.02,
+          "max_diff": 0.05
+        },
+        "high": {
+          "proportions": {
+            "train": 9.28,
+            "valid": 9.26,
+            "test": 9.26
+          },
+          "std": 0.01,
+          "max_diff": 0.02
+        },
+        "low_mid": {
+          "proportions": {
+            "train": 12.01,
+            "valid": 12.05,
+            "test": 12.04
+          },
+          "std": 0.02,
+          "max_diff": 0.04
+        },
+        "low": {
+          "proportions": {
+            "train": 20.25,
+            "valid": 20.26,
+            "test": 20.23
+          },
+          "std": 0.01,
+          "max_diff": 0.03
+        }
+      },
+      "trainval_vs_test": {
+        "trainval": {
+          "max_min_ratio": 2.2467312348668282,
+          "cv": 0.2686917752043355,
+          "max_class": "mid",
+          "max_count": 9279,
+          "min_class": "high",
+          "min_count": 4130,
+          "mean_count": 7420.0,
+          "total": 44520,
+          "n_classes": 6
+        },
+        "test": {
+          "max_min_ratio": 2.248787584869059,
+          "cv": 0.2684809322908471,
+          "max_class": "mid",
+          "max_count": 4637,
+          "min_class": "high",
+          "min_count": 2062,
+          "mean_count": 3711.8333333333335,
+          "total": 22271,
+          "n_classes": 6
+        }
+      },
+      "trainval_test_stability": {
+        "high_mid": {
+          "proportions": {
+            "train+valid": 20.34,
+            "test": 20.34
+          },
+          "std": 0.0,
+          "max_diff": 0.0
+        },
+        "sub_bass": {
+          "proportions": {
+            "train+valid": 17.27,
+            "test": 17.31
+          },
+          "std": 0.02,
+          "max_diff": 0.04
+        },
+        "mid": {
+          "proportions": {
+            "train+valid": 20.84,
+            "test": 20.82
+          },
+          "std": 0.01,
+          "max_diff": 0.02
+        },
+        "high": {
+          "proportions": {
+            "train+valid": 9.28,
+            "test": 9.26
+          },
+          "std": 0.01,
+          "max_diff": 0.02
+        },
+        "low_mid": {
+          "proportions": {
+            "train+valid": 12.02,
+            "test": 12.04
+          },
+          "std": 0.01,
+          "max_diff": 0.02
+        },
+        "low": {
+          "proportions": {
+            "train+valid": 20.25,
+            "test": 20.23
+          },
+          "std": 0.01,
+          "max_diff": 0.02
+        }
+      }
+    }
+  },
+  {
+    "dataset": "minipigs",
+    "split_type": "intrasession-block",
+    "fold": 1,
+    "task": "acoustic_stim",
+    "n_recordings": 56,
+    "subjects": {
+      "train": [
+        "sub-01",
+        "sub-02",
+        "sub-03",
+        "sub-04",
+        "sub-05",
+        "sub-06",
+        "sub-07"
+      ],
+      "valid": [
+        "sub-01",
+        "sub-02",
+        "sub-03",
+        "sub-04",
+        "sub-05",
+        "sub-06",
+        "sub-07"
+      ],
+      "test": [
+        "sub-01",
+        "sub-02",
+        "sub-03",
+        "sub-04",
+        "sub-05",
+        "sub-06",
+        "sub-07"
+      ]
+    },
+    "original": {
+      "train": {
+        "counts": {
+          "stim_5000Hz": 4412,
+          "stim_500Hz": 4070,
+          "stim_2000Hz": 4287,
+          "stim_15000Hz": 2291,
+          "stim_1000Hz": 3970,
+          "stim_20000Hz": 2105,
+          "stim_10000Hz": 4281,
+          "stim_40000Hz": 680,
+          "stim_8000Hz": 3005,
+          "stim_30000Hz": 514,
+          "stim_200Hz": 516,
+          "stim_800Hz": 3233,
+          "stim_400Hz": 392,
+          "stim_100Hz": 540,
+          "stim_16000Hz": 668,
+          "stim_300Hz": 632
+        },
+        "imbalance": {
+          "max_min_ratio": 11.255102040816327,
+          "cv": 0.7173399777844769,
+          "max_class": "stim_5000Hz",
+          "max_count": 4412,
+          "min_class": "stim_400Hz",
+          "min_count": 392,
+          "mean_count": 2224.75,
+          "total": 35596,
+          "n_classes": 16
+        }
+      },
+      "valid": {
+        "counts": {
+          "stim_5000Hz": 1101,
+          "stim_500Hz": 1022,
+          "stim_2000Hz": 1071,
+          "stim_15000Hz": 574,
+          "stim_1000Hz": 999,
+          "stim_20000Hz": 528,
+          "stim_10000Hz": 1076,
+          "stim_40000Hz": 170,
+          "stim_8000Hz": 760,
+          "stim_30000Hz": 128,
+          "stim_200Hz": 128,
+          "stim_800Hz": 814,
+          "stim_400Hz": 98,
+          "stim_100Hz": 136,
+          "stim_16000Hz": 164,
+          "stim_300Hz": 160
+        },
+        "imbalance": {
+          "max_min_ratio": 11.23469387755102,
+          "cv": 0.7177844334545201,
+          "max_class": "stim_5000Hz",
+          "max_count": 1101,
+          "min_class": "stim_400Hz",
+          "min_count": 98,
+          "mean_count": 558.0625,
+          "total": 8929,
+          "n_classes": 16
+        }
+      },
+      "test": {
+        "counts": {
+          "stim_5000Hz": 2754,
+          "stim_500Hz": 2552,
+          "stim_2000Hz": 2676,
+          "stim_15000Hz": 1428,
+          "stim_1000Hz": 2477,
+          "stim_20000Hz": 1319,
+          "stim_10000Hz": 2685,
+          "stim_40000Hz": 426,
+          "stim_8000Hz": 1884,
+          "stim_30000Hz": 322,
+          "stim_200Hz": 322,
+          "stim_800Hz": 2029,
+          "stim_400Hz": 242,
+          "stim_100Hz": 336,
+          "stim_16000Hz": 418,
+          "stim_300Hz": 396
+        },
+        "imbalance": {
+          "max_min_ratio": 11.380165289256198,
+          "cv": 0.7175532382006892,
+          "max_class": "stim_5000Hz",
+          "max_count": 2754,
+          "min_class": "stim_400Hz",
+          "min_count": 242,
+          "mean_count": 1391.625,
+          "total": 22266,
+          "n_classes": 16
+        }
+      },
+      "proportion_stability": {
+        "stim_20000Hz": {
+          "proportions": {
+            "train": 5.91,
+            "valid": 5.91,
+            "test": 5.92
+          },
+          "std": 0.0,
+          "max_diff": 0.01
+        },
+        "stim_300Hz": {
+          "proportions": {
+            "train": 1.78,
+            "valid": 1.79,
+            "test": 1.78
+          },
+          "std": 0.01,
+          "max_diff": 0.02
+        },
+        "stim_2000Hz": {
+          "proportions": {
+            "train": 12.04,
+            "valid": 11.99,
+            "test": 12.02
+          },
+          "std": 0.02,
+          "max_diff": 0.05
+        },
+        "stim_500Hz": {
+          "proportions": {
+            "train": 11.43,
+            "valid": 11.45,
+            "test": 11.46
+          },
+          "std": 0.01,
+          "max_diff": 0.03
+        },
+        "stim_40000Hz": {
+          "proportions": {
+            "train": 1.91,
+            "valid": 1.9,
+            "test": 1.91
+          },
+          "std": 0.0,
+          "max_diff": 0.01
+        },
+        "stim_15000Hz": {
+          "proportions": {
+            "train": 6.44,
+            "valid": 6.43,
+            "test": 6.41
+          },
+          "std": 0.01,
+          "max_diff": 0.02
+        },
+        "stim_800Hz": {
+          "proportions": {
+            "train": 9.08,
+            "valid": 9.12,
+            "test": 9.11
+          },
+          "std": 0.02,
+          "max_diff": 0.03
+        },
+        "stim_1000Hz": {
+          "proportions": {
+            "train": 11.15,
+            "valid": 11.19,
+            "test": 11.12
+          },
+          "std": 0.03,
+          "max_diff": 0.06
+        },
+        "stim_16000Hz": {
+          "proportions": {
+            "train": 1.88,
+            "valid": 1.84,
+            "test": 1.88
+          },
+          "std": 0.02,
+          "max_diff": 0.04
+        },
+        "stim_200Hz": {
+          "proportions": {
+            "train": 1.45,
+            "valid": 1.43,
+            "test": 1.45
+          },
+          "std": 0.01,
+          "max_diff": 0.02
+        },
+        "stim_10000Hz": {
+          "proportions": {
+            "train": 12.03,
+            "valid": 12.05,
+            "test": 12.06
+          },
+          "std": 0.01,
+          "max_diff": 0.03
+        },
+        "stim_400Hz": {
+          "proportions": {
+            "train": 1.1,
+            "valid": 1.1,
+            "test": 1.09
+          },
+          "std": 0.01,
+          "max_diff": 0.01
+        },
+        "stim_8000Hz": {
+          "proportions": {
+            "train": 8.44,
+            "valid": 8.51,
+            "test": 8.46
+          },
+          "std": 0.03,
+          "max_diff": 0.07
+        },
+        "stim_5000Hz": {
+          "proportions": {
+            "train": 12.39,
+            "valid": 12.33,
+            "test": 12.37
+          },
+          "std": 0.03,
+          "max_diff": 0.06
+        },
+        "stim_30000Hz": {
+          "proportions": {
+            "train": 1.44,
+            "valid": 1.43,
+            "test": 1.45
+          },
+          "std": 0.01,
+          "max_diff": 0.01
+        },
+        "stim_100Hz": {
+          "proportions": {
+            "train": 1.52,
+            "valid": 1.52,
+            "test": 1.51
+          },
+          "std": 0.01,
+          "max_diff": 0.01
+        }
+      },
+      "trainval_vs_test": {
+        "trainval": {
+          "max_min_ratio": 11.251020408163265,
+          "cv": 0.7174261212869492,
+          "max_class": "stim_5000Hz",
+          "max_count": 5513,
+          "min_class": "stim_400Hz",
+          "min_count": 490,
+          "mean_count": 2782.8125,
+          "total": 44525,
+          "n_classes": 16
+        },
+        "test": {
+          "max_min_ratio": 11.380165289256198,
+          "cv": 0.7175532382006892,
+          "max_class": "stim_5000Hz",
+          "max_count": 2754,
+          "min_class": "stim_400Hz",
+          "min_count": 242,
+          "mean_count": 1391.625,
+          "total": 22266,
+          "n_classes": 16
+        }
+      },
+      "trainval_test_stability": {
+        "stim_20000Hz": {
+          "proportions": {
+            "train+valid": 5.91,
+            "test": 5.92
+          },
+          "std": 0.01,
+          "max_diff": 0.01
+        },
+        "stim_300Hz": {
+          "proportions": {
+            "train+valid": 1.78,
+            "test": 1.78
+          },
+          "std": 0.0,
+          "max_diff": 0.0
+        },
+        "stim_2000Hz": {
+          "proportions": {
+            "train+valid": 12.03,
+            "test": 12.02
+          },
+          "std": 0.01,
+          "max_diff": 0.02
+        },
+        "stim_500Hz": {
+          "proportions": {
+            "train+valid": 11.44,
+            "test": 11.46
+          },
+          "std": 0.01,
+          "max_diff": 0.03
+        },
+        "stim_40000Hz": {
+          "proportions": {
+            "train+valid": 1.91,
+            "test": 1.91
+          },
+          "std": 0.0,
+          "max_diff": 0.0
+        },
+        "stim_15000Hz": {
+          "proportions": {
+            "train+valid": 6.43,
+            "test": 6.41
+          },
+          "std": 0.01,
+          "max_diff": 0.02
+        },
+        "stim_800Hz": {
+          "proportions": {
+            "train+valid": 9.09,
+            "test": 9.11
+          },
+          "std": 0.01,
+          "max_diff": 0.02
+        },
+        "stim_1000Hz": {
+          "proportions": {
+            "train+valid": 11.16,
+            "test": 11.12
+          },
+          "std": 0.02,
+          "max_diff": 0.04
+        },
+        "stim_16000Hz": {
+          "proportions": {
+            "train+valid": 1.87,
+            "test": 1.88
+          },
+          "std": 0.0,
+          "max_diff": 0.01
+        },
+        "stim_200Hz": {
+          "proportions": {
+            "train+valid": 1.45,
+            "test": 1.45
+          },
+          "std": 0.0,
+          "max_diff": 0.0
+        },
+        "stim_10000Hz": {
+          "proportions": {
+            "train+valid": 12.03,
+            "test": 12.06
+          },
+          "std": 0.01,
+          "max_diff": 0.03
+        },
+        "stim_400Hz": {
+          "proportions": {
+            "train+valid": 1.1,
+            "test": 1.09
+          },
+          "std": 0.01,
+          "max_diff": 0.01
+        },
+        "stim_8000Hz": {
+          "proportions": {
+            "train+valid": 8.46,
+            "test": 8.46
+          },
+          "std": 0.0,
+          "max_diff": 0.01
+        },
+        "stim_5000Hz": {
+          "proportions": {
+            "train+valid": 12.38,
+            "test": 12.37
+          },
+          "std": 0.01,
+          "max_diff": 0.01
+        },
+        "stim_30000Hz": {
+          "proportions": {
+            "train+valid": 1.44,
+            "test": 1.45
+          },
+          "std": 0.0,
+          "max_diff": 0.0
+        },
+        "stim_100Hz": {
+          "proportions": {
+            "train+valid": 1.52,
+            "test": 1.51
+          },
+          "std": 0.0,
+          "max_diff": 0.01
+        }
+      }
+    },
+    "remapped": {
+      "train": {
+        "counts": {
+          "mid": 7417,
+          "sub_bass": 6150,
+          "low_mid": 4287,
+          "high_mid": 7240,
+          "low": 7203,
+          "high": 3299
+        },
+        "imbalance": {
+          "max_min_ratio": 2.2482570475901786,
+          "cv": 0.26844163076760363,
+          "max_class": "mid",
+          "max_count": 7417,
+          "min_class": "high",
+          "min_count": 3299,
+          "mean_count": 5932.666666666667,
+          "total": 35596,
+          "n_classes": 6
+        }
+      },
+      "valid": {
+        "counts": {
+          "mid": 1861,
+          "sub_bass": 1544,
+          "low_mid": 1071,
+          "high_mid": 1814,
+          "low": 1813,
+          "high": 826
+        },
+        "imbalance": {
+          "max_min_ratio": 2.2530266343825667,
+          "cv": 0.26966745085972604,
+          "max_class": "mid",
+          "max_count": 1861,
+          "min_class": "high",
+          "min_count": 826,
+          "mean_count": 1488.1666666666667,
+          "total": 8929,
+          "n_classes": 6
+        }
+      },
+      "test": {
+        "counts": {
+          "mid": 4638,
+          "sub_bass": 3848,
+          "low_mid": 2676,
+          "high_mid": 4531,
+          "low": 4506,
+          "high": 2067
+        },
+        "imbalance": {
+          "max_min_ratio": 2.243831640058055,
+          "cv": 0.2684901825835725,
+          "max_class": "mid",
+          "max_count": 4638,
+          "min_class": "high",
+          "min_count": 2067,
+          "mean_count": 3711.0,
+          "total": 22266,
+          "n_classes": 6
+        }
+      },
+      "proportion_stability": {
+        "high_mid": {
+          "proportions": {
+            "train": 20.34,
+            "valid": 20.32,
+            "test": 20.35
+          },
+          "std": 0.01,
+          "max_diff": 0.03
+        },
+        "sub_bass": {
+          "proportions": {
+            "train": 17.28,
+            "valid": 17.29,
+            "test": 17.28
+          },
+          "std": 0.01,
+          "max_diff": 0.01
+        },
+        "mid": {
+          "proportions": {
+            "train": 20.84,
+            "valid": 20.84,
+            "test": 20.83
+          },
+          "std": 0.01,
+          "max_diff": 0.01
+        },
+        "high": {
+          "proportions": {
+            "train": 9.27,
+            "valid": 9.25,
+            "test": 9.28
+          },
+          "std": 0.01,
+          "max_diff": 0.03
+        },
+        "low_mid": {
+          "proportions": {
+            "train": 12.04,
+            "valid": 11.99,
+            "test": 12.02
+          },
+          "std": 0.02,
+          "max_diff": 0.05
+        },
+        "low": {
+          "proportions": {
+            "train": 20.24,
+            "valid": 20.3,
+            "test": 20.24
+          },
+          "std": 0.03,
+          "max_diff": 0.07
+        }
+      },
+      "trainval_vs_test": {
+        "trainval": {
+          "max_min_ratio": 2.249212121212121,
+          "cv": 0.26868642278772836,
+          "max_class": "mid",
+          "max_count": 9278,
+          "min_class": "high",
+          "min_count": 4125,
+          "mean_count": 7420.833333333333,
+          "total": 44525,
+          "n_classes": 6
+        },
+        "test": {
+          "max_min_ratio": 2.243831640058055,
+          "cv": 0.2684901825835725,
+          "max_class": "mid",
+          "max_count": 4638,
+          "min_class": "high",
+          "min_count": 2067,
+          "mean_count": 3711.0,
+          "total": 22266,
+          "n_classes": 6
+        }
+      },
+      "trainval_test_stability": {
+        "high_mid": {
+          "proportions": {
+            "train+valid": 20.33,
+            "test": 20.35
+          },
+          "std": 0.01,
+          "max_diff": 0.01
+        },
+        "sub_bass": {
+          "proportions": {
+            "train+valid": 17.28,
+            "test": 17.28
+          },
+          "std": 0.0,
+          "max_diff": 0.0
+        },
+        "mid": {
+          "proportions": {
+            "train+valid": 20.84,
+            "test": 20.83
+          },
+          "std": 0.0,
+          "max_diff": 0.01
+        },
+        "high": {
+          "proportions": {
+            "train+valid": 9.26,
+            "test": 9.28
+          },
+          "std": 0.01,
+          "max_diff": 0.02
+        },
+        "low_mid": {
+          "proportions": {
+            "train+valid": 12.03,
+            "test": 12.02
+          },
+          "std": 0.01,
+          "max_diff": 0.02
+        },
+        "low": {
+          "proportions": {
+            "train+valid": 20.25,
+            "test": 20.24
+          },
+          "std": 0.01,
+          "max_diff": 0.01
+        }
+      }
+    }
+  },
+  {
+    "dataset": "minipigs",
+    "split_type": "intrasession-block",
+    "fold": 2,
+    "task": "acoustic_stim",
+    "n_recordings": 56,
+    "subjects": {
+      "train": [
+        "sub-01",
+        "sub-02",
+        "sub-03",
+        "sub-04",
+        "sub-05",
+        "sub-06",
+        "sub-07"
+      ],
+      "valid": [
+        "sub-01",
+        "sub-02",
+        "sub-03",
+        "sub-04",
+        "sub-05",
+        "sub-06",
+        "sub-07"
+      ],
+      "test": [
+        "sub-01",
+        "sub-02",
+        "sub-03",
+        "sub-04",
+        "sub-05",
+        "sub-06",
+        "sub-07"
+      ]
+    },
+    "original": {
+      "train": {
+        "counts": {
+          "stim_5000Hz": 4407,
+          "stim_500Hz": 4080,
+          "stim_2000Hz": 4286,
+          "stim_15000Hz": 2284,
+          "stim_1000Hz": 3962,
+          "stim_20000Hz": 2108,
+          "stim_10000Hz": 4293,
+          "stim_40000Hz": 678,
+          "stim_8000Hz": 3013,
+          "stim_30000Hz": 516,
+          "stim_200Hz": 514,
+          "stim_800Hz": 3237,
+          "stim_400Hz": 390,
+          "stim_100Hz": 542,
+          "stim_16000Hz": 670,
+          "stim_300Hz": 636
+        },
+        "imbalance": {
+          "max_min_ratio": 11.3,
+          "cv": 0.7172847104482125,
+          "max_class": "stim_5000Hz",
+          "max_count": 4407,
+          "min_class": "stim_400Hz",
+          "min_count": 390,
+          "mean_count": 2226.0,
+          "total": 35616,
+          "n_classes": 16
+        }
+      },
+      "valid": {
+        "counts": {
+          "stim_5000Hz": 1103,
+          "stim_500Hz": 1018,
+          "stim_2000Hz": 1072,
+          "stim_15000Hz": 574,
+          "stim_1000Hz": 999,
+          "stim_20000Hz": 527,
+          "stim_10000Hz": 1076,
+          "stim_40000Hz": 172,
+          "stim_8000Hz": 752,
+          "stim_30000Hz": 128,
+          "stim_200Hz": 130,
+          "stim_800Hz": 814,
+          "stim_400Hz": 98,
+          "stim_100Hz": 134,
+          "stim_16000Hz": 164,
+          "stim_300Hz": 160
+        },
+        "imbalance": {
+          "max_min_ratio": 11.255102040816327,
+          "cv": 0.7177036632318025,
+          "max_class": "stim_5000Hz",
+          "max_count": 1103,
+          "min_class": "stim_400Hz",
+          "min_count": 98,
+          "mean_count": 557.5625,
+          "total": 8921,
+          "n_classes": 16
+        }
+      },
+      "test": {
+        "counts": {
+          "stim_5000Hz": 2757,
+          "stim_500Hz": 2546,
+          "stim_2000Hz": 2676,
+          "stim_15000Hz": 1435,
+          "stim_1000Hz": 2485,
+          "stim_20000Hz": 1317,
+          "stim_10000Hz": 2673,
+          "stim_40000Hz": 426,
+          "stim_8000Hz": 1884,
+          "stim_30000Hz": 320,
+          "stim_200Hz": 322,
+          "stim_800Hz": 2025,
+          "stim_400Hz": 244,
+          "stim_100Hz": 336,
+          "stim_16000Hz": 416,
+          "stim_300Hz": 392
+        },
+        "imbalance": {
+          "max_min_ratio": 11.299180327868852,
+          "cv": 0.7176736222954543,
+          "max_class": "stim_5000Hz",
+          "max_count": 2757,
+          "min_class": "stim_400Hz",
+          "min_count": 244,
+          "mean_count": 1390.875,
+          "total": 22254,
+          "n_classes": 16
+        }
+      },
+      "proportion_stability": {
+        "stim_20000Hz": {
+          "proportions": {
+            "train": 5.92,
+            "valid": 5.91,
+            "test": 5.92
+          },
+          "std": 0.01,
+          "max_diff": 0.01
+        },
+        "stim_300Hz": {
+          "proportions": {
+            "train": 1.79,
+            "valid": 1.79,
+            "test": 1.76
+          },
+          "std": 0.01,
+          "max_diff": 0.03
+        },
+        "stim_2000Hz": {
+          "proportions": {
+            "train": 12.03,
+            "valid": 12.02,
+            "test": 12.02
+          },
+          "std": 0.01,
+          "max_diff": 0.02
+        },
+        "stim_500Hz": {
+          "proportions": {
+            "train": 11.46,
+            "valid": 11.41,
+            "test": 11.44
+          },
+          "std": 0.02,
+          "max_diff": 0.04
+        },
+        "stim_40000Hz": {
+          "proportions": {
+            "train": 1.9,
+            "valid": 1.93,
+            "test": 1.91
+          },
+          "std": 0.01,
+          "max_diff": 0.02
+        },
+        "stim_15000Hz": {
+          "proportions": {
+            "train": 6.41,
+            "valid": 6.43,
+            "test": 6.45
+          },
+          "std": 0.01,
+          "max_diff": 0.04
+        },
+        "stim_800Hz": {
+          "proportions": {
+            "train": 9.09,
+            "valid": 9.12,
+            "test": 9.1
+          },
+          "std": 0.02,
+          "max_diff": 0.04
+        },
+        "stim_1000Hz": {
+          "proportions": {
+            "train": 11.12,
+            "valid": 11.2,
+            "test": 11.17
+          },
+          "std": 0.03,
+          "max_diff": 0.07
+        },
+        "stim_16000Hz": {
+          "proportions": {
+            "train": 1.88,
+            "valid": 1.84,
+            "test": 1.87
+          },
+          "std": 0.02,
+          "max_diff": 0.04
+        },
+        "stim_200Hz": {
+          "proportions": {
+            "train": 1.44,
+            "valid": 1.46,
+            "test": 1.45
+          },
+          "std": 0.01,
+          "max_diff": 0.01
+        },
+        "stim_10000Hz": {
+          "proportions": {
+            "train": 12.05,
+            "valid": 12.06,
+            "test": 12.01
+          },
+          "std": 0.02,
+          "max_diff": 0.05
+        },
+        "stim_400Hz": {
+          "proportions": {
+            "train": 1.1,
+            "valid": 1.1,
+            "test": 1.1
+          },
+          "std": 0.0,
+          "max_diff": 0.0
+        },
+        "stim_8000Hz": {
+          "proportions": {
+            "train": 8.46,
+            "valid": 8.43,
+            "test": 8.47
+          },
+          "std": 0.02,
+          "max_diff": 0.04
+        },
+        "stim_5000Hz": {
+          "proportions": {
+            "train": 12.37,
+            "valid": 12.36,
+            "test": 12.39
+          },
+          "std": 0.01,
+          "max_diff": 0.02
+        },
+        "stim_30000Hz": {
+          "proportions": {
+            "train": 1.45,
+            "valid": 1.43,
+            "test": 1.44
+          },
+          "std": 0.01,
+          "max_diff": 0.01
+        },
+        "stim_100Hz": {
+          "proportions": {
+            "train": 1.52,
+            "valid": 1.5,
+            "test": 1.51
+          },
+          "std": 0.01,
+          "max_diff": 0.02
+        }
+      },
+      "trainval_vs_test": {
+        "trainval": {
+          "max_min_ratio": 11.290983606557377,
+          "cv": 0.7173661534922559,
+          "max_class": "stim_5000Hz",
+          "max_count": 5510,
+          "min_class": "stim_400Hz",
+          "min_count": 488,
+          "mean_count": 2783.5625,
+          "total": 44537,
+          "n_classes": 16
+        },
+        "test": {
+          "max_min_ratio": 11.299180327868852,
+          "cv": 0.7176736222954543,
+          "max_class": "stim_5000Hz",
+          "max_count": 2757,
+          "min_class": "stim_400Hz",
+          "min_count": 244,
+          "mean_count": 1390.875,
+          "total": 22254,
+          "n_classes": 16
+        }
+      },
+      "trainval_test_stability": {
+        "stim_20000Hz": {
+          "proportions": {
+            "train+valid": 5.92,
+            "test": 5.92
+          },
+          "std": 0.0,
+          "max_diff": 0.0
+        },
+        "stim_300Hz": {
+          "proportions": {
+            "train+valid": 1.79,
+            "test": 1.76
+          },
+          "std": 0.01,
+          "max_diff": 0.03
+        },
+        "stim_2000Hz": {
+          "proportions": {
+            "train+valid": 12.03,
+            "test": 12.02
+          },
+          "std": 0.0,
+          "max_diff": 0.01
+        },
+        "stim_500Hz": {
+          "proportions": {
+            "train+valid": 11.45,
+            "test": 11.44
+          },
+          "std": 0.0,
+          "max_diff": 0.01
+        },
+        "stim_40000Hz": {
+          "proportions": {
+            "train+valid": 1.91,
+            "test": 1.91
+          },
+          "std": 0.0,
+          "max_diff": 0.01
+        },
+        "stim_15000Hz": {
+          "proportions": {
+            "train+valid": 6.42,
+            "test": 6.45
+          },
+          "std": 0.02,
+          "max_diff": 0.03
+        },
+        "stim_800Hz": {
+          "proportions": {
+            "train+valid": 9.1,
+            "test": 9.1
+          },
+          "std": 0.0,
+          "max_diff": 0.0
+        },
+        "stim_1000Hz": {
+          "proportions": {
+            "train+valid": 11.14,
+            "test": 11.17
+          },
+          "std": 0.01,
+          "max_diff": 0.03
+        },
+        "stim_16000Hz": {
+          "proportions": {
+            "train+valid": 1.87,
+            "test": 1.87
+          },
+          "std": 0.0,
+          "max_diff": 0.0
+        },
+        "stim_200Hz": {
+          "proportions": {
+            "train+valid": 1.45,
+            "test": 1.45
+          },
+          "std": 0.0,
+          "max_diff": 0.0
+        },
+        "stim_10000Hz": {
+          "proportions": {
+            "train+valid": 12.06,
+            "test": 12.01
+          },
+          "std": 0.02,
+          "max_diff": 0.04
+        },
+        "stim_400Hz": {
+          "proportions": {
+            "train+valid": 1.1,
+            "test": 1.1
+          },
+          "std": 0.0,
+          "max_diff": 0.0
+        },
+        "stim_8000Hz": {
+          "proportions": {
+            "train+valid": 8.45,
+            "test": 8.47
+          },
+          "std": 0.01,
+          "max_diff": 0.01
+        },
+        "stim_5000Hz": {
+          "proportions": {
+            "train+valid": 12.37,
+            "test": 12.39
+          },
+          "std": 0.01,
+          "max_diff": 0.02
+        },
+        "stim_30000Hz": {
+          "proportions": {
+            "train+valid": 1.45,
+            "test": 1.44
+          },
+          "std": 0.0,
+          "max_diff": 0.01
+        },
+        "stim_100Hz": {
+          "proportions": {
+            "train+valid": 1.52,
+            "test": 1.51
+          },
+          "std": 0.0,
+          "max_diff": 0.01
+        }
+      }
+    },
+    "remapped": {
+      "train": {
+        "counts": {
+          "mid": 7420,
+          "sub_bass": 6162,
+          "low_mid": 4286,
+          "high_mid": 7247,
+          "low": 7199,
+          "high": 3302
+        },
+        "imbalance": {
+          "max_min_ratio": 2.247122955784373,
+          "cv": 0.2683782550926293,
+          "max_class": "mid",
+          "max_count": 7420,
+          "min_class": "high",
+          "min_count": 3302,
+          "mean_count": 5936.0,
+          "total": 35616,
+          "n_classes": 6
+        }
+      },
+      "valid": {
+        "counts": {
+          "mid": 1855,
+          "sub_bass": 1540,
+          "low_mid": 1072,
+          "high_mid": 1814,
+          "low": 1813,
+          "high": 827
+        },
+        "imbalance": {
+          "max_min_ratio": 2.2430471584038694,
+          "cv": 0.26892482509874605,
+          "max_class": "mid",
+          "max_count": 1855,
+          "min_class": "high",
+          "min_count": 827,
+          "mean_count": 1486.8333333333333,
+          "total": 8921,
+          "n_classes": 6
+        }
+      },
+      "test": {
+        "counts": {
+          "mid": 4641,
+          "sub_bass": 3840,
+          "low_mid": 2676,
+          "high_mid": 4524,
+          "low": 4510,
+          "high": 2063
+        },
+        "imbalance": {
+          "max_min_ratio": 2.249636451769268,
+          "cv": 0.26889487871848244,
+          "max_class": "mid",
+          "max_count": 4641,
+          "min_class": "high",
+          "min_count": 2063,
+          "mean_count": 3709.0,
+          "total": 22254,
+          "n_classes": 6
+        }
+      },
+      "proportion_stability": {
+        "high_mid": {
+          "proportions": {
+            "train": 20.35,
+            "valid": 20.33,
+            "test": 20.33
+          },
+          "std": 0.01,
+          "max_diff": 0.02
+        },
+        "sub_bass": {
+          "proportions": {
+            "train": 17.3,
+            "valid": 17.26,
+            "test": 17.26
+          },
+          "std": 0.02,
+          "max_diff": 0.05
+        },
+        "mid": {
+          "proportions": {
+            "train": 20.83,
+            "valid": 20.79,
+            "test": 20.85
+          },
+          "std": 0.03,
+          "max_diff": 0.06
+        },
+        "high": {
+          "proportions": {
+            "train": 9.27,
+            "valid": 9.27,
+            "test": 9.27
+          },
+          "std": 0.0,
+          "max_diff": 0.0
+        },
+        "low_mid": {
+          "proportions": {
+            "train": 12.03,
+            "valid": 12.02,
+            "test": 12.02
+          },
+          "std": 0.01,
+          "max_diff": 0.02
+        },
+        "low": {
+          "proportions": {
+            "train": 20.21,
+            "valid": 20.32,
+            "test": 20.27
+          },
+          "std": 0.04,
+          "max_diff": 0.11
+        }
+      },
+      "trainval_vs_test": {
+        "trainval": {
+          "max_min_ratio": 2.2463066117704042,
+          "cv": 0.2684850239108648,
+          "max_class": "mid",
+          "max_count": 9275,
+          "min_class": "high",
+          "min_count": 4129,
+          "mean_count": 7422.833333333333,
+          "total": 44537,
+          "n_classes": 6
+        },
+        "test": {
+          "max_min_ratio": 2.249636451769268,
+          "cv": 0.26889487871848244,
+          "max_class": "mid",
+          "max_count": 4641,
+          "min_class": "high",
+          "min_count": 2063,
+          "mean_count": 3709.0,
+          "total": 22254,
+          "n_classes": 6
+        }
+      },
+      "trainval_test_stability": {
+        "high_mid": {
+          "proportions": {
+            "train+valid": 20.34,
+            "test": 20.33
+          },
+          "std": 0.01,
+          "max_diff": 0.02
+        },
+        "sub_bass": {
+          "proportions": {
+            "train+valid": 17.29,
+            "test": 17.26
+          },
+          "std": 0.02,
+          "max_diff": 0.04
+        },
+        "mid": {
+          "proportions": {
+            "train+valid": 20.83,
+            "test": 20.85
+          },
+          "std": 0.01,
+          "max_diff": 0.03
+        },
+        "high": {
+          "proportions": {
+            "train+valid": 9.27,
+            "test": 9.27
+          },
+          "std": 0.0,
+          "max_diff": 0.0
+        },
+        "low_mid": {
+          "proportions": {
+            "train+valid": 12.03,
+            "test": 12.02
+          },
+          "std": 0.0,
+          "max_diff": 0.01
+        },
+        "low": {
+          "proportions": {
+            "train+valid": 20.23,
+            "test": 20.27
+          },
+          "std": 0.02,
+          "max_diff": 0.03
+        }
+      }
+    }
+  },
+  {
+    "dataset": "minipigs",
+    "split_type": "intrasession-causal",
+    "fold": null,
+    "task": "acoustic_stim",
+    "n_recordings": 56,
+    "subjects": {
+      "train": [
+        "sub-01",
+        "sub-02",
+        "sub-03",
+        "sub-04",
+        "sub-05",
+        "sub-06",
+        "sub-07"
+      ],
+      "valid": [
+        "sub-01",
+        "sub-02",
+        "sub-03",
+        "sub-04",
+        "sub-05",
+        "sub-06",
+        "sub-07"
+      ],
+      "test": [
+        "sub-01",
+        "sub-02",
+        "sub-03",
+        "sub-04",
+        "sub-05",
+        "sub-06",
+        "sub-07"
+      ]
+    },
+    "original": {
+      "train": {
+        "counts": {
+          "stim_5000Hz": 4942,
+          "stim_500Hz": 4561,
+          "stim_2000Hz": 4801,
+          "stim_15000Hz": 2563,
+          "stim_1000Hz": 4442,
+          "stim_20000Hz": 2358,
+          "stim_10000Hz": 4804,
+          "stim_40000Hz": 762,
+          "stim_8000Hz": 3371,
+          "stim_30000Hz": 576,
+          "stim_200Hz": 576,
+          "stim_800Hz": 3624,
+          "stim_400Hz": 436,
+          "stim_100Hz": 602,
+          "stim_16000Hz": 746,
+          "stim_300Hz": 708
+        },
+        "imbalance": {
+          "max_min_ratio": 11.3348623853211,
+          "cv": 0.7178743636137824,
+          "max_class": "stim_5000Hz",
+          "max_count": 4942,
+          "min_class": "stim_400Hz",
+          "min_count": 436,
+          "mean_count": 2492.0,
+          "total": 39872,
+          "n_classes": 16
+        }
+      },
+      "valid": {
+        "counts": {
+          "stim_5000Hz": 795,
+          "stim_500Hz": 741,
+          "stim_2000Hz": 776,
+          "stim_15000Hz": 409,
+          "stim_1000Hz": 711,
+          "stim_20000Hz": 382,
+          "stim_10000Hz": 780,
+          "stim_40000Hz": 124,
+          "stim_8000Hz": 539,
+          "stim_30000Hz": 92,
+          "stim_200Hz": 92,
+          "stim_800Hz": 581,
+          "stim_400Hz": 70,
+          "stim_100Hz": 96,
+          "stim_16000Hz": 122,
+          "stim_300Hz": 112
+        },
+        "imbalance": {
+          "max_min_ratio": 11.357142857142858,
+          "cv": 0.7195861257945823,
+          "max_class": "stim_5000Hz",
+          "max_count": 795,
+          "min_class": "stim_400Hz",
+          "min_count": 70,
+          "mean_count": 401.375,
+          "total": 6422,
+          "n_classes": 16
+        }
+      },
+      "test": {
+        "counts": {
+          "stim_5000Hz": 2530,
+          "stim_500Hz": 2342,
+          "stim_2000Hz": 2457,
+          "stim_15000Hz": 1321,
+          "stim_1000Hz": 2293,
+          "stim_20000Hz": 1212,
+          "stim_10000Hz": 2458,
+          "stim_40000Hz": 390,
+          "stim_8000Hz": 1739,
+          "stim_30000Hz": 296,
+          "stim_200Hz": 298,
+          "stim_800Hz": 1871,
+          "stim_400Hz": 226,
+          "stim_100Hz": 314,
+          "stim_16000Hz": 382,
+          "stim_300Hz": 368
+        },
+        "imbalance": {
+          "max_min_ratio": 11.194690265486726,
+          "cv": 0.716036844577326,
+          "max_class": "stim_5000Hz",
+          "max_count": 2530,
+          "min_class": "stim_400Hz",
+          "min_count": 226,
+          "mean_count": 1281.0625,
+          "total": 20497,
+          "n_classes": 16
+        }
+      },
+      "proportion_stability": {
+        "stim_20000Hz": {
+          "proportions": {
+            "train": 5.91,
+            "valid": 5.95,
+            "test": 5.91
+          },
+          "std": 0.02,
+          "max_diff": 0.04
+        },
+        "stim_300Hz": {
+          "proportions": {
+            "train": 1.78,
+            "valid": 1.74,
+            "test": 1.8
+          },
+          "std": 0.02,
+          "max_diff": 0.05
+        },
+        "stim_2000Hz": {
+          "proportions": {
+            "train": 12.04,
+            "valid": 12.08,
+            "test": 11.99
+          },
+          "std": 0.04,
+          "max_diff": 0.1
+        },
+        "stim_500Hz": {
+          "proportions": {
+            "train": 11.44,
+            "valid": 11.54,
+            "test": 11.43
+          },
+          "std": 0.05,
+          "max_diff": 0.11
+        },
+        "stim_40000Hz": {
+          "proportions": {
+            "train": 1.91,
+            "valid": 1.93,
+            "test": 1.9
+          },
+          "std": 0.01,
+          "max_diff": 0.03
+        },
+        "stim_15000Hz": {
+          "proportions": {
+            "train": 6.43,
+            "valid": 6.37,
+            "test": 6.44
+          },
+          "std": 0.03,
+          "max_diff": 0.08
+        },
+        "stim_800Hz": {
+          "proportions": {
+            "train": 9.09,
+            "valid": 9.05,
+            "test": 9.13
+          },
+          "std": 0.03,
+          "max_diff": 0.08
+        },
+        "stim_1000Hz": {
+          "proportions": {
+            "train": 11.14,
+            "valid": 11.07,
+            "test": 11.19
+          },
+          "std": 0.05,
+          "max_diff": 0.12
+        },
+        "stim_16000Hz": {
+          "proportions": {
+            "train": 1.87,
+            "valid": 1.9,
+            "test": 1.86
+          },
+          "std": 0.02,
+          "max_diff": 0.04
+        },
+        "stim_200Hz": {
+          "proportions": {
+            "train": 1.44,
+            "valid": 1.43,
+            "test": 1.45
+          },
+          "std": 0.01,
+          "max_diff": 0.02
+        },
+        "stim_10000Hz": {
+          "proportions": {
+            "train": 12.05,
+            "valid": 12.15,
+            "test": 11.99
+          },
+          "std": 0.06,
+          "max_diff": 0.15
+        },
+        "stim_400Hz": {
+          "proportions": {
+            "train": 1.09,
+            "valid": 1.09,
+            "test": 1.1
+          },
+          "std": 0.01,
+          "max_diff": 0.01
+        },
+        "stim_8000Hz": {
+          "proportions": {
+            "train": 8.45,
+            "valid": 8.39,
+            "test": 8.48
+          },
+          "std": 0.04,
+          "max_diff": 0.09
+        },
+        "stim_5000Hz": {
+          "proportions": {
+            "train": 12.39,
+            "valid": 12.38,
+            "test": 12.34
+          },
+          "std": 0.02,
+          "max_diff": 0.05
+        },
+        "stim_30000Hz": {
+          "proportions": {
+            "train": 1.44,
+            "valid": 1.43,
+            "test": 1.44
+          },
+          "std": 0.01,
+          "max_diff": 0.01
+        },
+        "stim_100Hz": {
+          "proportions": {
+            "train": 1.51,
+            "valid": 1.49,
+            "test": 1.53
+          },
+          "std": 0.02,
+          "max_diff": 0.04
+        }
+      },
+      "trainval_vs_test": {
+        "trainval": {
+          "max_min_ratio": 11.337944664031621,
+          "cv": 0.7181068536667762,
+          "max_class": "stim_5000Hz",
+          "max_count": 5737,
+          "min_class": "stim_400Hz",
+          "min_count": 506,
+          "mean_count": 2893.375,
+          "total": 46294,
+          "n_classes": 16
+        },
+        "test": {
+          "max_min_ratio": 11.194690265486726,
+          "cv": 0.716036844577326,
+          "max_class": "stim_5000Hz",
+          "max_count": 2530,
+          "min_class": "stim_400Hz",
+          "min_count": 226,
+          "mean_count": 1281.0625,
+          "total": 20497,
+          "n_classes": 16
+        }
+      },
+      "trainval_test_stability": {
+        "stim_20000Hz": {
+          "proportions": {
+            "train+valid": 5.92,
+            "test": 5.91
+          },
+          "std": 0.0,
+          "max_diff": 0.01
+        },
+        "stim_300Hz": {
+          "proportions": {
+            "train+valid": 1.77,
+            "test": 1.8
+          },
+          "std": 0.01,
+          "max_diff": 0.02
+        },
+        "stim_2000Hz": {
+          "proportions": {
+            "train+valid": 12.05,
+            "test": 11.99
+          },
+          "std": 0.03,
+          "max_diff": 0.06
+        },
+        "stim_500Hz": {
+          "proportions": {
+            "train+valid": 11.45,
+            "test": 11.43
+          },
+          "std": 0.01,
+          "max_diff": 0.03
+        },
+        "stim_40000Hz": {
+          "proportions": {
+            "train+valid": 1.91,
+            "test": 1.9
+          },
+          "std": 0.01,
+          "max_diff": 0.01
+        },
+        "stim_15000Hz": {
+          "proportions": {
+            "train+valid": 6.42,
+            "test": 6.44
+          },
+          "std": 0.01,
+          "max_diff": 0.03
+        },
+        "stim_800Hz": {
+          "proportions": {
+            "train+valid": 9.08,
+            "test": 9.13
+          },
+          "std": 0.02,
+          "max_diff": 0.04
+        },
+        "stim_1000Hz": {
+          "proportions": {
+            "train+valid": 11.13,
+            "test": 11.19
+          },
+          "std": 0.03,
+          "max_diff": 0.06
+        },
+        "stim_16000Hz": {
+          "proportions": {
+            "train+valid": 1.87,
+            "test": 1.86
+          },
+          "std": 0.01,
+          "max_diff": 0.01
+        },
+        "stim_200Hz": {
+          "proportions": {
+            "train+valid": 1.44,
+            "test": 1.45
+          },
+          "std": 0.01,
+          "max_diff": 0.01
+        },
+        "stim_10000Hz": {
+          "proportions": {
+            "train+valid": 12.06,
+            "test": 11.99
+          },
+          "std": 0.04,
+          "max_diff": 0.07
+        },
+        "stim_400Hz": {
+          "proportions": {
+            "train+valid": 1.09,
+            "test": 1.1
+          },
+          "std": 0.0,
+          "max_diff": 0.01
+        },
+        "stim_8000Hz": {
+          "proportions": {
+            "train+valid": 8.45,
+            "test": 8.48
+          },
+          "std": 0.02,
+          "max_diff": 0.04
+        },
+        "stim_5000Hz": {
+          "proportions": {
+            "train+valid": 12.39,
+            "test": 12.34
+          },
+          "std": 0.02,
+          "max_diff": 0.05
+        },
+        "stim_30000Hz": {
+          "proportions": {
+            "train+valid": 1.44,
+            "test": 1.44
+          },
+          "std": 0.0,
+          "max_diff": 0.0
+        },
+        "stim_100Hz": {
+          "proportions": {
+            "train+valid": 1.51,
+            "test": 1.53
+          },
+          "std": 0.01,
+          "max_diff": 0.02
+        }
+      }
+    },
+    "remapped": {
+      "train": {
+        "counts": {
+          "mid": 8313,
+          "sub_bass": 6883,
+          "low_mid": 4801,
+          "high_mid": 8113,
+          "low": 8066,
+          "high": 3696
+        },
+        "imbalance": {
+          "max_min_ratio": 2.249188311688312,
+          "cv": 0.2685583969543407,
+          "max_class": "mid",
+          "max_count": 8313,
+          "min_class": "high",
+          "min_count": 3696,
+          "mean_count": 6645.333333333333,
+          "total": 39872,
+          "n_classes": 6
+        }
+      },
+      "valid": {
+        "counts": {
+          "mid": 1334,
+          "sub_bass": 1111,
+          "low_mid": 776,
+          "high_mid": 1311,
+          "low": 1292,
+          "high": 598
+        },
+        "imbalance": {
+          "max_min_ratio": 2.230769230769231,
+          "cv": 0.26643914333373797,
+          "max_class": "mid",
+          "max_count": 1334,
+          "min_class": "high",
+          "min_count": 598,
+          "mean_count": 1070.3333333333333,
+          "total": 6422,
+          "n_classes": 6
+        }
+      },
+      "test": {
+        "counts": {
+          "mid": 4269,
+          "sub_bass": 3548,
+          "low_mid": 2457,
+          "high_mid": 4161,
+          "low": 4164,
+          "high": 1898
+        },
+        "imbalance": {
+          "max_min_ratio": 2.249209694415174,
+          "cv": 0.2694446674009505,
+          "max_class": "mid",
+          "max_count": 4269,
+          "min_class": "high",
+          "min_count": 1898,
+          "mean_count": 3416.1666666666665,
+          "total": 20497,
+          "n_classes": 6
+        }
+      },
+      "proportion_stability": {
+        "high_mid": {
+          "proportions": {
+            "train": 20.35,
+            "valid": 20.41,
+            "test": 20.3
+          },
+          "std": 0.05,
+          "max_diff": 0.11
+        },
+        "sub_bass": {
+          "proportions": {
+            "train": 17.26,
+            "valid": 17.3,
+            "test": 17.31
+          },
+          "std": 0.02,
+          "max_diff": 0.05
+        },
+        "mid": {
+          "proportions": {
+            "train": 20.85,
+            "valid": 20.77,
+            "test": 20.83
+          },
+          "std": 0.03,
+          "max_diff": 0.08
+        },
+        "high": {
+          "proportions": {
+            "train": 9.27,
+            "valid": 9.31,
+            "test": 9.26
+          },
+          "std": 0.02,
+          "max_diff": 0.05
+        },
+        "low_mid": {
+          "proportions": {
+            "train": 12.04,
+            "valid": 12.08,
+            "test": 11.99
+          },
+          "std": 0.04,
+          "max_diff": 0.1
+        },
+        "low": {
+          "proportions": {
+            "train": 20.23,
+            "valid": 20.12,
+            "test": 20.32
+          },
+          "std": 0.08,
+          "max_diff": 0.2
+        }
+      },
+      "trainval_vs_test": {
+        "trainval": {
+          "max_min_ratio": 2.246623195156032,
+          "cv": 0.26826170822115236,
+          "max_class": "mid",
+          "max_count": 9647,
+          "min_class": "high",
+          "min_count": 4294,
+          "mean_count": 7715.666666666667,
+          "total": 46294,
+          "n_classes": 6
+        },
+        "test": {
+          "max_min_ratio": 2.249209694415174,
+          "cv": 0.2694446674009505,
+          "max_class": "mid",
+          "max_count": 4269,
+          "min_class": "high",
+          "min_count": 1898,
+          "mean_count": 3416.1666666666665,
+          "total": 20497,
+          "n_classes": 6
+        }
+      },
+      "trainval_test_stability": {
+        "high_mid": {
+          "proportions": {
+            "train+valid": 20.36,
+            "test": 20.3
+          },
+          "std": 0.03,
+          "max_diff": 0.06
+        },
+        "sub_bass": {
+          "proportions": {
+            "train+valid": 17.27,
+            "test": 17.31
+          },
+          "std": 0.02,
+          "max_diff": 0.04
+        },
+        "mid": {
+          "proportions": {
+            "train+valid": 20.84,
+            "test": 20.83
+          },
+          "std": 0.01,
+          "max_diff": 0.01
+        },
+        "high": {
+          "proportions": {
+            "train+valid": 9.28,
+            "test": 9.26
+          },
+          "std": 0.01,
+          "max_diff": 0.02
+        },
+        "low_mid": {
+          "proportions": {
+            "train+valid": 12.05,
+            "test": 11.99
+          },
+          "std": 0.03,
+          "max_diff": 0.06
+        },
+        "low": {
+          "proportions": {
+            "train+valid": 20.21,
+            "test": 20.32
+          },
+          "std": 0.05,
+          "max_diff": 0.1
+        }
+      }
+    }
+  }
+]

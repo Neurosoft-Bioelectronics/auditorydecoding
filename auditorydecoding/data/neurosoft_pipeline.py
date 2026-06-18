@@ -34,11 +34,11 @@ except ImportError:
 
 from pathlib import Path
 
-from brainsets.utils.split import (
+from torch_brain.utils.split import (
     generate_stratified_folds,
 )
 
-from brainsets.utils.bids_utils import (
+from torch_brain.utils.bids import (
     fetch_ieeg_recordings,
     check_ieeg_recording_files_exist,
     group_recordings_by_entity,
@@ -47,27 +47,24 @@ from brainsets.utils.bids_utils import (
     load_participants_tsv,
     load_json_sidecar,
 )
-from brainsets.utils.mne_utils import (
+from torch_brain.utils.mne import (
     extract_measurement_date,
     extract_channels,
     concatenate_recordings,
 )
 
-from temporaldata import (
+from torch_brain.data import (
     Data,
     Interval,
     IrregularTimeSeries,
-)
-
-from brainsets.descriptions import (
     BrainsetDescription,
     SessionDescription,
     DeviceDescription,
     SubjectDescription,
+    serialize_fn_map,
 )
-from brainsets import serialize_fn_map
 
-from brainsets.pipeline import BrainsetPipeline
+from torch_brain.pipeline import BrainsetPipeline
 
 parser = ArgumentParser()
 parser.add_argument("--redownload", action="store_true")

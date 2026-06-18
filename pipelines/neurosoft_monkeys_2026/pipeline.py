@@ -4,8 +4,7 @@
 #   "mne==1.11.0",
 #   "mne-bids==0.18",
 #   "scikit-learn==1.7.2",
-#   "brainsets",
-#   "auditorydecoding@git+https://github.com/Neurosoft-Bioelectronics/auditorydecoding@main",
+#   "torch-brain",
 # ]
 # ///
 
