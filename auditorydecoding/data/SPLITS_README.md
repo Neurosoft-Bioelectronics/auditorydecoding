@@ -31,8 +31,8 @@ training runs**. Neither references the other's validation set.
 
 The intersubject split evaluates how well the model generalises to a **completely
 unseen subject**. It uses leave-one-out cross-validation: there is one fold per
-non-test subject, and in each fold that subject is held out entirely for
-validation while the remaining non-test subjects form the training set.
+subject, and in each fold that subject is held out entirely for
+validation while the remaining subjects form the training set.
 
 Furthermore, there is a test set (fixed set of subjects) that is always held out and 
 hence does not make part of the LOO rotation. The test set is common across the intersession 
@@ -55,7 +55,7 @@ The intersession split evaluates how well the model handles **temporal drift**
 single deterministic fold (no cross-validation).
 
 For each subject with multiple sessions, the sessions are ordered
-causally: the first ~70% are assigned to training and the remaining
+chronologically: the first ~70% are assigned to training and the remaining
 ~30% to validation. Subjects with only one session contribute that session to
 training only.
 
