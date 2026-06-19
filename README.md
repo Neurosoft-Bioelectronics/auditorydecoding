@@ -45,7 +45,7 @@ This command will prompt you to set the `raw_dir` (location of your BIDS/raw dat
 Once brainsets is configured, prepare the Neurosoft minipigs 2026 dataset using the following command:
 
 ```bash
-uv run brainsets prepare --local datasets/neurosoft_minipigs_2026  --raw <path to the BIDS data>
+uv run brainsets prepare --local pipelines/neurosoft_minipigs_2026  --raw <path to the BIDS data>
 ```
 
 This command will:
@@ -81,15 +81,10 @@ uv run ruff format .
 
 ## Specific Dependencies
 
-- **brainsets**: BIDS processing and neural data utilities
+- **torch-brain**: Neural data processing, BIDS utilities, temporal data structures, and deep learning models (replaces the former `brainsets` and `temporaldata` packages)
 - **mne**: MEG/EEG analysis
 - **mne-bids**: BIDS I/O for MNE
 - **scikit-learn**: Machine learning utilities
-- **temporaldata**: For now, it is installed directly from the main branch of the GitHub repository:
-
-  ```bash
-  pip install git+https://github.com/adamjstewart/temporaldata.git@main
-  ```
 
 See `pyproject.toml` for the complete global dependency list.
 

@@ -3,9 +3,8 @@ from collections import defaultdict
 import numpy as np
 from pathlib import Path
 from typing import Callable, Literal, Optional
-from temporaldata import Interval
-
-from torch_brain.dataset import Dataset, MultiChannelDatasetMixin
+from torch_brain.data import Interval
+from torch_brain.datasets import Dataset, MultiChannelDatasetMixin
 
 
 class NeurosoftDataset(MultiChannelDatasetMixin, Dataset):

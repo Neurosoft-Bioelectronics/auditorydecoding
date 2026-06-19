@@ -9,16 +9,16 @@ description = "Auditory decoding of brain activity in different animals"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
-    "brainsets",
     "matplotlib>=3.10.8",
+    "mne==1.11.0",
+    "mne-bids==0.18",
+    "scikit-learn==1.7.2",
+    "torch>=2.12.1",
     "torch-brain",
-    "temporaldata",
 ]
 
 [tool.uv.sources]
-brainsets = { git = "https://github.com/neuro-galaxy/brainsets", branch = "main" }
 torch-brain = { git = "https://github.com/neuro-galaxy/torch_brain", branch = "main" }
-temporaldata = { git = "https://github.com/neuro-galaxy/temporaldata", branch = "main" }
 
 [dependency-groups]
 dev = ["pre-commit>=4.5.1", "ruff>=0.15.4"]
