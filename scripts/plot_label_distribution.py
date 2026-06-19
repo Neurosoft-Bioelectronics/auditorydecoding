@@ -45,42 +45,42 @@ DATASET_CLASSES = {
 }
 
 CLASS_MAPPING = {
-    "stim_100Hz": "sub_bass",
-    "stim_200Hz": "sub_bass",
-    "stim_300Hz": "sub_bass",
-    "stim_400Hz": "sub_bass",
-    "stim_500Hz": "sub_bass",
-    "stim_650Hz": "sub_bass",
-    "stim_800Hz": "low_lo",
-    "stim_1000Hz": "low",
-    "stim_1500Hz": "low",
-    "stim_2000Hz": "low_mid",
-    "stim_3000Hz": "low_mid",
-    "stim_4000Hz": "low_mid",
-    "stim_5000Hz": "mid",
-    "stim_7700Hz": "mid_hi",
-    "stim_8000Hz": "mid_hi",
-    "stim_9500Hz": "mid_hi",
-    "stim_10000Hz": "high_lo",
-    "stim_12000Hz": "high",
-    "stim_13000Hz": "high",
-    "stim_15000Hz": "high",
-    "stim_16000Hz": "high",
-    "stim_18000Hz": "high",
-    "stim_20000Hz": "high",
-    "stim_30000Hz": "high",
-    "stim_40000Hz": "high",
+    "stim_100Hz": "low_bass",
+    "stim_200Hz": "low_bass",
+    "stim_300Hz": "low_bass",
+    "stim_400Hz": "low_bass",
+    "stim_500Hz": "low_bass",
+    "stim_650Hz": "low_bass",
+    "stim_800Hz": "mid_bass",
+    "stim_1000Hz": "low_mids",
+    "stim_1500Hz": "low_mids",
+    "stim_2000Hz": "midrange",
+    "stim_3000Hz": "midrange",
+    "stim_4000Hz": "midrange",
+    "stim_5000Hz": "high_mids",
+    "stim_7700Hz": "low_treble",
+    "stim_8000Hz": "low_treble",
+    "stim_9500Hz": "low_treble",
+    "stim_10000Hz": "mid_treble",
+    "stim_12000Hz": "high_treble",
+    "stim_13000Hz": "high_treble",
+    "stim_15000Hz": "high_treble",
+    "stim_16000Hz": "high_treble",
+    "stim_18000Hz": "high_treble",
+    "stim_20000Hz": "high_treble",
+    "stim_30000Hz": "high_treble",
+    "stim_40000Hz": "high_treble",
 }
 
 CLASS_ORDER = [
-    "sub_bass",
-    "low_lo",
-    "low",
-    "low_mid",
-    "mid",
-    "mid_hi",
-    "high_lo",
-    "high",
+    "low_bass",
+    "mid_bass",
+    "low_mids",
+    "midrange",
+    "high_mids",
+    "low_treble",
+    "mid_treble",
+    "high_treble",
 ]
 
 SPLIT_CONFIGS = {
@@ -631,7 +631,7 @@ def plot_heatmap_imbalance_overview(
         subtitle = (
             "Original (per-frequency)"
             if mode == "original"
-            else "Remapped (6 bands)"
+            else f"Remapped ({len(CLASS_ORDER)} bands)"
         )
         n_cls = n_labels
         ax.set_title(
@@ -661,8 +661,7 @@ def plot_heatmap_cross_config_proportions(
     split) configuration.
 
     Rows = configuration, columns = bands.  Colour = proportion (%).
-    Uniform = 16.67%.  Allows visual inspection of whether proportions are
-    stable.
+    Allows visual inspection of whether proportions are stable.
     """
     bands = CLASS_ORDER
     splits = ["train", "valid", "test"]

@@ -259,6 +259,59 @@ each recording (single partition).
 These splits operate on trials *within* a session and do not depend on the
 intersubject/intersession assignment.
 
+## Class balance after frequency-band remapping
+
+Individual stimulus frequencies are remapped to 8 perceptual frequency bands
+for classification. The mapping groups the raw `stim_*Hz` labels as follows:
+
+| Band          | Stimulus frequencies                           |
+| ------------- | ---------------------------------------------- |
+| `low_bass`    | 100, 200, 300, 400, 500, 650 Hz                |
+| `mid_bass`    | 800 Hz                                         |
+| `low_mids`    | 1000, 1500 Hz                                  |
+| `midrange`    | 2000, 3000, 4000 Hz                            |
+| `high_mids`   | 5000 Hz                                        |
+| `low_treble`  | 7700, 8000, 9500 Hz                            |
+| `mid_treble`  | 10000 Hz                                       |
+| `high_treble` | 12000, 13000, 15000, 16000, 18000, 20000, 30000, 40000 Hz |
+
+After remapping, the class proportions are relatively even across
+train/valid/test splits for all split types and folds. The heatmaps below show
+the remapped band proportions (%) for every (split type, fold, split)
+configuration; uniform would be 12.5% per band.
+
+### Minipigs
+
+![Minipigs — remapped band proportions across all configurations](figures/minipigs_cross_config_proportions.png)
+
+For minipigs, proportions are stable across all split configurations. The
+intrasession splits (block and causal) are near-uniform by construction. The
+intersubject and intersession splits show slightly more variation (driven by
+per-subject stimulation protocols) but remain well-balanced, with most values
+within a few percentage points of the 12.5% uniform baseline.
+
+### Monkeys
+
+![Monkeys — remapped band proportions across all configurations](figures/monkeys_cross_config_proportions.png)
+
+For monkeys, the intrasession and intersubject splits show good balance.
+However, the **intersession test split** is a notable outlier: the `high_treble`
+band dominates at ~63%, with several bands at 0%.
+
+This is an artifact of the underlying data, not a split-design flaw. Of the
+5 monkey subjects, 4 have only a single session with a very limited set of
+stimulus frequencies, so they can only be assigned to training. The one subject
+with many sessions (sub-01) covers a broad range of frequencies, but that
+subject's later sessions must go either into the calibration set (train/valid)
+or into the test set, they cannot appear in both. The test subject (sub-02)
+happens to have sessions that are heavily skewed toward high frequencies.
+There is no practical way to fix this without fundamentally altering the
+intersession evaluation protocol (e.g. putting sub-01's sessions in test would
+leave almost no data for training). For the monkey dataset, the intersession
+test results on the `acoustic_stim` task should therefore be interpreted with
+this class imbalance in mind. The intersubject and intrasession evaluations
+remain the more reliable benchmarks.
+
 ## Configuration reference
 
 Split configs are defined as the `split_config` class attribute on each

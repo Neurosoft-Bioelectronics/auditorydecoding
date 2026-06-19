@@ -215,7 +215,8 @@ profiling_output/
 /data/ 
 uv.lock
 results/
-*.png 
+*.png
+!auditorydecoding/data/figures/*.png
 *.mplstyle
 
 /reports/*
