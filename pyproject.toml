@@ -15,7 +15,7 @@ dependencies = [
     "mne-bids==0.18",
     "scikit-learn==1.7.2",
     "torch-brain",
-    "torch==2.6.0",
+    "torch>=2.6.0",
     "scipy>=1.17.1",
     "temporaldata",
     "pyyaml>=6.0.3",
@@ -31,6 +31,7 @@ dependencies = [
 
 [tool.uv.sources]
 torch-brain = { git = "https://github.com/neuro-galaxy/torch_brain", branch = "main" }
+brainsets = { git = "https://github.com/neuro-galaxy/brainsets", branch = "suarez/mne-bids-utils" }
 
 [dependency-groups]
 dev = ["pre-commit>=4.5.1", "ruff>=0.15.4"]
