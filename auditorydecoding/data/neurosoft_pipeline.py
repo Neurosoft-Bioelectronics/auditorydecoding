@@ -34,12 +34,11 @@ except ImportError:
 
 from pathlib import Path
 
-from brainsets.utils.split import (
-    generate_string_kfold_assignment,
+from torch_brain.utils.split import (
     generate_stratified_folds,
 )
 
-from brainsets.utils.bids_utils import (
+from torch_brain.utils.bids import (
     fetch_ieeg_recordings,
     check_ieeg_recording_files_exist,
     group_recordings_by_entity,
@@ -48,27 +47,24 @@ from brainsets.utils.bids_utils import (
     load_participants_tsv,
     load_json_sidecar,
 )
-from brainsets.utils.mne_utils import (
+from torch_brain.utils.mne import (
     extract_measurement_date,
     extract_channels,
     concatenate_recordings,
 )
 
-from temporaldata import (
+from torch_brain.data import (
     Data,
     Interval,
     IrregularTimeSeries,
-)
-
-from brainsets.descriptions import (
     BrainsetDescription,
     SessionDescription,
     DeviceDescription,
     SubjectDescription,
+    serialize_fn_map,
 )
-from brainsets import serialize_fn_map
 
-from brainsets.pipeline import BrainsetPipeline
+from torch_brain.pipeline import BrainsetPipeline
 
 parser = ArgumentParser()
 parser.add_argument("--redownload", action="store_true")
@@ -108,6 +104,10 @@ STIM_FREQUENCY_TO_ID = {
     "stim_wn": 25,
 }
 
+# Cross-session split: fraction of a subject's sessions (chronological order)
+# assigned to training; the remainder become validation.
+INTERSESSION_TRAIN_RATIO = 0.7
+
 # Per-recording causal split: contiguous chronological blocks by trial count.
 # Must sum to 1.0 (train earliest → test latest within each recording).
 CAUSAL_TRAIN_RATIO = 0.6
@@ -140,6 +140,11 @@ class NeurosoftPipeline(BrainsetPipeline):
     - 'trim': Remove overlapping segments from the later recording.
     - 'drop': Drop the later recording if it overlaps.
     """
+
+    split_config: dict = None
+    """Manual split configuration for intersubject/intersession evaluation.
+    Must be set in each per-animal pipeline subclass.
+    See auditorydecoding/data/SPLITS_README.md for the full schema."""
 
     @classmethod
     def get_manifest(
@@ -178,14 +183,12 @@ class NeurosoftPipeline(BrainsetPipeline):
 
         manifest_list = []
         for session_id, recordings in grouped_recordings.items():
-            manifest_list.append(
-                {
-                    "session_id": session_id,
-                    "recording_ids": [
-                        recording["recording_id"] for recording in recordings
-                    ],
-                }
-            )
+            manifest_list.append({
+                "session_id": session_id,
+                "recording_ids": [
+                    recording["recording_id"] for recording in recordings
+                ],
+            })
 
         if not manifest_list:
             raise ValueError(f"No iEEG recordings found in BIDS root {raw_dir}")
@@ -310,6 +313,7 @@ class NeurosoftPipeline(BrainsetPipeline):
         subject_description = SubjectDescription(
             id=subject_id,
             species="Unknown",
+            species="unknown",
             age=subject_info["age"],
             sex=subject_info["sex"],
         )
@@ -352,7 +356,11 @@ class NeurosoftPipeline(BrainsetPipeline):
 
         self.update_status("Generating splits")
         splits = generate_splits(
-            subject_id, session_id, on_vs_off_trials, acoustic_stim_trials
+            self.split_config,
+            subject_id,
+            session_id,
+            on_vs_off_trials,
+            acoustic_stim_trials,
         )
 
         self.update_status("Creating Data Object")
@@ -374,31 +382,106 @@ class NeurosoftPipeline(BrainsetPipeline):
             data.to_hdf5(file, serialize_fn_map=serialize_fn_map)
 
 
+def _get_manual_split_assignments(
+    split_config: dict,
+    session_id: str,
+) -> dict[str, list[str]]:
+    """Look up the manual intersubject / intersession assignment for one session.
+
+    Returns a dict with keys ``"intersubject"`` and ``"intersession"``, each
+    mapping to a list of assignment strings.
+
+    - ``"intersubject"`` has one entry per LOO fold (one fold per non-test
+      subject listed in ``intersubject_subjects``).
+    - ``"intersession"`` has a single entry (deterministic chronological
+      split with ~70% training / ~30% validation per subject).
+
+    Assignments are one of ``"train"``, ``"valid"``, ``"test"``, or
+    ``"excluded"`` (session returns empty intervals for every split query).
+    """
+    config = split_config
+    entities = get_entities_from_fname(session_id, on_error="raise")
+    sub = f"sub-{entities['subject']}"
+    ses = f"ses-{entities['session']}"
+    is_anesthesia = "anest" in session_id
+    is_filtered = "desc-filtered" in session_id
+
+    # ── intersubject assignments (leave-one-out) ─────────────────────────
+    intersubject_assignments: list[str] = []
+    for loo_subject in config["intersubject_subjects"]:
+        if sub in config["test_subjects"]:
+            intersubject = "test"
+        elif sub == loo_subject:
+            intersubject = "valid"
+        else:
+            intersubject = "train"
+
+        if is_anesthesia and intersubject in ("test", "valid"):
+            intersubject = "train"
+        if is_filtered:
+            intersubject = "excluded"
+
+        intersubject_assignments.append(intersubject)
+
+    # ── intersession assignment (single deterministic fold) ──────────────
+    # Test-set subjects are split by timeline: early sessions go into
+    # training (so the model learns their baseline), later sessions are
+    # kept as "test" for temporal-drift evaluation.
+    #
+    # Non-test subjects use a chronological split: the first ~70% of
+    # sessions are training, the remainder are validation. Single-session
+    # subjects contribute only to training.
+    early_sessions = config.get("test_subject_early_sessions", {})
+    train_ratio = config.get(
+        "intersession_train_ratio", INTERSESSION_TRAIN_RATIO
+    )
+    intersession_sessions = config.get("intersession_sessions", {})
+
+    if sub in config["test_subjects"]:
+        if sub in early_sessions and ses in early_sessions[sub]:
+            intersession = "train"
+        else:
+            intersession = "test"
+    elif sub in intersession_sessions:
+        ordered = intersession_sessions[sub]
+        n_train = max(int(len(ordered) * train_ratio), 1)
+        if ses in set(ordered[:n_train]):
+            intersession = "train"
+        else:
+            intersession = "valid"
+    else:
+        intersession = "train"
+
+    if is_anesthesia and intersession in ("test", "valid"):
+        intersession = "train"
+    if is_filtered:
+        intersession = "excluded"
+
+    intersession_assignments = [intersession]
+
+    return {
+        "intersubject": intersubject_assignments,
+        "intersession": intersession_assignments,
+    }
+
+
 def generate_splits(
+    split_config: dict,
     subject_id: str,
     session_id: str,
     on_vs_off_trials: Interval,
     acoustic_stim_trials: Interval,
 ) -> Data:
-    subject_assignments = generate_string_kfold_assignment(
-        string_id=subject_id, n_folds=3, val_ratio=0.2, seed=42
-    )
-    session_assignments = generate_string_kfold_assignment(
-        string_id=f"{subject_id}_{session_id}",
-        n_folds=3,
-        val_ratio=0.2,
-        seed=42,
-    )
+    assignments = _get_manual_split_assignments(split_config, session_id)
+
     namespaced_assignments = {
-        f"intersubject_fold_{fold_idx}_assignment": assignment
-        for fold_idx, assignment in enumerate(subject_assignments)
+        f"intersubject_fold_{k}_assignment": assignments["intersubject"][k]
+        for k in range(len(assignments["intersubject"]))
     }
-    namespaced_assignments.update(
-        {
-            f"intersession_fold_{fold_idx}_assignment": assignment
-            for fold_idx, assignment in enumerate(session_assignments)
-        }
-    )
+    namespaced_assignments.update({
+        f"intersession_fold_{k}_assignment": assignments["intersession"][k]
+        for k in range(len(assignments["intersession"]))
+    })
 
     # split the 'baseline' trials from the on_vs_off_trials into smaller segments
     on_vs_off_trials = _split_baseline_trials(on_vs_off_trials)
@@ -1328,45 +1411,35 @@ def _split_baseline_trials(on_vs_off_trials: Interval) -> Interval:
     split_baseline_trials = baseline_trials.subdivide(0.5, drop_short=False)
 
     # Create a new Interval with the the split baseline trials
-    start_times = np.concatenate(
-        [
-            on_trials.start,
-            rest_trials.start,
-            split_baseline_trials.start,
-        ]
-    )
+    start_times = np.concatenate([
+        on_trials.start,
+        rest_trials.start,
+        split_baseline_trials.start,
+    ])
 
-    end_times = np.concatenate(
-        [
-            on_trials.end,
-            rest_trials.end,
-            split_baseline_trials.end,
-        ]
-    )
+    end_times = np.concatenate([
+        on_trials.end,
+        rest_trials.end,
+        split_baseline_trials.end,
+    ])
 
-    behavior_labels = np.concatenate(
-        [
-            on_trials.behavior_labels,
-            rest_trials.behavior_labels,
-            split_baseline_trials.behavior_labels,
-        ]
-    )
+    behavior_labels = np.concatenate([
+        on_trials.behavior_labels,
+        rest_trials.behavior_labels,
+        split_baseline_trials.behavior_labels,
+    ])
 
-    behavior_ids = np.concatenate(
-        [
-            on_trials.behavior_ids,
-            rest_trials.behavior_ids,
-            split_baseline_trials.behavior_ids,
-        ]
-    )
+    behavior_ids = np.concatenate([
+        on_trials.behavior_ids,
+        rest_trials.behavior_ids,
+        split_baseline_trials.behavior_ids,
+    ])
 
-    recording_ids = np.concatenate(
-        [
-            on_trials.recording_id,
-            rest_trials.recording_id,
-            split_baseline_trials.recording_id,
-        ]
-    )
+    recording_ids = np.concatenate([
+        on_trials.recording_id,
+        rest_trials.recording_id,
+        split_baseline_trials.recording_id,
+    ])
 
     new_kwargs = {
         "start": start_times,
