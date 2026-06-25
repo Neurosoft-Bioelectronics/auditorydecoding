@@ -49,6 +49,3 @@ convention = "google"
 
 [tool.hatch.build.targets.sdist]
 include = ["auditorydecoding*"]
-
-[tool.hatch.build.targets.wheel]
-include = ["auditorydecoding*"]
