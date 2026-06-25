@@ -313,7 +313,6 @@ class NeurosoftPipeline(BrainsetPipeline):
         subject_description = SubjectDescription(
             id=subject_id,
             species="Unknown",
-            species="unknown",
             age=subject_info["age"],
             sex=subject_info["sex"],
         )
