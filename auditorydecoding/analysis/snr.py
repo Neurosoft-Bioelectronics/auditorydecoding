@@ -310,6 +310,30 @@ def apply_high_gamma_filter(
     )
 
 
+def apply_low_frequency_filter(
+    epochs: EpochArrays,
+    sfreq: float,
+    lowcut: float = 1.0,
+    highcut: float = 70.0,
+    notch_freq: float = 50.0,
+) -> EpochArrays:
+    """Low-frequency pipeline: 1–70 Hz bandpass + 50 Hz notch.
+
+    This isolates slow cortical potentials and lower-frequency evoked
+    components while discarding high-frequency noise and muscle artifacts.
+    """
+    rest = _apply_bandpass(epochs.rest, lowcut, highcut, sfreq)
+    stim = _apply_bandpass(epochs.stimulus, lowcut, highcut, sfreq)
+    rest = _apply_notch(rest, notch_freq, sfreq)
+    stim = _apply_notch(stim, notch_freq, sfreq)
+    return EpochArrays(
+        rest=rest,
+        stimulus=stim,
+        stim_labels=epochs.stim_labels,
+        window_samples=epochs.window_samples,
+    )
+
+
 # ---------------------------------------------------------------------------
 # RQ1 — Channel-level & session-level SNR
 # ---------------------------------------------------------------------------
@@ -343,6 +367,44 @@ def compute_channel_snr(epochs: EpochArrays) -> np.ndarray:
 
     with np.errstate(divide="ignore", invalid="ignore"):
         snr = np.where(mean_rest_var > 0, erp_var / mean_rest_var, 0.0)
+    return snr
+
+
+def compute_power_ratio_snr(epochs: EpochArrays) -> np.ndarray:
+    r"""Power-ratio SNR per channel (phase-insensitive).
+
+    Unlike :func:`compute_channel_snr`, this metric does **not** rely on
+    phase-locked ERPs.  Instead it compares the mean single-trial power
+    (temporal variance) during stimulus to the mean single-trial power
+    during rest:
+
+    .. math::
+
+        \text{SNR}_{\text{power}, c}
+            = \frac{\frac{1}{N}\sum_{i=1}^N \operatorname{Var}(S_{i,c}(t))}
+                   {\frac{1}{N}\sum_{i=1}^N \operatorname{Var}(R_{i,c}(t))}
+
+    A value > 1 means that, on average, individual stimulus epochs carry
+    more total energy than matched rest epochs — regardless of whether
+    the response waveform is consistent across trials.
+
+    Parameters
+    ----------
+    epochs : EpochArrays
+        Baseline-corrected and (optionally) filtered epochs.
+
+    Returns
+    -------
+    snr : np.ndarray, shape (n_channels,)
+    """
+    stim_var = epochs.stimulus.var(axis=-1)  # (N, C)
+    rest_var = epochs.rest.var(axis=-1)  # (N, C)
+
+    mean_stim_var = stim_var.mean(axis=0)  # (C,)
+    mean_rest_var = rest_var.mean(axis=0)  # (C,)
+
+    with np.errstate(divide="ignore", invalid="ignore"):
+        snr = np.where(mean_rest_var > 0, mean_stim_var / mean_rest_var, 0.0)
     return snr
 
 
@@ -448,6 +510,7 @@ def build_channel_table(
     broadband_epochs: EpochArrays,
     high_gamma_epochs: EpochArrays,
     snr_threshold: float = 0.5,
+    low_freq_epochs: EpochArrays | None = None,
 ) -> dict[str, np.ndarray]:
     """Compute all per-channel metrics and return a dict suitable for a DataFrame.
 
@@ -459,6 +522,8 @@ def build_channel_table(
     high_gamma_epochs : EpochArrays
         Baseline-corrected, high-gamma-filtered epochs (ECOG channels only).
     snr_threshold : float
+    low_freq_epochs : EpochArrays, optional
+        Baseline-corrected, low-frequency-filtered epochs (1–70 Hz).
 
     Returns
     -------
@@ -472,7 +537,10 @@ def build_channel_table(
 
     ch_names = session.channel_names[session.ecog_mask]
 
-    return {
+    bb_power_snr = compute_power_ratio_snr(broadband_epochs)
+    hg_power_snr = compute_power_ratio_snr(high_gamma_epochs)
+
+    table = {
         "session_id": np.full(len(ch_names), session.session_id),
         "channel_id": ch_names,
         "status": np.where(active, "Active", "Dead"),
@@ -480,7 +548,23 @@ def build_channel_table(
         "high_gamma_snr": hg_snr,
         "broadband_resp_ratio": resp,
         "tuning_metric": tuning,
+        "broadband_power_snr": bb_power_snr,
+        "high_gamma_power_snr": hg_power_snr,
     }
+
+    if low_freq_epochs is not None:
+        lf_snr = compute_channel_snr(low_freq_epochs)
+        lf_resp = compute_responsive_ratio(low_freq_epochs)
+        lf_tuning = compute_tonotopic_tuning(low_freq_epochs)
+        lf_active = classify_channels(lf_snr, threshold=snr_threshold)
+        lf_power_snr = compute_power_ratio_snr(low_freq_epochs)
+        table["lowfreq_snr"] = lf_snr
+        table["lowfreq_resp_ratio"] = lf_resp
+        table["lowfreq_tuning_metric"] = lf_tuning
+        table["lowfreq_status"] = np.where(lf_active, "Active", "Dead")
+        table["lowfreq_power_snr"] = lf_power_snr
+
+    return table
 
 
 def build_session_table(
@@ -498,7 +582,7 @@ def build_session_table(
     dict with keys matching the Session-Level Summary Table columns.
     """
     active = channel_table["status"] == "Active"
-    return {
+    row: dict[str, object] = {
         "session_id": channel_table["session_id"][0],
         "total_channels": len(active),
         "active_channels": int(active.sum()),
@@ -513,4 +597,34 @@ def build_session_table(
             else 0.0
         ),
         "max_tuning_metric": float(channel_table["tuning_metric"].max()),
+        "mean_broadband_power_snr": float(
+            channel_table["broadband_power_snr"].mean()
+        ),
+        "mean_active_power_snr": (
+            float(channel_table["broadband_power_snr"][active].mean())
+            if active.any()
+            else 0.0
+        ),
     }
+
+    if "lowfreq_snr" in channel_table:
+        lf_active = channel_table["lowfreq_status"] == "Active"
+        row["lowfreq_active_channels"] = int(lf_active.sum())
+        row["mean_lowfreq_snr"] = (
+            float(channel_table["lowfreq_snr"][lf_active].mean())
+            if lf_active.any()
+            else 0.0
+        )
+        row["mean_lowfreq_resp_ratio"] = (
+            float(channel_table["lowfreq_resp_ratio"][lf_active].mean())
+            if lf_active.any()
+            else 0.0
+        )
+        row["max_lowfreq_tuning_metric"] = float(
+            channel_table["lowfreq_tuning_metric"].max()
+        )
+        row["mean_lowfreq_power_snr"] = float(
+            channel_table["lowfreq_power_snr"].mean()
+        )
+
+    return row

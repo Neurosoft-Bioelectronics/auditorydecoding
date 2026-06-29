@@ -33,6 +33,7 @@ from auditorydecoding.analysis.snr import (
     baseline_correct,
     apply_broadband_filter,
     apply_high_gamma_filter,
+    apply_low_frequency_filter,
     build_channel_table,
     build_session_table,
     compute_channel_snr,
@@ -52,7 +53,7 @@ DEFAULT_DATA_DIR = Path(
 def analyse_session(
     h5_path: Path,
     snr_threshold: float = 0.5,
-) -> tuple[dict, dict, np.ndarray, np.ndarray]:
+) -> tuple[dict, dict, np.ndarray, np.ndarray, float]:
     """Run the full analysis pipeline on a single session file.
 
     Returns
@@ -65,8 +66,9 @@ def analyse_session(
         Broadband SNR per channel (for plotting).
     erp : np.ndarray
         Broadband ERP per channel, shape (n_channels, n_time).
+    sampling_rate : float
     """
-    print(f"  Loading {h5_path.name} …")
+    print(f"  Loading {h5_path.name} \u2026")
     session = load_session(h5_path)
 
     epochs = extract_epochs(session)
@@ -74,19 +76,21 @@ def analyse_session(
 
     bb_epochs = apply_broadband_filter(epochs, session.sampling_rate)
     hg_epochs = apply_high_gamma_filter(epochs, session.sampling_rate)
+    lf_epochs = apply_low_frequency_filter(epochs, session.sampling_rate)
 
     ch_table = build_channel_table(
         session,
         bb_epochs,
         hg_epochs,
         snr_threshold=snr_threshold,
+        low_freq_epochs=lf_epochs,
     )
     ses_table = build_session_table(ch_table)
 
     bb_snr = compute_channel_snr(bb_epochs)
     erp = compute_erp(bb_epochs)
 
-    return ch_table, ses_table, bb_snr, erp
+    return ch_table, ses_table, bb_snr, erp, session.sampling_rate
 
 
 # -----------------------------------------------------------------------
@@ -164,6 +168,369 @@ def plot_top_vs_bottom_erp(
     print(f"  Saved ERP comparison → {output_path}")
 
 
+def plot_lowfreq_vs_broadband_snr(
+    channel_df: pd.DataFrame,
+    output_path: Path,
+) -> None:
+    """Scatter plot of low-frequency SNR vs broadband SNR per channel."""
+    fig, ax = plt.subplots(figsize=(8, 7))
+
+    bb = channel_df["broadband_snr"].values
+    lf = channel_df["lowfreq_snr"].values
+
+    ax.scatter(bb, lf, alpha=0.4, s=18, color="#4c72b0", edgecolors="none")
+
+    lim = max(bb.max(), lf.max()) * 1.05
+    ax.plot([0, lim], [0, lim], "k--", alpha=0.4, linewidth=1, label="y = x")
+
+    ax.set_xlabel("Broadband SNR (1\u2013300 Hz)")
+    ax.set_ylabel("Low-Frequency SNR (1\u201370 Hz)")
+    ax.set_title("Low-Frequency vs. Broadband SNR (per channel)")
+    ax.legend()
+    fig.tight_layout()
+    fig.savefig(output_path, dpi=150)
+    plt.close(fig)
+    print(f"  Saved LF vs BB scatter → {output_path}")
+
+
+def plot_lowfreq_snr_histogram(
+    channel_df: pd.DataFrame,
+    output_path: Path,
+    snr_threshold: float = 0.5,
+) -> None:
+    """Overlaid histograms comparing broadband and low-frequency SNR."""
+    fig, ax = plt.subplots(figsize=(9, 5))
+
+    bb = channel_df["broadband_snr"].values
+    lf = channel_df["lowfreq_snr"].values
+
+    max_val = max(bb.max(), lf.max())
+    bins = np.linspace(0, min(max_val, 5.0), 60)
+
+    ax.hist(
+        bb,
+        bins=bins,
+        alpha=0.5,
+        color="#4c72b0",
+        edgecolor="black",
+        linewidth=0.5,
+        label="Broadband (1\u2013300 Hz)",
+    )
+    ax.hist(
+        lf,
+        bins=bins,
+        alpha=0.5,
+        color="#e74c3c",
+        edgecolor="black",
+        linewidth=0.5,
+        label="Low-Freq (1\u201370 Hz)",
+    )
+    ax.axvline(
+        snr_threshold,
+        color="black",
+        linestyle="--",
+        linewidth=1.5,
+        label=f"Threshold = {snr_threshold}",
+    )
+
+    ax.set_xlabel("SNR")
+    ax.set_ylabel("Number of channels")
+    ax.set_title("SNR Distribution: Broadband vs. Low-Frequency Filtering")
+    ax.legend()
+    fig.tight_layout()
+    fig.savefig(output_path, dpi=150)
+    plt.close(fig)
+    print(f"  Saved LF vs BB histogram → {output_path}")
+
+
+def plot_lowfreq_session_comparison(
+    session_df: pd.DataFrame,
+    output_path: Path,
+) -> None:
+    """Bar chart comparing active channel counts across filter bands per session."""
+    if "lowfreq_active_channels" not in session_df.columns:
+        return
+
+    has_any = (session_df["active_channels"] > 0) | (
+        session_df["lowfreq_active_channels"] > 0
+    )
+    df = session_df[has_any].copy()
+    if df.empty:
+        return
+
+    df["short_id"] = df["session_id"].apply(
+        lambda s: s[:35] + "…" if len(s) > 35 else s
+    )
+
+    fig, ax = plt.subplots(figsize=(12, 5))
+    x = np.arange(len(df))
+    w = 0.35
+    ax.bar(
+        x - w / 2,
+        df["active_channels"],
+        w,
+        label="Broadband (1\u2013300 Hz)",
+        color="#4c72b0",
+        edgecolor="black",
+        linewidth=0.5,
+    )
+    ax.bar(
+        x + w / 2,
+        df["lowfreq_active_channels"],
+        w,
+        label="Low-Freq (1\u201370 Hz)",
+        color="#e74c3c",
+        edgecolor="black",
+        linewidth=0.5,
+    )
+
+    ax.set_xticks(x)
+    ax.set_xticklabels(df["short_id"], rotation=45, ha="right", fontsize=7)
+    ax.set_ylabel("Active Channels")
+    ax.set_title(
+        "Active Channel Count by Filter Band (sessions with any active channels)"
+    )
+    ax.legend()
+    fig.tight_layout()
+    fig.savefig(output_path, dpi=150)
+    plt.close(fig)
+    print(f"  Saved session comparison → {output_path}")
+
+
+# -----------------------------------------------------------------------
+# Power Ratio SNR plots (RQ6)
+# -----------------------------------------------------------------------
+
+
+def plot_power_ratio_histogram(
+    channel_df: pd.DataFrame,
+    output_path: Path,
+) -> None:
+    """Overlaid histograms of evoked-SNR vs power-ratio SNR (broadband)."""
+    fig, ax = plt.subplots(figsize=(9, 5))
+
+    evoked = channel_df["broadband_snr"].values
+    power = channel_df["broadband_power_snr"].values
+
+    max_val = max(np.percentile(evoked, 99), np.percentile(power, 99))
+    bins = np.linspace(0, min(max_val, 5.0), 60)
+
+    ax.hist(
+        evoked,
+        bins=bins,
+        alpha=0.5,
+        color="#4c72b0",
+        edgecolor="black",
+        linewidth=0.5,
+        label="Evoked SNR (phase-locked)",
+    )
+    ax.hist(
+        power,
+        bins=bins,
+        alpha=0.5,
+        color="#2ecc71",
+        edgecolor="black",
+        linewidth=0.5,
+        label="Power Ratio SNR (phase-insensitive)",
+    )
+    ax.axvline(
+        1.0,
+        color="black",
+        linestyle="--",
+        linewidth=1.5,
+        label="Power Ratio = 1.0 (stimulus = rest)",
+    )
+    ax.axvline(
+        0.5,
+        color="red",
+        linestyle=":",
+        linewidth=1.2,
+        label="Evoked SNR threshold = 0.5",
+    )
+
+    ax.set_xlabel("SNR")
+    ax.set_ylabel("Number of channels")
+    ax.set_title("Evoked SNR vs. Power Ratio SNR Distribution (Broadband)")
+    ax.legend(fontsize=8)
+    fig.tight_layout()
+    fig.savefig(output_path, dpi=150)
+    plt.close(fig)
+    print(f"  Saved power ratio histogram \u2192 {output_path}")
+
+
+def plot_power_ratio_scatter(
+    channel_df: pd.DataFrame,
+    output_path: Path,
+) -> None:
+    """Scatter: evoked SNR (x) vs power ratio SNR (y), colored by status."""
+    fig, ax = plt.subplots(figsize=(8, 7))
+
+    active = channel_df["status"] == "Active"
+    evoked = channel_df["broadband_snr"].values
+    power = channel_df["broadband_power_snr"].values
+
+    ax.scatter(
+        evoked[~active],
+        power[~active],
+        alpha=0.3,
+        s=18,
+        color="#aaaaaa",
+        edgecolors="none",
+        label="Dead channels",
+    )
+    ax.scatter(
+        evoked[active],
+        power[active],
+        alpha=0.8,
+        s=40,
+        color="#e74c3c",
+        edgecolors="black",
+        linewidth=0.5,
+        label="Active channels",
+        zorder=5,
+    )
+
+    ax.axhline(
+        1.0,
+        color="#2ecc71",
+        linestyle="--",
+        alpha=0.7,
+        linewidth=1,
+        label="Power Ratio = 1",
+    )
+    ax.axvline(
+        0.5,
+        color="#4c72b0",
+        linestyle=":",
+        alpha=0.7,
+        linewidth=1,
+        label="Evoked SNR = 0.5",
+    )
+
+    ax.set_xlabel("Evoked SNR (phase-locked)")
+    ax.set_ylabel("Power Ratio SNR (phase-insensitive)")
+    ax.set_title("Evoked SNR vs. Power Ratio SNR (per channel)")
+    ax.legend(fontsize=8)
+    fig.tight_layout()
+    fig.savefig(output_path, dpi=150)
+    plt.close(fig)
+    print(f"  Saved power ratio scatter \u2192 {output_path}")
+
+
+def plot_power_ratio_by_band(
+    channel_df: pd.DataFrame,
+    output_path: Path,
+) -> None:
+    """Grouped bar chart: mean power ratio SNR across filter bands."""
+    bands = ["broadband_power_snr", "high_gamma_power_snr"]
+    labels = ["Broadband\n(1\u2013300 Hz)", "High-Gamma\n(70\u2013150 Hz)"]
+    colors = ["#4c72b0", "#9b59b6"]
+
+    if "lowfreq_power_snr" in channel_df.columns:
+        bands.append("lowfreq_power_snr")
+        labels.append("Low-Freq\n(1\u201370 Hz)")
+        colors.append("#e74c3c")
+
+    active = channel_df["status"] == "Active"
+
+    fig, axes = plt.subplots(1, 2, figsize=(12, 5))
+
+    for ax, mask, title in [
+        (axes[0], np.ones(len(channel_df), dtype=bool), "All Channels"),
+        (axes[1], active.values, "Active Channels Only"),
+    ]:
+        if mask.sum() == 0:
+            ax.set_title(f"{title}\n(no channels)")
+            continue
+
+        means = [channel_df.loc[mask, b].mean() for b in bands]
+        sems = [channel_df.loc[mask, b].sem() for b in bands]
+
+        x = np.arange(len(bands))
+        bars = ax.bar(
+            x,
+            means,
+            yerr=sems,
+            color=colors,
+            edgecolor="black",
+            linewidth=0.5,
+            capsize=4,
+            alpha=0.85,
+        )
+        ax.axhline(1.0, color="black", linestyle="--", alpha=0.5, linewidth=1)
+        ax.set_xticks(x)
+        ax.set_xticklabels(labels, fontsize=9)
+        ax.set_ylabel("Mean Power Ratio SNR")
+        ax.set_title(title)
+
+        for bar, m in zip(bars, means):
+            ax.text(
+                bar.get_x() + bar.get_width() / 2,
+                bar.get_height() + 0.01,
+                f"{m:.3f}",
+                ha="center",
+                va="bottom",
+                fontsize=9,
+                fontweight="bold",
+            )
+
+    fig.suptitle("Power Ratio SNR by Frequency Band", fontsize=13)
+    fig.tight_layout()
+    fig.savefig(output_path, dpi=150)
+    plt.close(fig)
+    print(f"  Saved power ratio by band \u2192 {output_path}")
+
+
+def plot_power_ratio_session_bars(
+    session_df: pd.DataFrame,
+    output_path: Path,
+) -> None:
+    """Per-session mean power ratio SNR bar chart."""
+    fig, ax = plt.subplots(figsize=(14, 5))
+
+    df = session_df.sort_values(
+        "mean_broadband_power_snr", ascending=False
+    ).copy()
+    df["short_id"] = df["session_id"].apply(
+        lambda s: s[:35] + "\u2026" if len(s) > 35 else s
+    )
+
+    x = np.arange(len(df))
+    bars = ax.bar(
+        x,
+        df["mean_broadband_power_snr"],
+        color="#2ecc71",
+        edgecolor="black",
+        linewidth=0.5,
+        alpha=0.85,
+    )
+    ax.axhline(
+        1.0,
+        color="black",
+        linestyle="--",
+        alpha=0.6,
+        linewidth=1.2,
+        label="Power Ratio = 1.0",
+    )
+
+    for i, (_, row) in enumerate(df.iterrows()):
+        if row["active_channels"] > 0:
+            bars[i].set_color("#e74c3c")
+            bars[i].set_alpha(1.0)
+
+    ax.set_xticks(x)
+    ax.set_xticklabels(df["short_id"], rotation=60, ha="right", fontsize=6)
+    ax.set_ylabel("Mean Power Ratio SNR (broadband)")
+    ax.set_title(
+        "Per-Session Mean Power Ratio SNR (red = sessions with active channels)"
+    )
+    ax.legend()
+    fig.tight_layout()
+    fig.savefig(output_path, dpi=150)
+    plt.close(fig)
+    print(f"  Saved power ratio session bars \u2192 {output_path}")
+
+
 # -----------------------------------------------------------------------
 # Main
 # -----------------------------------------------------------------------
@@ -216,12 +583,12 @@ def main() -> None:
 
     for h5_path in h5_files:
         try:
-            ch_table, ses_table, bb_snr, erp = analyse_session(
+            ch_table, ses_table, bb_snr, erp, sfreq = analyse_session(
                 h5_path,
                 snr_threshold=args.snr_threshold,
             )
         except Exception as exc:
-            print(f"  ⚠ Skipping {h5_path.name}: {exc}")
+            print(f"  \u26a0 Skipping {h5_path.name}: {exc}")
             continue
 
         sid = ch_table["session_id"][0]
@@ -236,9 +603,7 @@ def main() -> None:
 
         all_session_rows.append(ses_table)
         erp_dict[sid] = erp
-
-        session_info = load_session(h5_path)
-        sfreq_dict[sid] = session_info.sampling_rate
+        sfreq_dict[sid] = sfreq
 
     if not all_channel_rows:
         print("No sessions were processed successfully.")
@@ -267,6 +632,143 @@ def main() -> None:
         sfreq_dict,
         args.output_dir / "erp_top_vs_bottom.png",
     )
+
+    if "lowfreq_snr" in channel_df.columns:
+        plot_lowfreq_vs_broadband_snr(
+            channel_df,
+            args.output_dir / "lowfreq_vs_broadband_scatter.png",
+        )
+        plot_lowfreq_snr_histogram(
+            channel_df,
+            args.output_dir / "lowfreq_vs_broadband_histogram.png",
+            snr_threshold=args.snr_threshold,
+        )
+        plot_lowfreq_session_comparison(
+            session_df,
+            args.output_dir / "lowfreq_session_comparison.png",
+        )
+
+        # Print low-freq summary statistics
+        lf_active = (channel_df["lowfreq_status"] == "Active").sum()
+        bb_active = (channel_df["status"] == "Active").sum()
+        print("\n--- Low-Frequency Filter Analysis ---")
+        print(f"  Broadband active channels: {bb_active}/{len(channel_df)}")
+        print(f"  Low-freq active channels:  {lf_active}/{len(channel_df)}")
+        print(
+            f"  Median broadband SNR: {channel_df['broadband_snr'].median():.6f}"
+        )
+        print(
+            f"  Median low-freq SNR:  {channel_df['lowfreq_snr'].median():.6f}"
+        )
+        print(
+            f"  Mean broadband SNR:   {channel_df['broadband_snr'].mean():.6f}"
+        )
+        print(f"  Mean low-freq SNR:    {channel_df['lowfreq_snr'].mean():.6f}")
+
+        from scipy.stats import spearmanr, wilcoxon
+
+        rho, pval = spearmanr(
+            channel_df["broadband_snr"], channel_df["lowfreq_snr"]
+        )
+        print(f"  Spearman(BB, LF):     rho={rho:.4f}, p={pval:.2e}")
+
+        try:
+            stat, wp = wilcoxon(
+                channel_df["lowfreq_snr"], channel_df["broadband_snr"]
+            )
+            print(f"  Wilcoxon signed-rank: stat={stat:.1f}, p={wp:.2e}")
+        except ValueError:
+            pass
+
+        lf_resp = channel_df["lowfreq_resp_ratio"]
+        bb_resp = channel_df["broadband_resp_ratio"]
+        print(f"  Mean broadband resp ratio: {bb_resp.mean():.4f}")
+        print(f"  Mean low-freq resp ratio:  {lf_resp.mean():.4f}")
+
+    # ------------------------------------------------------------------
+    # RQ6: Power Ratio SNR (phase-insensitive)
+    # ------------------------------------------------------------------
+    if "broadband_power_snr" in channel_df.columns:
+        from scipy.stats import spearmanr as _spearmanr, wilcoxon as _wilcoxon
+
+        print("\n--- RQ6: Power Ratio SNR (Phase-Insensitive) ---")
+
+        bb_power = channel_df["broadband_power_snr"]
+        bb_evoked = channel_df["broadband_snr"]
+        active_mask = channel_df["status"] == "Active"
+
+        print(f"  Mean evoked SNR (all):       {bb_evoked.mean():.6f}")
+        print(f"  Mean power ratio SNR (all):  {bb_power.mean():.6f}")
+        print(f"  Median evoked SNR:           {bb_evoked.median():.6f}")
+        print(f"  Median power ratio SNR:      {bb_power.median():.6f}")
+
+        above_1 = (bb_power > 1.0).sum()
+        print(
+            f"  Channels with power ratio > 1.0: {above_1}/{len(bb_power)} "
+            f"({100 * above_1 / len(bb_power):.1f}%)"
+        )
+
+        pct_higher = (bb_power > bb_evoked).sum()
+        print(
+            f"  Channels where power ratio > evoked: {pct_higher}/{len(bb_power)} "
+            f"({100 * pct_higher / len(bb_power):.1f}%)"
+        )
+
+        if active_mask.any():
+            print("\n  Active channels:")
+            print(
+                f"    Mean evoked SNR:      {bb_evoked[active_mask].mean():.4f}"
+            )
+            print(
+                f"    Mean power ratio SNR: {bb_power[active_mask].mean():.4f}"
+            )
+
+        rho, pval = _spearmanr(bb_evoked, bb_power)
+        print(f"  Spearman(evoked, power): rho={rho:.4f}, p={pval:.2e}")
+
+        try:
+            stat, wp = _wilcoxon(bb_power, bb_evoked)
+            print(
+                f"  Wilcoxon signed-rank (power vs evoked): stat={stat:.1f}, p={wp:.2e}"
+            )
+        except ValueError:
+            pass
+
+        if "high_gamma_power_snr" in channel_df.columns:
+            hg_power = channel_df["high_gamma_power_snr"]
+            hg_above = (hg_power > 1.0).sum()
+            print("\n  High-gamma power ratio:")
+            print(f"    Mean:  {hg_power.mean():.6f}")
+            print(
+                f"    > 1.0: {hg_above}/{len(hg_power)} ({100 * hg_above / len(hg_power):.1f}%)"
+            )
+
+        if "lowfreq_power_snr" in channel_df.columns:
+            lf_power = channel_df["lowfreq_power_snr"]
+            lf_above = (lf_power > 1.0).sum()
+            print("\n  Low-freq power ratio:")
+            print(f"    Mean:  {lf_power.mean():.6f}")
+            print(
+                f"    > 1.0: {lf_above}/{len(lf_power)} ({100 * lf_above / len(lf_power):.1f}%)"
+            )
+
+        # Plots
+        plot_power_ratio_histogram(
+            channel_df,
+            args.output_dir / "power_ratio_histogram.png",
+        )
+        plot_power_ratio_scatter(
+            channel_df,
+            args.output_dir / "power_ratio_scatter.png",
+        )
+        plot_power_ratio_by_band(
+            channel_df,
+            args.output_dir / "power_ratio_by_band.png",
+        )
+        plot_power_ratio_session_bars(
+            session_df,
+            args.output_dir / "power_ratio_session_bars.png",
+        )
 
     print("\nDone.")
 
