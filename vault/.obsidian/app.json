@@ -4,5 +4,11 @@
   "livePreview": true,
   "readableLineLength": true,
   "showLineNumber": false,
-  "defaultViewMode": "source"
+  "defaultViewMode": "source",
+  "showUnsupportedFiles": false,
+  "detectAllFileExtensions": false,
+  "attachmentFolderPath": "_attachments",
+  "userIgnoreFilters": [
+    "**/results/**"
+  ]
 }
