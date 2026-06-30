@@ -566,6 +566,127 @@ def compute_cumulative_erp_snr(
     return np.stack(snr_curve, axis=0)  # (n_steps, C)
 
 
+def identify_blocks(stim_labels: np.ndarray) -> list[tuple[int, int, str]]:
+    """Identify contiguous blocks of same-frequency stimulation.
+
+    A block is a maximal contiguous run of trials with the same stimulus label.
+
+    Parameters
+    ----------
+    stim_labels : np.ndarray, shape (n_trials,)
+
+    Returns
+    -------
+    blocks : list of (start_idx, end_idx, label)
+        Half-open intervals ``[start, end)`` for each block.
+    """
+    blocks: list[tuple[int, int, str]] = []
+    if len(stim_labels) == 0:
+        return blocks
+
+    start = 0
+    current = stim_labels[0]
+    for i in range(1, len(stim_labels)):
+        if stim_labels[i] != current:
+            blocks.append((start, i, str(current)))
+            start = i
+            current = stim_labels[i]
+    blocks.append((start, len(stim_labels), str(current)))
+    return blocks
+
+
+def compute_block_half_snr(epochs: EpochArrays) -> dict:
+    """Compare ERP SNR between first and second halves of each block.
+
+    For each contiguous block of same-frequency trials, splits the trials
+    in half and computes evoked SNR for each half independently.
+
+    Returns
+    -------
+    dict with keys:
+        blocks : list of (start, end, label)
+        first_half_snr : np.ndarray, shape (n_blocks, n_channels)
+        second_half_snr : np.ndarray, shape (n_blocks, n_channels)
+        block_sizes : np.ndarray, shape (n_blocks,)
+    """
+    blocks = identify_blocks(epochs.stim_labels)
+    n_ch = epochs.stimulus.shape[1]
+
+    first_half_snrs = []
+    second_half_snrs = []
+    block_sizes = []
+
+    for start, end, _label in blocks:
+        n = end - start
+        if n < 4:  # need at least 2 per half
+            first_half_snrs.append(np.full(n_ch, np.nan))
+            second_half_snrs.append(np.full(n_ch, np.nan))
+            block_sizes.append(n)
+            continue
+
+        mid = start + n // 2
+        first = EpochArrays(
+            rest=epochs.rest[start:mid],
+            stimulus=epochs.stimulus[start:mid],
+            stim_labels=epochs.stim_labels[start:mid],
+            window_samples=epochs.window_samples,
+        )
+        second = EpochArrays(
+            rest=epochs.rest[mid:end],
+            stimulus=epochs.stimulus[mid:end],
+            stim_labels=epochs.stim_labels[mid:end],
+            window_samples=epochs.window_samples,
+        )
+        first_half_snrs.append(compute_channel_snr(first))
+        second_half_snrs.append(compute_channel_snr(second))
+        block_sizes.append(n)
+
+    return {
+        "blocks": blocks,
+        "first_half_snr": np.array(first_half_snrs),
+        "second_half_snr": np.array(second_half_snrs),
+        "block_sizes": np.array(block_sizes),
+    }
+
+
+def compute_block_order_snr(epochs: EpochArrays) -> dict:
+    """Compare ERP SNR across blocks in chronological order.
+
+    Computes overall evoked SNR per block (pooling all channels) so we can
+    test whether early blocks produce stronger responses than late blocks.
+
+    Returns
+    -------
+    dict with keys:
+        blocks : list of (start, end, label)
+        per_block_snr : np.ndarray, shape (n_blocks, n_channels)
+        block_indices : np.ndarray, shape (n_blocks,)  — 0-based block order
+    """
+    blocks = identify_blocks(epochs.stim_labels)
+    n_ch = epochs.stimulus.shape[1]
+
+    per_block = []
+    for start, end, _label in blocks:
+        n = end - start
+        if n < 2:
+            per_block.append(np.full(n_ch, np.nan))
+            continue
+
+        sub = EpochArrays(
+            rest=epochs.rest[start:end],
+            stimulus=epochs.stimulus[start:end],
+            stim_labels=epochs.stim_labels[start:end],
+            window_samples=epochs.window_samples,
+        )
+        per_block.append(compute_channel_snr(sub))
+
+    return {
+        "blocks": blocks,
+        "per_block_snr": np.array(per_block),
+        "block_indices": np.arange(len(blocks)),
+    }
+
+
 def classify_channels(
     snr: np.ndarray,
     threshold: float = 0.5,

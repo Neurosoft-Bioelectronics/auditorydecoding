@@ -40,6 +40,9 @@ from auditorydecoding.analysis.snr import (
     compute_erp,
     compute_habituation_snr,
     compute_cumulative_erp_snr,
+    compute_block_half_snr,
+    compute_block_order_snr,
+    identify_blocks,
 )
 
 DEFAULT_DATA_DIR = Path(
@@ -430,6 +433,278 @@ def plot_habituation_index_distribution(
     fig.savefig(output_path, dpi=150)
     plt.close(fig)
     print(f"  Saved habituation index histogram \u2192 {output_path}")
+
+
+# -----------------------------------------------------------------------
+# Block-level habituation plots (RQ8)
+# -----------------------------------------------------------------------
+
+
+def plot_within_block_habituation(
+    all_block_halves: list[dict],
+    output_path: Path,
+) -> None:
+    """Paired comparison: first-half vs second-half SNR within blocks."""
+    first_means = []
+    second_means = []
+    for bh in all_block_halves:
+        mask = ~np.isnan(bh["first_half_snr"]).any(axis=1)
+        if mask.any():
+            first_means.extend(
+                np.nanmean(bh["first_half_snr"][mask], axis=1).tolist()
+            )
+            second_means.extend(
+                np.nanmean(bh["second_half_snr"][mask], axis=1).tolist()
+            )
+
+    if not first_means:
+        return
+
+    first_mean_per_block = np.array(first_means)
+    second_mean_per_block = np.array(second_means)
+
+    fig, axes = plt.subplots(1, 2, figsize=(14, 5))
+
+    # Panel 1: paired scatter
+    ax = axes[0]
+    lim = max(first_mean_per_block.max(), second_mean_per_block.max()) * 1.1
+    ax.scatter(
+        first_mean_per_block,
+        second_mean_per_block,
+        alpha=0.3,
+        s=20,
+        color="#e67e22",
+        edgecolors="none",
+    )
+    ax.plot([0, lim], [0, lim], "k--", alpha=0.4, linewidth=1, label="y = x")
+    ax.set_xlabel("First Half of Block — Mean SNR")
+    ax.set_ylabel("Second Half of Block — Mean SNR")
+    ax.set_title("Within-Block Habituation (per block)")
+    ax.legend()
+
+    # Panel 2: bar chart of grand means
+    ax2 = axes[1]
+    means = [first_mean_per_block.mean(), second_mean_per_block.mean()]
+    sems = [
+        first_mean_per_block.std() / np.sqrt(len(first_mean_per_block)),
+        second_mean_per_block.std() / np.sqrt(len(second_mean_per_block)),
+    ]
+    bars = ax2.bar(
+        [0, 1],
+        means,
+        yerr=sems,
+        color=["#3498db", "#e74c3c"],
+        edgecolor="black",
+        linewidth=0.5,
+        capsize=6,
+        alpha=0.85,
+    )
+    ax2.set_xticks([0, 1])
+    ax2.set_xticklabels(["First Half", "Second Half"])
+    ax2.set_ylabel("Mean Evoked SNR")
+    ax2.set_title("Grand Mean: First vs Second Half of Each Block")
+    for bar, m in zip(bars, means):
+        ax2.text(
+            bar.get_x() + bar.get_width() / 2,
+            bar.get_height() + sems[0] * 0.3,
+            f"{m:.4f}",
+            ha="center",
+            va="bottom",
+            fontsize=10,
+            fontweight="bold",
+        )
+
+    fig.suptitle("Within-Block Habituation Analysis", fontsize=13)
+    fig.tight_layout()
+    fig.savefig(output_path, dpi=150)
+    plt.close(fig)
+    print(f"  Saved within-block habituation → {output_path}")
+
+
+def plot_across_block_habituation(
+    all_block_orders: list[dict],
+    output_path: Path,
+) -> None:
+    """SNR as a function of block index (chronological order)."""
+    max_blocks = max(len(bo["per_block_snr"]) for bo in all_block_orders)
+
+    fig, axes = plt.subplots(1, 2, figsize=(14, 5))
+
+    # Panel 1: individual session curves (mean across channels per block)
+    ax = axes[0]
+    all_block_means = []
+    for bo in all_block_orders:
+        block_means = np.nanmean(bo["per_block_snr"], axis=1)
+        n_blocks = len(block_means)
+        ax.plot(
+            range(1, n_blocks + 1),
+            block_means,
+            alpha=0.15,
+            color="steelblue",
+            linewidth=0.8,
+        )
+        all_block_means.append(block_means)
+
+    # Grand mean curve (padded)
+    padded = np.full((len(all_block_means), max_blocks), np.nan)
+    for i, bm in enumerate(all_block_means):
+        padded[i, : len(bm)] = bm
+    grand_mean = np.nanmean(padded, axis=0)
+    grand_sem = np.nanstd(padded, axis=0) / np.sqrt(
+        np.sum(~np.isnan(padded), axis=0)
+    )
+    x = np.arange(1, max_blocks + 1)
+    valid = ~np.isnan(grand_mean)
+    ax.plot(
+        x[valid],
+        grand_mean[valid],
+        color="red",
+        linewidth=2,
+        label="Grand mean",
+    )
+    ax.fill_between(
+        x[valid],
+        (grand_mean - grand_sem)[valid],
+        (grand_mean + grand_sem)[valid],
+        color="red",
+        alpha=0.2,
+    )
+    ax.set_xlabel("Block Index (chronological)")
+    ax.set_ylabel("Mean Evoked SNR (across channels)")
+    ax.set_title("SNR by Block Order (all sessions)")
+    ax.legend()
+
+    # Panel 2: first-third vs middle-third vs last-third bars
+    ax2 = axes[1]
+    thirds_snr = [[], [], []]
+    for bo in all_block_orders:
+        snr = bo["per_block_snr"]  # (n_blocks, n_channels)
+        n = len(snr)
+        if n < 3:
+            continue
+        t1 = n // 3
+        t2 = 2 * n // 3
+        thirds_snr[0].append(np.nanmean(snr[:t1]))
+        thirds_snr[1].append(np.nanmean(snr[t1:t2]))
+        thirds_snr[2].append(np.nanmean(snr[t2:]))
+
+    if all(len(t) > 0 for t in thirds_snr):
+        means = [np.mean(t) for t in thirds_snr]
+        sems = [np.std(t) / np.sqrt(len(t)) for t in thirds_snr]
+        colors = ["#3498db", "#f39c12", "#e74c3c"]
+        labels = ["Early\nBlocks", "Middle\nBlocks", "Late\nBlocks"]
+        bars = ax2.bar(
+            range(3),
+            means,
+            yerr=sems,
+            color=colors,
+            edgecolor="black",
+            linewidth=0.5,
+            capsize=6,
+            alpha=0.85,
+        )
+        ax2.set_xticks(range(3))
+        ax2.set_xticklabels(labels)
+        ax2.set_ylabel("Mean Evoked SNR")
+        ax2.set_title("SNR by Block Position (thirds)")
+        for bar, m in zip(bars, means):
+            ax2.text(
+                bar.get_x() + bar.get_width() / 2,
+                bar.get_height() + 0.001,
+                f"{m:.4f}",
+                ha="center",
+                va="bottom",
+                fontsize=10,
+                fontweight="bold",
+            )
+
+    fig.suptitle("Across-Block Habituation Analysis", fontsize=13)
+    fig.tight_layout()
+    fig.savefig(output_path, dpi=150)
+    plt.close(fig)
+    print(f"  Saved across-block habituation → {output_path}")
+
+
+def plot_block_erp_comparison(
+    bb_epochs_dict: dict,
+    sfreq_dict: dict,
+    output_path: Path,
+    n_sessions: int = 4,
+) -> None:
+    """ERP waveforms from early vs late within-block trials for top sessions."""
+
+    session_snrs = {}
+    for sid, ep in bb_epochs_dict.items():
+        session_snrs[sid] = np.mean(compute_channel_snr(ep))
+
+    top_sids = sorted(session_snrs, key=session_snrs.get, reverse=True)[
+        :n_sessions
+    ]
+
+    if not top_sids:
+        return
+
+    fig, axes = plt.subplots(
+        len(top_sids), 1, figsize=(12, 3.5 * len(top_sids)), squeeze=False
+    )
+
+    for row, sid in enumerate(top_sids):
+        ax = axes[row, 0]
+        ep = bb_epochs_dict[sid]
+        sfreq = sfreq_dict[sid]
+        blocks = identify_blocks(ep.stim_labels)
+
+        snr_all = compute_channel_snr(ep)
+        best_ch = np.argmax(snr_all)
+
+        # Aggregate ERPs from first-half and second-half of all blocks
+        first_half_trials = []
+        second_half_trials = []
+        for start, end, _ in blocks:
+            n = end - start
+            if n < 4:
+                continue
+            mid = start + n // 2
+            first_half_trials.append(ep.stimulus[start:mid, best_ch, :])
+            second_half_trials.append(ep.stimulus[mid:end, best_ch, :])
+
+        if not first_half_trials:
+            continue
+
+        first_erp = np.concatenate(first_half_trials, axis=0).mean(axis=0)
+        second_erp = np.concatenate(second_half_trials, axis=0).mean(axis=0)
+
+        t_ms = np.arange(len(first_erp)) / sfreq * 1000
+        ax.plot(
+            t_ms,
+            first_erp,
+            color="#3498db",
+            linewidth=1.5,
+            label="First half of blocks",
+        )
+        ax.plot(
+            t_ms,
+            second_erp,
+            color="#e74c3c",
+            linewidth=1.5,
+            label="Second half of blocks",
+        )
+        ax.set_xlabel("Time (ms)")
+        ax.set_ylabel("Amplitude (µV)")
+        short_sid = sid[:40] + "…" if len(sid) > 40 else sid
+        ax.set_title(
+            f"{short_sid} — Best channel (ch {best_ch}, SNR={snr_all[best_ch]:.3f})"
+        )
+        ax.legend(fontsize=8)
+
+    fig.suptitle(
+        "ERP: First vs Second Half of Blocks (best channel per session)",
+        fontsize=13,
+    )
+    fig.tight_layout()
+    fig.savefig(output_path, dpi=150)
+    plt.close(fig)
+    print(f"  Saved block ERP comparison → {output_path}")
 
 
 # -----------------------------------------------------------------------
@@ -1006,6 +1281,173 @@ def main() -> None:
                 sfreq_dict,
                 args.output_dir / "cumulative_snr_curves.png",
             )
+
+    # ------------------------------------------------------------------
+    # RQ8: Block-Level Habituation Analysis
+    # ------------------------------------------------------------------
+    if bb_epochs_dict:
+        from scipy.stats import wilcoxon as _wil3, spearmanr as _sp4
+
+        print("\n--- RQ8: Block-Level Habituation Analysis ---")
+
+        all_block_halves = []
+        all_block_orders = []
+        total_blocks = 0
+
+        for sid, bb_ep in bb_epochs_dict.items():
+            bh = compute_block_half_snr(bb_ep)
+            bo = compute_block_order_snr(bb_ep)
+            all_block_halves.append(bh)
+            all_block_orders.append(bo)
+            total_blocks += len(bh["blocks"])
+
+            n_blocks = len(bh["blocks"])
+            block_sizes = bh["block_sizes"]
+            print(
+                f"  {sid[:50]}: {n_blocks} blocks, "
+                f"sizes: min={block_sizes.min()}, max={block_sizes.max()}, "
+                f"mean={block_sizes.mean():.1f}"
+            )
+
+        print(f"\n  Total blocks across all sessions: {total_blocks}")
+
+        # --- Within-block analysis ---
+        # Aggregate to per-block mean SNR (across channels) to handle
+        # sessions with different channel counts.
+        first_mean_per_block_list = []
+        second_mean_per_block_list = []
+        first_ch_accum = []
+        second_ch_accum = []
+        for bh in all_block_halves:
+            valid = ~np.isnan(bh["first_half_snr"]).any(axis=1)
+            if valid.any():
+                first_mean_per_block_list.extend(
+                    np.nanmean(bh["first_half_snr"][valid], axis=1).tolist()
+                )
+                second_mean_per_block_list.extend(
+                    np.nanmean(bh["second_half_snr"][valid], axis=1).tolist()
+                )
+                first_ch_accum.append(
+                    np.nanmean(bh["first_half_snr"][valid], axis=0)
+                )
+                second_ch_accum.append(
+                    np.nanmean(bh["second_half_snr"][valid], axis=0)
+                )
+
+        if first_mean_per_block_list:
+            first_mean_per_block = np.array(first_mean_per_block_list)
+            second_mean_per_block = np.array(second_mean_per_block_list)
+
+            print(
+                f"\n  Within-block analysis ({len(first_mean_per_block)} valid blocks):"
+            )
+            print(
+                f"    Mean SNR first half:  {first_mean_per_block.mean():.6f}"
+            )
+            print(
+                f"    Mean SNR second half: {second_mean_per_block.mean():.6f}"
+            )
+            ratio = first_mean_per_block.mean() / max(
+                second_mean_per_block.mean(), 1e-12
+            )
+            print(f"    Ratio (first/second): {ratio:.3f}")
+
+            pct_higher = (first_mean_per_block > second_mean_per_block).sum()
+            print(
+                f"    Blocks where first half > second half: "
+                f"{pct_higher}/{len(first_mean_per_block)} "
+                f"({100 * pct_higher / len(first_mean_per_block):.1f}%)"
+            )
+
+            try:
+                stat, wp = _wil3(first_mean_per_block, second_mean_per_block)
+                print(
+                    f"    Wilcoxon first vs second half: stat={stat:.1f}, p={wp:.2e}"
+                )
+            except ValueError as e:
+                print(
+                    f"    Wilcoxon first vs second half: could not compute ({e})"
+                )
+
+            # Per-channel aggregated (per session, since channel counts differ)
+            ch_higher_count = 0
+            ch_total = 0
+            for f_ch, s_ch in zip(first_ch_accum, second_ch_accum):
+                ch_higher_count += int((f_ch > s_ch).sum())
+                ch_total += len(f_ch)
+            if ch_total > 0:
+                print(
+                    f"\n    Per-channel (across sessions): first half > second half in "
+                    f"{ch_higher_count}/{ch_total} channels "
+                    f"({100 * ch_higher_count / ch_total:.1f}%)"
+                )
+
+        # --- Across-block analysis ---
+        print("\n  Across-block analysis:")
+        all_corrs = []
+        for bo in all_block_orders:
+            snr_per_block = np.nanmean(bo["per_block_snr"], axis=1)
+            valid = ~np.isnan(snr_per_block)
+            if valid.sum() >= 3:
+                rho, p = _sp4(bo["block_indices"][valid], snr_per_block[valid])
+                all_corrs.append(rho)
+
+        if all_corrs:
+            corrs = np.array(all_corrs)
+            print(f"    Sessions with ≥3 blocks: {len(corrs)}")
+            print(f"    Mean Spearman(block_idx, SNR): {corrs.mean():.4f}")
+            print(f"    Median Spearman: {np.median(corrs):.4f}")
+            neg = (corrs < 0).sum()
+            print(
+                f"    Sessions with negative correlation: "
+                f"{neg}/{len(corrs)} ({100 * neg / len(corrs):.1f}%)"
+            )
+
+        # --- Thirds analysis ---
+        thirds_snr = [[], [], []]
+        for bo in all_block_orders:
+            snr = bo["per_block_snr"]
+            n = len(snr)
+            if n < 3:
+                continue
+            t1 = n // 3
+            t2 = 2 * n // 3
+            thirds_snr[0].append(np.nanmean(snr[:t1]))
+            thirds_snr[1].append(np.nanmean(snr[t1:t2]))
+            thirds_snr[2].append(np.nanmean(snr[t2:]))
+
+        if all(len(t) > 0 for t in thirds_snr):
+            print("\n  Block-thirds analysis:")
+            labels = ["Early", "Middle", "Late"]
+            for i, (label, vals) in enumerate(zip(labels, thirds_snr)):
+                print(
+                    f"    {label} blocks: mean SNR = {np.mean(vals):.6f} (n={len(vals)} sessions)"
+                )
+
+            try:
+                stat, wp = _wil3(thirds_snr[0], thirds_snr[2])
+                print(
+                    f"    Wilcoxon early vs late blocks: stat={stat:.1f}, p={wp:.2e}"
+                )
+            except ValueError as e:
+                print(
+                    f"    Wilcoxon early vs late blocks: could not compute ({e})"
+                )
+
+        # --- Plots ---
+        plot_within_block_habituation(
+            all_block_halves,
+            args.output_dir / "block_within_habituation.png",
+        )
+        plot_across_block_habituation(
+            all_block_orders,
+            args.output_dir / "block_across_habituation.png",
+        )
+        plot_block_erp_comparison(
+            bb_epochs_dict,
+            sfreq_dict,
+            args.output_dir / "block_erp_comparison.png",
+        )
 
     print("\nDone.")
 
