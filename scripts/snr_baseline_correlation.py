@@ -47,6 +47,8 @@ SNR_METRICS = [
     ("max_tuning_metric", "Max Tonotopic Tuning"),
     ("mean_broadband_power_snr", "Mean Power Ratio SNR"),
     ("mean_lowfreq_power_snr", "Mean Low-Freq Power SNR"),
+    ("mean_broadband_induced_snr", "Mean Induced Power SNR"),
+    ("max_habituation_index", "Max Habituation Index"),
 ]
 
 plt.rcParams.update({

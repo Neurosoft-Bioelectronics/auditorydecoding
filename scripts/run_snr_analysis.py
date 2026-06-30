@@ -38,6 +38,8 @@ from auditorydecoding.analysis.snr import (
     build_session_table,
     compute_channel_snr,
     compute_erp,
+    compute_habituation_snr,
+    compute_cumulative_erp_snr,
 )
 
 DEFAULT_DATA_DIR = Path(
@@ -67,6 +69,8 @@ def analyse_session(
     erp : np.ndarray
         Broadband ERP per channel, shape (n_channels, n_time).
     sampling_rate : float
+    bb_epochs : EpochArrays
+        Broadband-filtered epochs (for habituation analysis).
     """
     print(f"  Loading {h5_path.name} \u2026")
     session = load_session(h5_path)
@@ -90,7 +94,7 @@ def analyse_session(
     bb_snr = compute_channel_snr(bb_epochs)
     erp = compute_erp(bb_epochs)
 
-    return ch_table, ses_table, bb_snr, erp, session.sampling_rate
+    return ch_table, ses_table, bb_snr, erp, session.sampling_rate, bb_epochs
 
 
 # -----------------------------------------------------------------------
@@ -295,6 +299,137 @@ def plot_lowfreq_session_comparison(
     fig.savefig(output_path, dpi=150)
     plt.close(fig)
     print(f"  Saved session comparison → {output_path}")
+
+
+# -----------------------------------------------------------------------
+# Habituation plots (RQ7)
+# -----------------------------------------------------------------------
+
+
+def plot_habituation_quartiles(
+    quartile_snrs: np.ndarray,
+    output_path: Path,
+    n_splits: int = 4,
+) -> None:
+    """Bar chart of mean evoked SNR per chronological quartile."""
+    mean_per_q = quartile_snrs.mean(axis=1)  # (n_splits,)
+    sem_per_q = quartile_snrs.std(axis=1) / np.sqrt(quartile_snrs.shape[1])
+
+    fig, ax = plt.subplots(figsize=(6, 4))
+    labels = [f"Q{i + 1}" for i in range(n_splits)]
+    x = np.arange(n_splits)
+    ax.bar(
+        x,
+        mean_per_q,
+        yerr=sem_per_q,
+        color=plt.cm.Blues(np.linspace(0.4, 0.9, n_splits)),
+        edgecolor="black",
+        linewidth=0.5,
+        capsize=4,
+        alpha=0.85,
+    )
+    ax.set_xticks(x)
+    ax.set_xticklabels(labels)
+    ax.set_xlabel("Trial Quartile (Q1 = earliest)")
+    ax.set_ylabel("Mean Evoked SNR")
+    ax.set_title("Evoked SNR by Chronological Trial Quartile")
+    fig.tight_layout()
+    fig.savefig(output_path, dpi=150)
+    plt.close(fig)
+    print(f"  Saved habituation quartiles \u2192 {output_path}")
+
+
+def plot_cumulative_snr_curves(
+    cumulative_snrs: dict[str, np.ndarray],
+    sfreq_dict: dict[str, float],
+    output_path: Path,
+    top_n: int = 10,
+    step: int = 5,
+) -> None:
+    """Line plot: ERP SNR vs number of trials for top-N channels across sessions."""
+    all_curves = []
+    for sid, curves in cumulative_snrs.items():
+        max_snr_per_ch = curves.max(axis=0)
+        top_ch = np.argsort(max_snr_per_ch)[-top_n:]
+        for ch_idx in top_ch:
+            all_curves.append(curves[:, ch_idx])
+
+    if not all_curves:
+        return
+
+    fig, ax = plt.subplots(figsize=(8, 5))
+    for curve in all_curves:
+        n_steps = len(curve)
+        trial_counts = [(i + 1) * step for i in range(n_steps - 1)]
+        trial_counts.append(trial_counts[-1] + step if n_steps > 1 else step)
+        ax.plot(
+            trial_counts[:n_steps],
+            curve,
+            alpha=0.3,
+            color="steelblue",
+            linewidth=0.8,
+        )
+
+    if all_curves:
+        max_len = max(len(c) for c in all_curves)
+        padded = np.full((len(all_curves), max_len), np.nan)
+        for i, c in enumerate(all_curves):
+            padded[i, : len(c)] = c
+        mean_curve = np.nanmean(padded, axis=0)
+        trial_counts = [(i + 1) * step for i in range(max_len)]
+        ax.plot(
+            trial_counts,
+            mean_curve,
+            color="red",
+            linewidth=2,
+            label="Mean across top channels",
+        )
+
+    ax.set_xlabel("Number of Trials Included")
+    ax.set_ylabel("Cumulative ERP SNR")
+    ax.set_title("Cumulative ERP SNR vs. Trial Count (top channels)")
+    ax.legend()
+    fig.tight_layout()
+    fig.savefig(output_path, dpi=150)
+    plt.close(fig)
+    print(f"  Saved cumulative SNR curves \u2192 {output_path}")
+
+
+def plot_habituation_index_distribution(
+    channel_df: pd.DataFrame,
+    output_path: Path,
+) -> None:
+    """Histogram of per-channel habituation index."""
+    hi = channel_df["habituation_index"].values
+
+    fig, ax = plt.subplots(figsize=(8, 5))
+    ax.hist(hi, bins=50, edgecolor="black", alpha=0.7, color="#e67e22")
+    ax.axvline(
+        0, color="black", linestyle="--", linewidth=1.5, label="HI = 0 (stable)"
+    )
+    ax.axvline(
+        0.1,
+        color="red",
+        linestyle=":",
+        linewidth=1.2,
+        label="HI = 0.1 (mild habituation)",
+    )
+    ax.axvline(
+        -0.1,
+        color="blue",
+        linestyle=":",
+        linewidth=1.2,
+        label="HI = -0.1 (mild sensitization)",
+    )
+
+    ax.set_xlabel("Habituation Index")
+    ax.set_ylabel("Number of Channels")
+    ax.set_title("Distribution of Per-Channel Habituation Index")
+    ax.legend(fontsize=8)
+    fig.tight_layout()
+    fig.savefig(output_path, dpi=150)
+    plt.close(fig)
+    print(f"  Saved habituation index histogram \u2192 {output_path}")
 
 
 # -----------------------------------------------------------------------
@@ -580,12 +715,15 @@ def main() -> None:
     all_session_rows: list[dict] = []
     erp_dict: dict[str, np.ndarray] = {}
     sfreq_dict: dict[str, float] = {}
+    bb_epochs_dict: dict[str, object] = {}
 
     for h5_path in h5_files:
         try:
-            ch_table, ses_table, bb_snr, erp, sfreq = analyse_session(
-                h5_path,
-                snr_threshold=args.snr_threshold,
+            ch_table, ses_table, bb_snr, erp, sfreq, bb_epochs = (
+                analyse_session(
+                    h5_path,
+                    snr_threshold=args.snr_threshold,
+                )
             )
         except Exception as exc:
             print(f"  \u26a0 Skipping {h5_path.name}: {exc}")
@@ -604,6 +742,7 @@ def main() -> None:
         all_session_rows.append(ses_table)
         erp_dict[sid] = erp
         sfreq_dict[sid] = sfreq
+        bb_epochs_dict[sid] = bb_epochs
 
     if not all_channel_rows:
         print("No sessions were processed successfully.")
@@ -769,6 +908,104 @@ def main() -> None:
             session_df,
             args.output_dir / "power_ratio_session_bars.png",
         )
+
+    # ------------------------------------------------------------------
+    # Induced Power SNR (Hypothesis A)
+    # ------------------------------------------------------------------
+    if "broadband_induced_snr" in channel_df.columns:
+        from scipy.stats import spearmanr as _sp2
+
+        print("\n--- Hypothesis A: Induced Power SNR ---")
+        bb_induced = channel_df["broadband_induced_snr"]
+        bb_evoked = channel_df["broadband_snr"]
+        bb_power = channel_df["broadband_power_snr"]
+
+        print(f"  Mean induced SNR (all):    {bb_induced.mean():.6f}")
+        print(f"  Median induced SNR (all):  {bb_induced.median():.6f}")
+        print(f"  Mean evoked SNR (all):     {bb_evoked.mean():.6f}")
+        print(f"  Mean power ratio SNR (all):{bb_power.mean():.6f}")
+
+        induced_dom = (bb_induced > bb_evoked).sum()
+        print(
+            f"  Channels where induced > evoked: {induced_dom}/{len(bb_induced)} "
+            f"({100 * induced_dom / len(bb_induced):.1f}%)"
+        )
+
+        rho_ip, p_ip = _sp2(bb_induced, bb_power)
+        print(
+            f"  Spearman(induced, power ratio): rho={rho_ip:.4f}, p={p_ip:.2e}"
+        )
+        rho_ie, p_ie = _sp2(bb_induced, bb_evoked)
+        print(
+            f"  Spearman(induced, evoked):       rho={rho_ie:.4f}, p={p_ie:.2e}"
+        )
+
+    # ------------------------------------------------------------------
+    # RQ7: Habituation Analysis (Hypothesis B)
+    # ------------------------------------------------------------------
+    if "habituation_index" in channel_df.columns and bb_epochs_dict:
+        from scipy.stats import wilcoxon as _wil2, spearmanr as _sp3
+
+        print("\n--- RQ7: Habituation Analysis (Hypothesis B) ---")
+
+        hi = channel_df["habituation_index"]
+        print(f"  Mean HI:   {hi.mean():.6f}")
+        print(f"  Median HI: {hi.median():.6f}")
+        hi_pos = (hi > 0.1).sum()
+        hi_neg = (hi < -0.1).sum()
+        print(
+            f"  Channels with HI > 0.1 (habituation): {hi_pos}/{len(hi)} "
+            f"({100 * hi_pos / len(hi):.1f}%)"
+        )
+        print(
+            f"  Channels with HI < -0.1 (sensitization): {hi_neg}/{len(hi)} "
+            f"({100 * hi_neg / len(hi):.1f}%)"
+        )
+
+        all_quartile_snrs = []
+        cumulative_snrs_dict: dict[str, np.ndarray] = {}
+        for sid, bb_ep in bb_epochs_dict.items():
+            q_snr = compute_habituation_snr(bb_ep, n_splits=4)
+            all_quartile_snrs.append(q_snr)
+            cum_snr = compute_cumulative_erp_snr(bb_ep, step=5)
+            cumulative_snrs_dict[sid] = cum_snr
+
+        if all_quartile_snrs:
+            stacked_q = np.concatenate(
+                all_quartile_snrs, axis=1
+            )  # (4, total_channels)
+            q1_snr = stacked_q[0]
+            q4_snr = stacked_q[-1]
+            print(f"\n  Mean Q1 SNR: {q1_snr.mean():.6f}")
+            print(f"  Mean Q4 SNR: {q4_snr.mean():.6f}")
+
+            try:
+                stat, wp = _wil2(q1_snr, q4_snr)
+                print(f"  Wilcoxon Q1 vs Q4: stat={stat:.1f}, p={wp:.2e}")
+            except ValueError as e:
+                print(f"  Wilcoxon Q1 vs Q4: could not compute ({e})")
+
+            rho_hi_ev, p_hi_ev = _sp3(hi, channel_df["broadband_snr"])
+            print(
+                f"  Spearman(HI, evoked SNR): rho={rho_hi_ev:.4f}, p={p_hi_ev:.2e}"
+            )
+
+            plot_habituation_quartiles(
+                stacked_q,
+                args.output_dir / "habituation_quartiles.png",
+            )
+
+        plot_habituation_index_distribution(
+            channel_df,
+            args.output_dir / "habituation_index_histogram.png",
+        )
+
+        if cumulative_snrs_dict:
+            plot_cumulative_snr_curves(
+                cumulative_snrs_dict,
+                sfreq_dict,
+                args.output_dir / "cumulative_snr_curves.png",
+            )
 
     print("\nDone.")
 

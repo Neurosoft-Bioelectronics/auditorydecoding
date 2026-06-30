@@ -408,6 +408,164 @@ def compute_power_ratio_snr(epochs: EpochArrays) -> np.ndarray:
     return snr
 
 
+def compute_induced_power_snr(epochs: EpochArrays) -> np.ndarray:
+    r"""Induced-power SNR per channel (non-phase-locked component).
+
+    Decomposes total single-trial power into evoked + induced:
+
+    .. math::
+
+        \text{Induced\_var}_c = \frac{1}{N}\sum_i \operatorname{Var}(S_{i,c})
+                                - \operatorname{Var}(\bar{S}_c)
+
+        \text{Induced\_SNR}_c = \frac{\text{Induced\_var}_c}
+                                     {\frac{1}{N}\sum_i \operatorname{Var}(R_{i,c})}
+
+    Parameters
+    ----------
+    epochs : EpochArrays
+        Baseline-corrected and (optionally) filtered epochs.
+
+    Returns
+    -------
+    snr : np.ndarray, shape (n_channels,)
+    """
+    erp = epochs.stimulus.mean(axis=0)  # (C, W)
+    erp_var = erp.var(axis=-1)  # (C,)
+
+    stim_var = epochs.stimulus.var(axis=-1)  # (N, C)
+    mean_stim_var = stim_var.mean(axis=0)  # (C,)
+
+    induced_var = mean_stim_var - erp_var  # (C,)
+    induced_var = np.maximum(induced_var, 0.0)
+
+    rest_var = epochs.rest.var(axis=-1)  # (N, C)
+    mean_rest_var = rest_var.mean(axis=0)  # (C,)
+
+    with np.errstate(divide="ignore", invalid="ignore"):
+        snr = np.where(mean_rest_var > 0, induced_var / mean_rest_var, 0.0)
+    return snr
+
+
+def compute_habituation_snr(
+    epochs: EpochArrays, n_splits: int = 4
+) -> np.ndarray:
+    r"""Evoked SNR computed independently for chronological trial quartiles.
+
+    Splits trials into *n_splits* equal groups (Q1 = earliest, Q_n = latest)
+    and computes the evoked-potential SNR for each split.
+
+    Parameters
+    ----------
+    epochs : EpochArrays
+    n_splits : int
+
+    Returns
+    -------
+    snr_splits : np.ndarray, shape (n_splits, n_channels)
+    """
+    n_trials = epochs.stimulus.shape[0]
+    split_size = n_trials // n_splits
+    if split_size < 2:
+        return np.zeros((n_splits, epochs.stimulus.shape[1]))
+
+    snr_splits = []
+    for q in range(n_splits):
+        start = q * split_size
+        end = start + split_size if q < n_splits - 1 else n_trials
+        sub = EpochArrays(
+            rest=epochs.rest[start:end],
+            stimulus=epochs.stimulus[start:end],
+            stim_labels=epochs.stim_labels[start:end],
+            window_samples=epochs.window_samples,
+        )
+        snr_splits.append(compute_channel_snr(sub))
+
+    return np.stack(snr_splits, axis=0)  # (n_splits, C)
+
+
+def compute_habituation_index(epochs: EpochArrays) -> np.ndarray:
+    r"""Per-channel habituation index (HI).
+
+    .. math::
+
+        HI_c = \frac{SNR_{\text{early},c} - SNR_{\text{late},c}}
+                     {SNR_{\text{early},c} + SNR_{\text{late},c} + \epsilon}
+
+    where early = first 25% of trials, late = last 25%.
+
+    - HI > 0: habituation (early stronger)
+    - HI < 0: sensitization (late stronger)
+    - HI ~ 0: stable response
+
+    Parameters
+    ----------
+    epochs : EpochArrays
+
+    Returns
+    -------
+    hi : np.ndarray, shape (n_channels,)
+    """
+    n_trials = epochs.stimulus.shape[0]
+    q_size = max(n_trials // 4, 1)
+
+    early = EpochArrays(
+        rest=epochs.rest[:q_size],
+        stimulus=epochs.stimulus[:q_size],
+        stim_labels=epochs.stim_labels[:q_size],
+        window_samples=epochs.window_samples,
+    )
+    late = EpochArrays(
+        rest=epochs.rest[-q_size:],
+        stimulus=epochs.stimulus[-q_size:],
+        stim_labels=epochs.stim_labels[-q_size:],
+        window_samples=epochs.window_samples,
+    )
+
+    snr_early = compute_channel_snr(early)
+    snr_late = compute_channel_snr(late)
+
+    eps = 1e-12
+    hi = (snr_early - snr_late) / (snr_early + snr_late + eps)
+    return hi
+
+
+def compute_cumulative_erp_snr(
+    epochs: EpochArrays, step: int = 5
+) -> np.ndarray:
+    r"""ERP SNR using the first K trials, for K in [step, 2*step, ..., N].
+
+    Shows how evoked SNR evolves as more trials are included. If habituation
+    is present, SNR should peak early then decline as flat late trials
+    dilute the average.
+
+    Parameters
+    ----------
+    epochs : EpochArrays
+    step : int
+
+    Returns
+    -------
+    snr_curve : np.ndarray, shape (n_steps, n_channels)
+    """
+    n_trials = epochs.stimulus.shape[0]
+    steps = list(range(step, n_trials + 1, step))
+    if not steps or steps[-1] != n_trials:
+        steps.append(n_trials)
+
+    snr_curve = []
+    for k in steps:
+        sub = EpochArrays(
+            rest=epochs.rest[:k],
+            stimulus=epochs.stimulus[:k],
+            stim_labels=epochs.stim_labels[:k],
+            window_samples=epochs.window_samples,
+        )
+        snr_curve.append(compute_channel_snr(sub))
+
+    return np.stack(snr_curve, axis=0)  # (n_steps, C)
+
+
 def classify_channels(
     snr: np.ndarray,
     threshold: float = 0.5,
@@ -540,6 +698,9 @@ def build_channel_table(
     bb_power_snr = compute_power_ratio_snr(broadband_epochs)
     hg_power_snr = compute_power_ratio_snr(high_gamma_epochs)
 
+    bb_induced_snr = compute_induced_power_snr(broadband_epochs)
+    bb_hi = compute_habituation_index(broadband_epochs)
+
     table = {
         "session_id": np.full(len(ch_names), session.session_id),
         "channel_id": ch_names,
@@ -550,6 +711,8 @@ def build_channel_table(
         "tuning_metric": tuning,
         "broadband_power_snr": bb_power_snr,
         "high_gamma_power_snr": hg_power_snr,
+        "broadband_induced_snr": bb_induced_snr,
+        "habituation_index": bb_hi,
     }
 
     if low_freq_epochs is not None:
@@ -558,11 +721,13 @@ def build_channel_table(
         lf_tuning = compute_tonotopic_tuning(low_freq_epochs)
         lf_active = classify_channels(lf_snr, threshold=snr_threshold)
         lf_power_snr = compute_power_ratio_snr(low_freq_epochs)
+        lf_induced_snr = compute_induced_power_snr(low_freq_epochs)
         table["lowfreq_snr"] = lf_snr
         table["lowfreq_resp_ratio"] = lf_resp
         table["lowfreq_tuning_metric"] = lf_tuning
         table["lowfreq_status"] = np.where(lf_active, "Active", "Dead")
         table["lowfreq_power_snr"] = lf_power_snr
+        table["lowfreq_induced_snr"] = lf_induced_snr
 
     return table
 
@@ -605,6 +770,15 @@ def build_session_table(
             if active.any()
             else 0.0
         ),
+        "mean_broadband_induced_snr": float(
+            channel_table["broadband_induced_snr"].mean()
+        ),
+        "mean_habituation_index": float(
+            channel_table["habituation_index"].mean()
+        ),
+        "max_habituation_index": float(
+            channel_table["habituation_index"].max()
+        ),
     }
 
     if "lowfreq_snr" in channel_table:
@@ -625,6 +799,9 @@ def build_session_table(
         )
         row["mean_lowfreq_power_snr"] = float(
             channel_table["lowfreq_power_snr"].mean()
+        )
+        row["mean_lowfreq_induced_snr"] = float(
+            channel_table["lowfreq_induced_snr"].mean()
         )
 
     return row
